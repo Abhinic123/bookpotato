@@ -104,7 +104,7 @@ export default function Home() {
             <div className="text-sm text-text-secondary">Available Books</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer" onClick={() => window.location.href = '/my-books?tab=borrowed'}>
           <CardContent className="pt-6 text-center">
             <div className="text-2xl font-bold text-secondary">
               {userStats?.borrowedBooks || 0}

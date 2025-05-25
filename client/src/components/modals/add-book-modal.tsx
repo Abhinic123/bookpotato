@@ -130,7 +130,7 @@ export default function AddBookModal({ open, onOpenChange }: AddBookModalProps) 
   };
 
   const handleBarcodeScanned = async (barcode: string) => {
-    setIsScannerOpen(false);
+    setScanMode(false);
     
     try {
       // Try to fetch book details from Open Library API using ISBN
