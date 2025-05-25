@@ -1,12 +1,21 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { Bell, BookOpen, Home, Search, Users, Bookmark, Plus } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Bell, BookOpen, Home, Search, Users, Bookmark, Plus, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getCurrentUser } from "@/lib/auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { getCurrentUser, logout } from "@/lib/auth";
 import { getInitials } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import AddBookModal from "@/components/modals/add-book-modal";
 
 interface AppLayoutProps {
@@ -14,8 +23,10 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [showAddModal, setShowAddModal] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: authData } = useQuery({
     queryKey: ["/api/auth/me"],
@@ -28,6 +39,24 @@ export default function AppLayout({ children }: AppLayoutProps) {
   });
 
   const unreadCount = notifications?.filter((n: any) => !n.isRead).length || 0;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      queryClient.clear();
+      setLocation("/auth");
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const navigation = [
     { name: "Home", icon: Home, path: "/" },
@@ -60,13 +89,39 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </Badge>
               )}
             </Button>
-            <Button variant="ghost" className="p-0" onClick={() => alert('Profile functionality coming soon!')}>
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                  {authData?.user ? getInitials(authData.user.name) : "?"}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="p-0">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                      {authData?.user ? getInitials(authData.user.name) : "?"}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {authData?.user?.name || "User"}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {authData?.user?.email || "user@example.com"}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
