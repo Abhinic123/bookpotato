@@ -328,7 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         FROM books b
         JOIN users u ON b.owner_id = u.id
         JOIN society_members sm ON b.society_id = sm.society_id
-        WHERE sm.user_id = ${req.session.userId} AND sm.is_active = ${true}
+        WHERE sm.user_id = ${req.session.userId} AND sm.is_active = true
         ORDER BY b.created_at DESC
         LIMIT 10
       `);
@@ -374,7 +374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           FROM books b
           JOIN users u ON b.owner_id = u.id
           JOIN society_members sm ON b.society_id = sm.society_id
-          WHERE sm.user_id = ${req.session.userId} AND sm.is_active = ${true}
+          WHERE sm.user_id = ${req.session.userId}
           ORDER BY b.created_at DESC
         `);
       } else {
