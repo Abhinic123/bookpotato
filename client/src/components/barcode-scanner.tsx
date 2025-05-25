@@ -25,12 +25,22 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
     };
   }, [isOpen]);
 
-  const startScanner = () => {
+  const startScanner = async () => {
     if (!scannerRef.current) return;
 
-    setIsScanning(true);
+    try {
+      // Request camera permission explicitly
+      await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: "environment",
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        } 
+      });
+      
+      setIsScanning(true);
 
-    Quagga.init({
+      Quagga.init({
       inputStream: {
         name: "Live",
         type: "LiveStream",
@@ -70,11 +80,16 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
       Quagga.start();
     });
 
-    Quagga.onDetected((result) => {
-      const code = result.codeResult.code;
-      onScan(code);
-      stopScanner();
-    });
+      Quagga.onDetected((result) => {
+        const code = result.codeResult.code;
+        onScan(code);
+        stopScanner();
+      });
+    } catch (error) {
+      console.error("Camera access denied:", error);
+      setIsScanning(false);
+      alert("Camera access is required for barcode scanning. Please allow camera permissions and try again.");
+    }
   };
 
   const stopScanner = () => {

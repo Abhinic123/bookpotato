@@ -33,11 +33,7 @@ export default function Browse() {
   }, [societies, selectedSociety]);
 
   const { data: books = [], isLoading } = useQuery({
-    queryKey: ["/api/books/society", currentSociety?.id || 0],
-    queryFn: () => {
-      return fetch(`/api/books/society/${currentSociety?.id || 0}`)
-        .then(res => res.json());
-    },
+    queryKey: ["/api/books/all"],
     enabled: !!currentSociety,
   });
 
