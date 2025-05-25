@@ -73,9 +73,10 @@ type BookFormData = z.infer<typeof bookSchema>;
 interface AddBookModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editBook?: any;
 }
 
-export default function AddBookModal({ open, onOpenChange }: AddBookModalProps) {
+export default function AddBookModal({ open, onOpenChange, editBook }: AddBookModalProps) {
   const [scanMode, setScanMode] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -87,20 +88,22 @@ export default function AddBookModal({ open, onOpenChange }: AddBookModalProps) 
   const form = useForm<BookFormData>({
     resolver: zodResolver(bookSchema),
     defaultValues: {
-      title: "",
-      author: "",
-      isbn: "",
-      genre: "",
-      description: "",
-      condition: "",
-      dailyFee: "",
-      societyId: societies?.[0]?.id || 0,
+      title: editBook?.title || "",
+      author: editBook?.author || "",
+      isbn: editBook?.isbn || "",
+      genre: editBook?.genre || "",
+      description: editBook?.description || "",
+      condition: editBook?.condition || "",
+      dailyFee: editBook?.dailyFee?.toString() || "",
+      societyId: editBook?.societyId || (Array.isArray(societies) ? societies[0]?.id : 0) || 0,
     },
   });
 
   const addBookMutation = useMutation({
     mutationFn: async (data: BookFormData) => {
-      const response = await apiRequest("POST", "/api/books", {
+      const method = editBook ? "PATCH" : "POST";
+      const url = editBook ? `/api/books/${editBook.id}` : "/api/books";
+      const response = await apiRequest(method, url, {
         ...data,
         dailyFee: Number(data.dailyFee),
       });
@@ -194,7 +197,7 @@ export default function AddBookModal({ open, onOpenChange }: AddBookModalProps) 
       <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>Add Book to Library</DialogTitle>
+            <DialogTitle>{editBook ? "Edit Book" : "Add Book to Library"}</DialogTitle>
             <Button 
               variant="ghost" 
               size="icon"

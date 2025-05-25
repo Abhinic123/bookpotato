@@ -93,7 +93,7 @@ export default function MyBooks() {
             </Card>
           ))}
         </div>
-      ) : borrowedBooks && borrowedBooks.length > 0 ? (
+      ) : Array.isArray(borrowedBooks) && borrowedBooks.length > 0 ? (
         borrowedBooks.map((rental: RentalWithDetails) => (
           <Card key={rental.id}>
             <CardContent className="p-4">
@@ -176,7 +176,7 @@ export default function MyBooks() {
             </Card>
           ))}
         </div>
-      ) : lentBooks && lentBooks.length > 0 ? (
+      ) : Array.isArray(lentBooks) && lentBooks.length > 0 ? (
         lentBooks.map((rental: RentalWithDetails) => (
           <Card key={rental.id}>
             <CardContent className="p-4">
@@ -263,9 +263,9 @@ export default function MyBooks() {
             </Card>
           ))}
         </div>
-      ) : myBooks && myBooks.length > 0 ? (
+      ) : Array.isArray(myBooks) && myBooks.length > 0 ? (
         myBooks.map((book: Book) => (
-          <Card key={book.id}>
+          <Card key={book.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleBookClick(book)}>
             <CardContent className="p-4">
               <div className="flex items-start space-x-3">
                 <div className="w-12 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded flex items-center justify-center flex-shrink-0">
@@ -292,7 +292,14 @@ export default function MyBooks() {
                   </div>
                 </div>
                 
-                <Button variant="ghost" size="icon">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditBook(book);
+                  }}
+                >
                   <Edit className="h-4 w-4" />
                 </Button>
               </div>
