@@ -10,11 +10,15 @@ import { formatCurrency, formatDateRelative, getBookStatusColor, getBookStatusTe
 import type { RentalWithDetails, Book } from "@shared/schema";
 import { BookOpen, Plus, Edit } from "lucide-react";
 import AddBookModal from "@/components/modals/add-book-modal";
+import BookDetailsModal from "@/components/modals/book-details-modal";
 
 export default function MyBooks() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<any>(null);
+  const [showBookDetails, setShowBookDetails] = useState(false);
+  const [editingBook, setEditingBook] = useState<any>(null);
 
   const { data: borrowedBooks, isLoading: loadingBorrowed } = useQuery({
     queryKey: ["/api/rentals/borrowed"],
@@ -27,6 +31,22 @@ export default function MyBooks() {
   const { data: myBooks, isLoading: loadingOwned } = useQuery({
     queryKey: ["/api/books/my"],
   });
+
+  const { data: userResponse } = useQuery({
+    queryKey: ['/api/auth/me'],
+  });
+
+  const user = (userResponse as any)?.user;
+
+  const handleBookClick = (book: any) => {
+    setSelectedBook(book);
+    setShowBookDetails(true);
+  };
+
+  const handleEditBook = (book: any) => {
+    setEditingBook(book);
+    setShowAddModal(true);
+  };
 
   const returnBookMutation = useMutation({
     mutationFn: async (rentalId: number) => {

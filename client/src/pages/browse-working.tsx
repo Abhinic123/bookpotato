@@ -5,11 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import PaymentModal from "@/components/modals/payment-modal";
+import BookDetailsModal from "@/components/modals/book-details-modal";
 
 export default function BrowseWorking() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showBookDetails, setShowBookDetails] = useState(false);
 
   const { data: books, isLoading } = useQuery({
     queryKey: ['/api/books/all'],
@@ -24,6 +26,11 @@ export default function BrowseWorking() {
   const handleBorrow = (book: any) => {
     setSelectedBook(book);
     setShowPaymentModal(true);
+  };
+
+  const handleBookClick = (book: any) => {
+    setSelectedBook(book);
+    setShowBookDetails(true);
   };
 
   if (isLoading) {
@@ -106,7 +113,7 @@ export default function BrowseWorking() {
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {filteredBooks.map((book: any) => (
-              <Card key={book.id} className="overflow-hidden">
+              <Card key={book.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleBookClick(book)}>
                 <div className="aspect-[3/4] bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
                   {book.coverImage ? (
                     <img 
@@ -138,7 +145,10 @@ export default function BrowseWorking() {
                       size="sm" 
                       className="w-full"
                       disabled={!book.isAvailable}
-                      onClick={() => handleBorrow(book)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBorrow(book);
+                      }}
                       variant={book.isAvailable ? "default" : "secondary"}
                     >
                       {book.isAvailable ? "Borrow" : "Currently Borrowed"}
@@ -150,6 +160,14 @@ export default function BrowseWorking() {
           </div>
         )}
       </div>
+
+      {/* Book Details Modal */}
+      <BookDetailsModal
+        isOpen={showBookDetails}
+        onClose={() => setShowBookDetails(false)}
+        book={selectedBook}
+        user={user}
+      />
 
       {/* Payment Modal */}
       <PaymentModal
