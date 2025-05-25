@@ -14,7 +14,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -35,7 +34,7 @@ const createSocietySchema = z.object({
   name: z.string().min(1, "Society name is required"),
   description: z.string().optional(),
   city: z.string().min(1, "City is required"),
-  apartmentCount: z.number().min(90, "Society must have at least 90 apartments"),
+  apartmentCount: z.number().min(1, "Apartment count must be at least 1"),
   location: z.string().optional(),
 });
 
@@ -46,40 +45,40 @@ export default function Societies() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: mySocieties, isLoading: loadingMy } = useQuery({
-    queryKey: ["/api/societies/my"],
-  });
-
-  const { data: availableSocieties, isLoading: loadingAvailable } = useQuery({
-    queryKey: ["/api/societies/available"],
-  });
-
-  const createForm = useForm<CreateSocietyFormData>({
+  const form = useForm<CreateSocietyFormData>({
     resolver: zodResolver(createSocietySchema),
     defaultValues: {
       name: "",
       description: "",
       city: "",
-      apartmentCount: 90,
+      apartmentCount: 0,
       location: "",
     },
   });
 
+  const { data: mySocieties, isLoading: isLoadingMy } = useQuery({
+    queryKey: ["/api/societies/my"],
+  });
 
+  const { data: availableSocieties, isLoading: isLoadingAvailable } = useQuery({
+    queryKey: ["/api/societies/available"],
+  });
 
-  const createSocietyMutation = useMutation({
+  const createMutation = useMutation({
     mutationFn: async (data: CreateSocietyFormData) => {
-      const response = await apiRequest("POST", "/api/societies", data);
-      return response.json();
+      return await apiRequest("/api/societies", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
     },
     onSuccess: () => {
       toast({
-        title: "Society Created",
-        description: "Your new society has been created successfully!",
+        title: "Success",
+        description: "Society created successfully!",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/societies"] });
-      createForm.reset();
       setShowCreateModal(false);
+      form.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/societies"] });
     },
     onError: (error: any) => {
       toast({
@@ -90,17 +89,16 @@ export default function Societies() {
     },
   });
 
-
-
   const joinByIdMutation = useMutation({
     mutationFn: async (societyId: number) => {
-      const response = await apiRequest("POST", "/api/societies/join", { societyId });
-      return response.json();
+      return await apiRequest(`/api/societies/${societyId}/join`, {
+        method: "POST",
+      });
     },
     onSuccess: () => {
       toast({
-        title: "Joined Successfully",
-        description: "You have successfully joined the society!",
+        title: "Success",
+        description: "Successfully joined society!",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/societies"] });
     },
@@ -114,45 +112,37 @@ export default function Societies() {
   });
 
   const onCreateSubmit = (data: CreateSocietyFormData) => {
-    createSocietyMutation.mutate(data);
+    createMutation.mutate(data);
   };
-
-
 
   const handleJoinById = (societyId: number) => {
     joinByIdMutation.mutate(societyId);
   };
 
-  const getSocietyColor = (name: string) => {
-    const colors = [
-      "from-purple-500 to-pink-500",
-      "from-blue-500 to-cyan-500",
-      "from-green-500 to-teal-500",
-      "from-orange-500 to-red-500",
-      "from-indigo-500 to-purple-500",
-    ];
-    const index = name.length % colors.length;
-    return colors[index];
-  };
-
-  if (loadingMy) {
-    return (
-      <div className="p-4 space-y-4">
-        <div className="animate-pulse">
-          <div className="h-32 bg-gray-200 rounded-xl"></div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          {[1, 2].map((i) => (
-            <div key={i} className="animate-pulse">
-              <div className="h-24 bg-gray-200 rounded-xl"></div>
-            </div>
+  function renderMySocieties() {
+    if (isLoadingMy) {
+      return (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-32"></div>
+                      <div className="h-3 bg-gray-200 rounded w-24"></div>
+                    </div>
+                  </div>
+                  <div className="h-6 bg-gray-200 rounded w-16"></div>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  function renderMySocieties() {
     if (!mySocieties || mySocieties.length === 0) {
       return (
         <Card>
@@ -216,236 +206,30 @@ export default function Societies() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* Current Societies */}
-      {mySocieties && mySocieties.length > 0 && (
-        <div className="gradient-primary p-4 text-white">
-          <h3 className="text-lg font-semibold mb-3">Your Societies</h3>
-          <div className="space-y-3">
-            {mySocieties.map((society: SocietyWithStats) => (
-              <div key={society.id} className="bg-white bg-opacity-20 rounded-xl p-4">
+  function renderAvailableSocieties() {
+    if (isLoadingAvailable) {
+      return (
+        <div className="space-y-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-12 h-12 bg-gradient-to-br ${getSocietyColor(society.name)} rounded-xl flex items-center justify-center text-white font-bold`}>
-                      <span>{getInitials(society.name)}</span>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">{society.name}</h4>
-                      <p className="text-sm opacity-90">
-                        {society.memberCount} members · {society.bookCount} books
-                      </p>
-                      <p className="text-xs opacity-75 flex items-center mt-1">
-                        <Hash className="h-3 w-3 mr-1" />
-                        {society.code}
-                      </p>
+                    <div className="w-12 h-12 bg-gray-200 rounded-xl animate-pulse"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-32"></div>
+                      <div className="h-3 bg-gray-200 rounded w-24"></div>
                     </div>
                   </div>
-                  <Badge className="bg-green-500 text-white">
-                    <Check className="h-3 w-3 mr-1" />
-                    Active
-                  </Badge>
+                  <div className="h-8 bg-gray-200 rounded w-16"></div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Society Management */}
-      <div className="p-4">
-        <div className="mb-6">
-          <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-            <DialogTrigger asChild>
-              <Button className="bg-primary text-white p-4 rounded-xl h-auto flex items-center space-x-2 w-full">
-                <Plus className="h-6 w-6" />
-                <span className="text-sm font-medium">Create New Society</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-sm">
-              <DialogHeader>
-                <DialogTitle>Create New Society</DialogTitle>
-              </DialogHeader>
-              <Form {...createForm}>
-                <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-4">
-                  <FormField
-                    control={createForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Society Name</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter society name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={createForm.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>City</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter city name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={createForm.control}
-                    name="apartmentCount"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Number of Apartments</FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="number" 
-                            placeholder="Minimum 90 apartments"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={createForm.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Location (Optional)</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Specific area or locality" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={createForm.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description (Optional)</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Brief description of your society"
-                            className="resize-none"
-                            rows={2}
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button 
-                    type="submit" 
-                    className="w-full"
-                    disabled={createSocietyMutation.isPending}
-                  >
-                    {createSocietyMutation.isPending ? "Creating..." : "Create Society"}
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
-
-
-        </div>
-
-        {/* Available Societies */}
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Discover Societies</h3>
-          
-          {loadingAvailable ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gray-200 rounded-xl"></div>
-                        <div className="space-y-2">
-                          <div className="h-4 bg-gray-200 rounded w-24"></div>
-                          <div className="h-3 bg-gray-200 rounded w-32"></div>
-                        </div>
-                      </div>
-                      <div className="h-8 bg-gray-200 rounded w-16"></div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : availableSocieties && availableSocieties.length > 0 ? (
-            <div className="space-y-3">
-              {availableSocieties.map((society: SocietyWithStats) => (
-                <Card key={society.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center text-white font-bold">
-                          <span>{getInitials(society.name)}</span>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-text-primary">
-                            {society.name}
-                          </h4>
-                          <div className="flex items-center space-x-4 text-sm text-text-secondary">
-                            <span className="flex items-center">
-                              <Users className="h-3 w-3 mr-1" />
-                              {society.memberCount} members
-                            </span>
-                            <span className="flex items-center">
-                              <Building2 className="h-3 w-3 mr-1" />
-                              {society.bookCount} books
-                            </span>
-                          </div>
-                          {society.description && (
-                            <p className="text-xs text-text-secondary mt-1">
-                              {society.description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        size="sm" 
-                        onClick={() => handleJoinById(society.id)}
-                        disabled={joinByIdMutation.isPending}
-                        className="bg-secondary text-white hover:bg-secondary/90"
-                      >
-                        <Check className="h-4 w-4 mr-1" />
-                        {joinByIdMutation.isPending ? "Joining..." : "Join"}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <Building2 className="h-12 w-12 text-text-secondary mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-text-primary mb-2">
-                  No Societies Available
-                </h3>
-                <p className="text-sm text-text-secondary">
-                  All societies are full or none exist yet. Create a new society to get started!
-                </p>
               </CardContent>
             </Card>
-          )}
+          ))}
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  function renderAvailableSocieties() {
     if (!availableSocieties || availableSocieties.length === 0) {
       return (
         <Card>
@@ -464,7 +248,7 @@ export default function Societies() {
 
     return (
       <div className="space-y-3">
-        {availableSocieties?.map((society: SocietyWithStats) => (
+        {availableSocieties.map((society: SocietyWithStats) => (
           <Card key={society.id}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">

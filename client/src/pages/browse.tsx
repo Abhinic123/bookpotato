@@ -30,6 +30,14 @@ export default function Browse() {
       currentSociety?.id, 
       { search: searchQuery, genre: selectedGenre }
     ],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (searchQuery) params.set('search', searchQuery);
+      if (selectedGenre && selectedGenre !== 'all') params.set('genre', selectedGenre);
+      
+      return fetch(`/api/books/society/${currentSociety?.id}?${params.toString()}`)
+        .then(res => res.json());
+    },
     enabled: !!currentSociety?.id,
   });
 

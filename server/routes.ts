@@ -228,6 +228,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Book routes
+  app.get("/api/books/society", requireAuth, async (req, res) => {
+    try {
+      const mySocieties = await storage.getSocietiesByUser(req.session.userId!);
+      if (!mySocieties || mySocieties.length === 0) {
+        return res.json([]);
+      }
+      
+      const societyId = mySocieties[0].id;
+      const books = await storage.getBooksBySociety(societyId);
+      res.json(books);
+    } catch (error) {
+      console.error("Get society books error:", error);
+      res.status(500).json({ message: "Failed to fetch books" });
+    }
+  });
+
   app.get("/api/books/society/:societyId", requireAuth, async (req, res) => {
     try {
       const societyId = parseInt(req.params.societyId);
