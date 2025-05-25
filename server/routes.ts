@@ -319,46 +319,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Book routes - Get books from ALL user's societies by default
-  app.get("/api/books/society", requireAuth, async (req, res) => {
-    try {
-      // Get ALL books from user's societies for home page
-      const result = await db.execute(sql`
-        SELECT b.*, u.name as owner_name
-        FROM books b
-        JOIN users u ON b.owner_id = u.id
-        JOIN society_members sm ON b.society_id = sm.society_id
-        WHERE sm.user_id = ${req.session.userId} AND sm.is_active = true
-        ORDER BY b.created_at DESC
-        LIMIT 10
-      `);
-      
-      const books = result.rows.map((row: any) => ({
-        id: row.id,
-        title: row.title,
-        author: row.author,
-        isbn: row.isbn || "",
-        genre: row.genre || "",
-        condition: row.condition || "good",
-        description: row.description || "",
-        imageUrl: row.image_url || "",
-        dailyFee: row.daily_fee,
-        isAvailable: row.is_available,
-        ownerId: row.owner_id,
-        societyId: row.society_id,
-        createdAt: row.created_at,
-        owner: {
-          id: row.owner_id,
-          name: row.owner_name
-        }
-      }));
-      
-      res.json(books);
-    } catch (error) {
-      console.error("Get society books error:", error);
-      res.status(500).json({ message: "Failed to fetch books" });
-    }
-  });
+
 
   app.get("/api/books/society/:societyId", requireAuth, async (req, res) => {
     try {
