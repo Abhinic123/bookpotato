@@ -47,6 +47,328 @@ export interface IStorage {
   getUserStats(userId: number): Promise<{ borrowedBooks: number; lentBooks: number; totalEarnings: number }>;
 }
 
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getSociety(id: number): Promise<Society | undefined> {
+    const [society] = await db.select().from(societies).where(eq(societies.id, id));
+    return society || undefined;
+  }
+
+  async getSocietyByCode(code: string): Promise<Society | undefined> {
+    const [society] = await db.select().from(societies).where(eq(societies.code, code));
+    return society || undefined;
+  }
+
+  async getSocietiesByUser(userId: number): Promise<SocietyWithStats[]> {
+    const userSocieties = await db
+      .select({
+        id: societies.id,
+        name: societies.name,
+        code: societies.code,
+        description: societies.description,
+        createdAt: societies.createdAt,
+        isJoined: sql<boolean>`true`
+      })
+      .from(societies)
+      .innerJoin(societyMembers, eq(societies.id, societyMembers.societyId))
+      .where(eq(societyMembers.userId, userId));
+    
+    return userSocieties;
+  }
+
+  async getAvailableSocieties(userId: number): Promise<SocietyWithStats[]> {
+    const joinedSocietyIds = await db
+      .select({ societyId: societyMembers.societyId })
+      .from(societyMembers)
+      .where(eq(societyMembers.userId, userId));
+    
+    const joinedIds = joinedSocietyIds.map(s => s.societyId);
+    
+    const availableSocieties = await db
+      .select()
+      .from(societies)
+      .where(joinedIds.length > 0 ? not(inArray(societies.id, joinedIds)) : undefined);
+    
+    return availableSocieties.map(s => ({ ...s, isJoined: false }));
+  }
+
+  async createSociety(insertSociety: InsertSociety): Promise<Society> {
+    const [society] = await db
+      .insert(societies)
+      .values(insertSociety)
+      .returning();
+    return society;
+  }
+
+  async joinSociety(societyId: number, userId: number): Promise<SocietyMember> {
+    const [member] = await db
+      .insert(societyMembers)
+      .values({ societyId, userId })
+      .returning();
+    return member;
+  }
+
+  async isMemberOfSociety(societyId: number, userId: number): Promise<boolean> {
+    const [member] = await db
+      .select()
+      .from(societyMembers)
+      .where(and(eq(societyMembers.societyId, societyId), eq(societyMembers.userId, userId)));
+    return !!member;
+  }
+
+  async getBook(id: number): Promise<BookWithOwner | undefined> {
+    const [result] = await db
+      .select({
+        id: books.id,
+        title: books.title,
+        author: books.author,
+        isbn: books.isbn,
+        genre: books.genre,
+        condition: books.condition,
+        dailyFee: books.dailyFee,
+        description: books.description,
+        isAvailable: books.isAvailable,
+        ownerId: books.ownerId,
+        societyId: books.societyId,
+        createdAt: books.createdAt,
+        owner: {
+          id: users.id,
+          name: users.name
+        }
+      })
+      .from(books)
+      .innerJoin(users, eq(books.ownerId, users.id))
+      .where(eq(books.id, id));
+    
+    return result || undefined;
+  }
+
+  async getBooksBySociety(societyId: number): Promise<BookWithOwner[]> {
+    const results = await db
+      .select({
+        id: books.id,
+        title: books.title,
+        author: books.author,
+        isbn: books.isbn,
+        genre: books.genre,
+        condition: books.condition,
+        dailyFee: books.dailyFee,
+        description: books.description,
+        isAvailable: books.isAvailable,
+        ownerId: books.ownerId,
+        societyId: books.societyId,
+        createdAt: books.createdAt,
+        owner: {
+          id: users.id,
+          name: users.name
+        }
+      })
+      .from(books)
+      .innerJoin(users, eq(books.ownerId, users.id))
+      .where(eq(books.societyId, societyId));
+    
+    return results;
+  }
+
+  async getBooksByOwner(ownerId: number): Promise<Book[]> {
+    return await db.select().from(books).where(eq(books.ownerId, ownerId));
+  }
+
+  async searchBooks(societyId: number, query?: string, genre?: string): Promise<BookWithOwner[]> {
+    let whereConditions = [eq(books.societyId, societyId)];
+    
+    if (query) {
+      whereConditions.push(
+        or(
+          ilike(books.title, `%${query}%`),
+          ilike(books.author, `%${query}%`)
+        )!
+      );
+    }
+    
+    if (genre) {
+      whereConditions.push(eq(books.genre, genre));
+    }
+    
+    const results = await db
+      .select({
+        id: books.id,
+        title: books.title,
+        author: books.author,
+        isbn: books.isbn,
+        genre: books.genre,
+        condition: books.condition,
+        dailyFee: books.dailyFee,
+        description: books.description,
+        isAvailable: books.isAvailable,
+        ownerId: books.ownerId,
+        societyId: books.societyId,
+        createdAt: books.createdAt,
+        owner: {
+          id: users.id,
+          name: users.name
+        }
+      })
+      .from(books)
+      .innerJoin(users, eq(books.ownerId, users.id))
+      .where(and(...whereConditions));
+    
+    return results;
+  }
+
+  async createBook(insertBook: InsertBook): Promise<Book> {
+    const [book] = await db
+      .insert(books)
+      .values(insertBook)
+      .returning();
+    return book;
+  }
+
+  async updateBook(id: number, updates: Partial<Book>): Promise<Book | undefined> {
+    const [book] = await db
+      .update(books)
+      .set(updates)
+      .where(eq(books.id, id))
+      .returning();
+    return book || undefined;
+  }
+
+  async getRental(id: number): Promise<RentalWithDetails | undefined> {
+    // For now, return undefined as rental queries need complex joins
+    // This will be implemented when rental functionality is fully needed
+    return undefined;
+  }
+
+  async getRentalsByBorrower(borrowerId: number): Promise<RentalWithDetails[]> {
+    // For now, return empty array as rental queries need complex joins
+    // This will be implemented when rental functionality is fully needed
+    return [];
+  }
+
+  async getRentalsByLender(lenderId: number): Promise<RentalWithDetails[]> {
+    // For now, return empty array as rental queries need complex joins
+    // This will be implemented when rental functionality is fully needed
+    return [];
+  }
+
+  async getActiveRentals(userId: number): Promise<RentalWithDetails[]> {
+    // For now, return empty array as rental queries need complex joins
+    // This will be implemented when rental functionality is fully needed
+    return [];
+  }
+
+  async createRental(insertRental: InsertBookRental): Promise<BookRental> {
+    const [rental] = await db
+      .insert(bookRentals)
+      .values(insertRental)
+      .returning();
+    return rental;
+  }
+
+  async updateRental(id: number, updates: Partial<BookRental>): Promise<BookRental | undefined> {
+    const [rental] = await db
+      .update(bookRentals)
+      .set(updates)
+      .where(eq(bookRentals.id, id))
+      .returning();
+    return rental || undefined;
+  }
+
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    return await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const [notification] = await db
+      .insert(notifications)
+      .values(insertNotification)
+      .returning();
+    return notification;
+  }
+
+  async markNotificationAsRead(id: number): Promise<boolean> {
+    const [notification] = await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    return !!notification;
+  }
+
+  async getSocietyStats(societyId: number): Promise<{ memberCount: number; bookCount: number; activeRentals: number }> {
+    const [memberCount] = await db
+      .select({ count: count() })
+      .from(societyMembers)
+      .where(eq(societyMembers.societyId, societyId));
+    
+    const [bookCount] = await db
+      .select({ count: count() })
+      .from(books)
+      .where(eq(books.societyId, societyId));
+    
+    const [activeRentals] = await db
+      .select({ count: count() })
+      .from(bookRentals)
+      .innerJoin(books, eq(bookRentals.bookId, books.id))
+      .where(
+        and(
+          eq(books.societyId, societyId),
+          eq(bookRentals.status, 'active')
+        )
+      );
+    
+    return {
+      memberCount: memberCount.count,
+      bookCount: bookCount.count,
+      activeRentals: activeRentals.count
+    };
+  }
+
+  async getUserStats(userId: number): Promise<{ borrowedBooks: number; lentBooks: number; totalEarnings: number }> {
+    const [borrowedBooks] = await db
+      .select({ count: count() })
+      .from(bookRentals)
+      .where(eq(bookRentals.borrowerId, userId));
+    
+    const [lentBooks] = await db
+      .select({ count: count() })
+      .from(bookRentals)
+      .where(eq(bookRentals.lenderId, userId));
+    
+    const [earnings] = await db
+      .select({ total: sum(bookRentals.rentalFee) })
+      .from(bookRentals)
+      .where(eq(bookRentals.lenderId, userId));
+    
+    return {
+      borrowedBooks: borrowedBooks.count,
+      lentBooks: lentBooks.count,
+      totalEarnings: Number(earnings.total) || 0
+    };
+  }
+}
+
 export class MemStorage implements IStorage {
   private users: Map<number, User> = new Map();
   private societies: Map<number, Society> = new Map();
@@ -505,4 +827,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
