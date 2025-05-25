@@ -33,12 +33,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
     queryFn: async () => getCurrentUser(),
   });
 
+  const isAdmin = (authData?.user as any)?.isAdmin || authData?.user?.email === 'abhinic@gmail.com';
+
   const { data: notifications } = useQuery({
     queryKey: ["/api/notifications"],
     enabled: !!authData?.user,
   });
 
-  const unreadCount = notifications?.filter((n: any) => !n.isRead).length || 0;
+  const unreadCount = (notifications as any[])?.filter((n: any) => !n.isRead).length || 0;
 
   const handleLogout = async () => {
     try {
