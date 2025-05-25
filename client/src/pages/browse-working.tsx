@@ -44,8 +44,8 @@ export default function BrowseWorking() {
   // Filter out unavailable books (already borrowed)
   const availableBooks = booksArray.filter((book: any) => book.isAvailable);
   
-  // Filter books based on search
-  const filteredBooks = availableBooks.filter((book: any) => {
+  // Filter books based on search (show ALL books)
+  const filteredBooks = booksArray.filter((book: any) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -55,14 +55,18 @@ export default function BrowseWorking() {
     );
   });
 
+  // Calculate borrowed books
+  const borrowedBooks = booksArray.filter((book: any) => !book.isAvailable);
+
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="p-4 bg-gradient-to-r from-primary to-secondary text-white">
         <h1 className="text-xl font-bold mb-2">Browse Books</h1>
-        <p className="text-sm opacity-90">
-          {availableBooks.length} books available for borrowing
-        </p>
+        <div className="text-sm opacity-90 space-y-1">
+          <p>Total Books: {booksArray.length} | Available: {availableBooks.length} | Borrowed: {borrowedBooks.length}</p>
+          <p>Explore the complete library collection</p>
+        </div>
       </div>
 
       {/* Search */}
@@ -80,7 +84,7 @@ export default function BrowseWorking() {
 
       {/* Debug Info */}
       <div className="p-2 bg-yellow-100 text-xs border">
-        Debug: Total: {booksArray.length} | Available: {availableBooks.length} | Filtered: {filteredBooks.length} | Loading: {isLoading ? 'Yes' : 'No'}
+        Debug: Total: {booksArray.length} | Available: {availableBooks.length} | Borrowed: {borrowedBooks.length} | Filtered: {filteredBooks.length}
       </div>
 
       {/* Books Grid */}
@@ -135,8 +139,9 @@ export default function BrowseWorking() {
                       className="w-full"
                       disabled={!book.isAvailable}
                       onClick={() => handleBorrow(book)}
+                      variant={book.isAvailable ? "default" : "secondary"}
                     >
-                      {book.isAvailable ? "Borrow" : "Not Available"}
+                      {book.isAvailable ? "Borrow" : "Currently Borrowed"}
                     </Button>
                   )}
                 </CardContent>

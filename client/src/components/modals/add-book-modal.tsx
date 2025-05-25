@@ -166,12 +166,7 @@ export default function AddBookModal({ open, onOpenChange }: AddBookModalProps) 
   };
 
   const handleBarcodeScan = () => {
-    // Simulate barcode scanning - in a real app this would integrate with camera
-    toast({
-      title: "Barcode Scanning",
-      description: "This feature would integrate with the device camera to scan book barcodes and auto-fill information.",
-    });
-    setScanMode(false);
+    setScanMode(true);
   };
 
   if (!(societies as any[])?.length) {
