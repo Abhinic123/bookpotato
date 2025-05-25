@@ -36,13 +36,16 @@ export default function BrowseWorking() {
     );
   }
 
-  // Handle different possible response structures
+  // Handle different possible response structures  
   const booksArray = Array.isArray(books) ? books : 
                      Array.isArray((books as any)?.books) ? (books as any).books :
                      Array.isArray((books as any)?.data) ? (books as any).data : [];
   
+  // Filter out unavailable books (already borrowed)
+  const availableBooks = booksArray.filter((book: any) => book.isAvailable);
+  
   // Filter books based on search
-  const filteredBooks = booksArray.filter((book: any) => {
+  const filteredBooks = availableBooks.filter((book: any) => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -58,7 +61,7 @@ export default function BrowseWorking() {
       <div className="p-4 bg-gradient-to-r from-primary to-secondary text-white">
         <h1 className="text-xl font-bold mb-2">Browse Books</h1>
         <p className="text-sm opacity-90">
-          {Array.isArray(books) ? books.length : 0} books available for borrowing
+          {availableBooks.length} books available for borrowing
         </p>
       </div>
 
@@ -77,7 +80,7 @@ export default function BrowseWorking() {
 
       {/* Debug Info */}
       <div className="p-2 bg-yellow-100 text-xs border">
-        Debug: Raw Response: {typeof books} | Books Array: {booksArray.length} | Filtered: {filteredBooks.length} | Loading: {isLoading ? 'Yes' : 'No'}
+        Debug: Total: {booksArray.length} | Available: {availableBooks.length} | Filtered: {filteredBooks.length} | Loading: {isLoading ? 'Yes' : 'No'}
       </div>
 
       {/* Books Grid */}

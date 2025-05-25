@@ -101,7 +101,7 @@ export default function Home() {
         <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/browse')}>
           <CardContent className="pt-6 text-center">
             <div className="text-2xl font-bold text-primary">
-              {Array.isArray(recentBooks) ? recentBooks.length : 0}
+              {Array.isArray(recentBooks) ? recentBooks.filter((book: any) => book.isAvailable).length : 0}
             </div>
             <div className="text-sm text-text-secondary">Available Books</div>
           </CardContent>

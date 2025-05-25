@@ -449,6 +449,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/rentals/borrowed", requireAuth, async (req, res) => {
     try {
       const rentals = await storage.getRentalsByBorrower(req.session.userId!);
+      console.log("📚 Borrowed books for user", req.session.userId!, ":", rentals.length);
       res.json(rentals);
     } catch (error) {
       console.error("Get borrowed books error:", error);
