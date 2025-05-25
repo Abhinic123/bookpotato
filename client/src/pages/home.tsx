@@ -98,10 +98,10 @@ export default function Home() {
 
       {/* Quick Stats */}
       <div className="p-4 grid grid-cols-2 gap-4">
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/browse')}>
           <CardContent className="pt-6 text-center">
             <div className="text-2xl font-bold text-primary">
-              {(societyStats as any)?.bookCount || 0}
+              {Array.isArray(recentBooks) ? recentBooks.length : 0}
             </div>
             <div className="text-sm text-text-secondary">Available Books</div>
           </CardContent>

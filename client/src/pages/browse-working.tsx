@@ -25,10 +25,17 @@ export default function BrowseWorking() {
 
   const borrowMutation = useMutation({
     mutationFn: async (bookId: number) => {
-      return apiRequest("/api/rentals", {
+      const response = await fetch("/api/rentals", {
         method: "POST",
-        body: { bookId }
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ bookId })
       });
+      if (!response.ok) {
+        throw new Error("Failed to borrow book");
+      }
+      return response.json();
     },
     onSuccess: () => {
       toast({
