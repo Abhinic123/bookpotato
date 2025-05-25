@@ -96,6 +96,7 @@ export const insertBookSchema = createInsertSchema(books).omit({
 
 export const insertBookRentalSchema = createInsertSchema(bookRentals).omit({
   id: true,
+  startDate: true,
   actualReturnDate: true,
   paymentId: true,
   createdAt: true,

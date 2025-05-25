@@ -159,9 +159,11 @@ export class MemStorage implements IStorage {
     const id = this.currentSocietyId++;
     const code = `${insertSociety.name.substring(0, 3).toUpperCase()}${Date.now().toString().slice(-4)}`;
     const society: Society = {
-      ...insertSociety,
       id,
+      name: insertSociety.name,
+      description: insertSociety.description || null,
       code,
+      createdBy: insertSociety.createdBy,
       memberCount: 1,
       bookCount: 0,
       createdAt: new Date(),
@@ -270,8 +272,17 @@ export class MemStorage implements IStorage {
   async createBook(insertBook: InsertBook): Promise<Book> {
     const id = this.currentBookId++;
     const book: Book = {
-      ...insertBook,
       id,
+      title: insertBook.title,
+      author: insertBook.author,
+      isbn: insertBook.isbn || null,
+      genre: insertBook.genre,
+      description: insertBook.description || null,
+      imageUrl: insertBook.imageUrl || null,
+      condition: insertBook.condition,
+      dailyFee: insertBook.dailyFee,
+      ownerId: insertBook.ownerId,
+      societyId: insertBook.societyId,
       isAvailable: true,
       createdAt: new Date(),
     };
@@ -390,9 +401,20 @@ export class MemStorage implements IStorage {
   async createRental(insertRental: InsertBookRental): Promise<BookRental> {
     const id = this.currentRentalId++;
     const rental: BookRental = {
-      ...insertRental,
       id,
+      bookId: insertRental.bookId,
+      borrowerId: insertRental.borrowerId,
+      lenderId: insertRental.lenderId,
+      societyId: insertRental.societyId,
+      startDate: new Date(),
+      endDate: insertRental.endDate,
       actualReturnDate: null,
+      totalAmount: insertRental.totalAmount,
+      platformFee: insertRental.platformFee,
+      lenderAmount: insertRental.lenderAmount,
+      securityDeposit: insertRental.securityDeposit,
+      status: insertRental.status,
+      paymentStatus: insertRental.paymentStatus,
       paymentId: null,
       createdAt: new Date(),
     };
