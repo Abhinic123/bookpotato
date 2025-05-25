@@ -86,6 +86,8 @@ export const notifications = pgTable("notifications", {
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
+  userNumber: true,
+  isAdmin: true,
   createdAt: true,
 });
 

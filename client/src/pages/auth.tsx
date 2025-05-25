@@ -53,6 +53,8 @@ export default function Auth() {
       email: "",
       phone: "",
       password: "",
+      address: "",
+      referredBy: undefined,
     },
   });
 
@@ -210,6 +212,42 @@ export default function Auth() {
                         type="tel" 
                         placeholder="Enter your phone number" 
                         {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={signupForm.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter your address" 
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={signupForm.control}
+                name="referredBy"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Who helped you get here? (Optional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        placeholder="Enter user number of person who referred you" 
+                        {...field}
+                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
                       />
                     </FormControl>
                     <FormMessage />
