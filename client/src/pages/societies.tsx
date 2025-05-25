@@ -191,10 +191,19 @@ export default function Societies() {
                     )}
                   </div>
                 </div>
-                <Badge variant="secondary">
-                  <Hash className="h-3 w-3 mr-1" />
-                  {society.code}
-                </Badge>
+                <div className="flex items-center space-x-2">
+                  <Badge variant="secondary">
+                    <Hash className="h-3 w-3 mr-1" />
+                    {society.code}
+                  </Badge>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                  >
+                    Unjoin
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
