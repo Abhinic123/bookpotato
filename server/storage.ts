@@ -97,17 +97,27 @@ export class DatabaseStorage implements IStorage {
         apartmentCount: societies.apartmentCount,
         location: societies.location,
         createdBy: societies.createdBy,
-        memberCount: societies.memberCount,
-        bookCount: societies.bookCount,
         status: societies.status,
         createdAt: societies.createdAt,
-        isJoined: sql<boolean>`true`
       })
       .from(societies)
       .innerJoin(societyMembers, eq(societies.id, societyMembers.societyId))
       .where(eq(societyMembers.userId, userId));
     
-    return userSocieties;
+    // Calculate dynamic stats for each society
+    const societiesWithStats = await Promise.all(
+      userSocieties.map(async (society) => {
+        const stats = await this.getSocietyStats(society.id);
+        return {
+          ...society,
+          memberCount: stats.memberCount,
+          bookCount: stats.bookCount,
+          isJoined: true
+        };
+      })
+    );
+    
+    return societiesWithStats;
   }
 
   async getAvailableSocieties(userId: number): Promise<SocietyWithStats[]> {
@@ -123,7 +133,20 @@ export class DatabaseStorage implements IStorage {
       .from(societies)
       .where(joinedIds.length > 0 ? not(inArray(societies.id, joinedIds)) : undefined);
     
-    return availableSocieties.map(s => ({ ...s, isJoined: false }));
+    // Calculate dynamic stats for each society
+    const societiesWithStats = await Promise.all(
+      availableSocieties.map(async (society) => {
+        const stats = await this.getSocietyStats(society.id);
+        return {
+          ...society,
+          memberCount: stats.memberCount,
+          bookCount: stats.bookCount,
+          isJoined: false
+        };
+      })
+    );
+    
+    return societiesWithStats;
   }
 
   async createSociety(societyData: any): Promise<Society> {
