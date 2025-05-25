@@ -82,8 +82,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.userId = user.id;
-      res.json({ 
-        user: { id: user.id, name: user.name, email: user.email, phone: user.phone }
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ message: "Session error" });
+        }
+        res.json({ 
+          user: { id: user.id, name: user.name, email: user.email, phone: user.phone }
+        });
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -111,7 +117,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     res.json({ 
-      user: { id: user.id, name: user.name, email: user.email, phone: user.phone }
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        phone: user.phone, 
+        isAdmin: user.isAdmin 
+      }
     });
   });
 
