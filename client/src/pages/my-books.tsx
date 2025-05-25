@@ -9,10 +9,12 @@ import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency, formatDateRelative, getBookStatusColor, getBookStatusText } from "@/lib/utils";
 import type { RentalWithDetails, Book } from "@shared/schema";
 import { BookOpen, Plus, Edit } from "lucide-react";
+import AddBookModal from "@/components/modals/add-book-modal";
 
 export default function MyBooks() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const { data: borrowedBooks, isLoading: loadingBorrowed } = useQuery({
     queryKey: ["/api/rentals/borrowed"],
@@ -218,7 +220,7 @@ export default function MyBooks() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">My Library</h3>
-        <Button size="sm">
+        <Button size="sm" onClick={() => setShowAddModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Book
         </Button>
@@ -287,7 +289,7 @@ export default function MyBooks() {
             <p className="text-text-secondary mb-4">
               Start building your library by adding books you'd like to lend out.
             </p>
-            <Button>
+            <Button onClick={() => setShowAddModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Your First Book
             </Button>
@@ -318,6 +320,11 @@ export default function MyBooks() {
           <MyLibraryTab />
         </TabsContent>
       </Tabs>
+      
+      <AddBookModal 
+        open={showAddModal} 
+        onOpenChange={setShowAddModal} 
+      />
     </div>
   );
 }
