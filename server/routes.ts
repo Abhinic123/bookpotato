@@ -239,10 +239,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const member = await storage.joinSociety(societyId, req.session.userId!);
       console.log("Successfully joined society:", member);
-      res.json(member);
+      
+      // Verify the join was successful
+      const isNowMember = await storage.isMemberOfSociety(societyId, req.session.userId!);
+      console.log("Verification - is now member:", isNowMember);
+      
+      // Ensure we return JSON
+      res.setHeader('Content-Type', 'application/json');
+      return res.json({ 
+        success: true, 
+        member: member,
+        message: "Successfully joined society",
+        verified: isNowMember
+      });
     } catch (error) {
       console.error("Join society error:", error);
-      res.status(500).json({ message: "Failed to join society: " + error.message });
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(500).json({ 
+        success: false,
+        message: "Failed to join society: " + error.message 
+      });
     }
   });
 
