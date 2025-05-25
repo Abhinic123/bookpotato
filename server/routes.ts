@@ -134,7 +134,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/societies/available", requireAuth, async (req, res) => {
     try {
-      const societies = await storage.getAvailableSocieties(req.session.userId!);
+      const result = await db.execute(sql`
+        SELECT s.id, s.name, s.description, s.code, s.city, s.apartment_count, 
+               s.location, s.created_by, s.status, s.created_at, s.member_count, s.book_count
+        FROM societies s
+        LEFT JOIN society_members sm ON s.id = sm.society_id AND sm.user_id = ${req.session.userId!} AND sm.is_active = true
+        WHERE sm.society_id IS NULL
+      `);
+      
+      const societies = result.rows.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        code: row.code,
+        city: row.city,
+        apartmentCount: row.apartment_count,
+        location: row.location,
+        createdBy: row.created_by,
+        status: row.status,
+        createdAt: row.created_at,
+        memberCount: row.member_count,
+        bookCount: row.book_count,
+        isJoined: false
+      }));
+      
       res.json(societies);
     } catch (error) {
       console.error("Get available societies error:", error);
