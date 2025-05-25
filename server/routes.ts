@@ -325,8 +325,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const societyId = parseInt(req.params.societyId);
       const { search, genre } = req.query;
-
-      let result;
       
       let books;
       if (societyId === 0) {
@@ -342,23 +340,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         books = await storage.getBooksBySociety(societyId);
       }
 
-      const formattedBooks = books.map((book: any) => ({
-        id: book.id,
-        title: book.title,
-        author: book.author,
-        isbn: book.isbn || "",
-        genre: book.genre || "",
-        condition: book.condition || "good",
-        description: book.description || "",
-        imageUrl: book.imageUrl || "",
-        dailyFee: book.dailyFee,
-        isAvailable: book.isAvailable,
-        societyId: book.societyId,
-        ownerId: book.ownerId,
-        createdAt: book.createdAt,
-        owner: book.owner
-      }));
-      
       res.json(books);
     } catch (error) {
       console.error("Get society books error:", error);
