@@ -448,21 +448,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Rental routes
   app.get("/api/rentals/borrowed", requireAuth, async (req, res) => {
     try {
+      console.log("🔍 API: Fetching borrowed books for user:", req.session.userId!);
       const rentals = await storage.getRentalsByBorrower(req.session.userId!);
-      console.log("📚 Borrowed books for user", req.session.userId!, ":", rentals.length);
+      console.log("📚 API: Borrowed books result:", rentals.length, "books");
+      if (rentals.length > 0) {
+        console.log("📖 First book:", rentals[0].book?.title);
+      }
       res.json(rentals);
     } catch (error) {
-      console.error("Get borrowed books error:", error);
+      console.error("❌ API: Get borrowed books error:", error);
       res.status(500).json({ message: "Failed to fetch borrowed books" });
     }
   });
 
   app.get("/api/rentals/lent", requireAuth, async (req, res) => {
     try {
+      console.log("🔍 API: Fetching lent books for user:", req.session.userId!);
       const rentals = await storage.getRentalsByLender(req.session.userId!);
+      console.log("📚 API: Lent books result:", rentals.length, "books");
+      if (rentals.length > 0) {
+        console.log("📖 First book:", rentals[0].book?.title);
+      }
       res.json(rentals);
     } catch (error) {
-      console.error("Get lent books error:", error);
+      console.error("❌ API: Get lent books error:", error);
       res.status(500).json({ message: "Failed to fetch lent books" });
     }
   });

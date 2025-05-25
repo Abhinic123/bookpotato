@@ -333,38 +333,36 @@ export class DatabaseStorage implements IStorage {
       
       const results = await db
         .select({
-          // Rental details
-          id: bookRentals.id,
+          // Rental details with explicit column names
+          rentalId: bookRentals.id,
           bookId: bookRentals.bookId,
           borrowerId: bookRentals.borrowerId,
           lenderId: bookRentals.lenderId,
           startDate: bookRentals.startDate,
           endDate: bookRentals.endDate,
+          actualReturnDate: bookRentals.actualReturnDate,
           status: bookRentals.status,
+          paymentStatus: bookRentals.paymentStatus,
           totalAmount: bookRentals.totalAmount,
           lenderAmount: bookRentals.lenderAmount,
           platformFee: bookRentals.platformFee,
           securityDeposit: bookRentals.securityDeposit,
-          createdAt: bookRentals.createdAt,
+          rentalCreatedAt: bookRentals.createdAt,
           // Book details
-          book: {
-            id: books.id,
-            title: books.title,
-            author: books.author,
-            genre: books.genre,
-            condition: books.condition,
-            dailyFee: books.dailyFee,
-            description: books.description,
-            isAvailable: books.isAvailable,
-            ownerId: books.ownerId,
-            societyId: books.societyId,
-            createdAt: books.createdAt
-          },
+          bookTitle: books.title,
+          bookAuthor: books.author,
+          bookGenre: books.genre,
+          bookCondition: books.condition,
+          bookDailyFee: books.dailyFee,
+          bookDescription: books.description,
+          bookIsAvailable: books.isAvailable,
+          bookOwnerId: books.ownerId,
+          bookSocietyId: books.societyId,
+          bookImageUrl: books.imageUrl,
+          bookIsbn: books.isbn,
+          bookCreatedAt: books.createdAt,
           // Lender details
-          lender: {
-            id: users.id,
-            name: users.name
-          }
+          lenderName: users.name
         })
         .from(bookRentals)
         .innerJoin(books, eq(bookRentals.bookId, books.id))
@@ -373,10 +371,45 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(bookRentals.createdAt));
       
       console.log('📚 Found borrowed books:', results.length);
+      if (results.length > 0) {
+        console.log('📖 Sample book:', results[0].bookTitle);
+      }
       
+      // Transform the flat result into the expected structure
       return results.map(row => ({
-        ...row,
-        borrower: { id: borrowerId, name: 'You' }
+        id: row.rentalId,
+        bookId: row.bookId,
+        borrowerId: row.borrowerId,
+        lenderId: row.lenderId,
+        societyId: row.bookSocietyId,
+        startDate: row.startDate,
+        endDate: row.endDate,
+        actualReturnDate: row.actualReturnDate,
+        status: row.status,
+        paymentStatus: row.paymentStatus,
+        totalAmount: row.totalAmount,
+        lenderAmount: row.lenderAmount,
+        platformFee: row.platformFee,
+        securityDeposit: row.securityDeposit,
+        paymentId: null,
+        createdAt: row.rentalCreatedAt,
+        book: {
+          id: row.bookId,
+          title: row.bookTitle,
+          author: row.bookAuthor,
+          isbn: row.bookIsbn,
+          genre: row.bookGenre,
+          imageUrl: row.bookImageUrl,
+          condition: row.bookCondition,
+          dailyFee: row.bookDailyFee,
+          description: row.bookDescription,
+          isAvailable: row.bookIsAvailable,
+          ownerId: row.bookOwnerId,
+          societyId: row.bookSocietyId,
+          createdAt: row.bookCreatedAt
+        },
+        borrower: { id: borrowerId, name: 'You' },
+        lender: { id: row.lenderId, name: row.lenderName }
       })) as RentalWithDetails[];
     } catch (error) {
       console.error('❌ Error fetching borrowed books:', error);
@@ -390,38 +423,36 @@ export class DatabaseStorage implements IStorage {
       
       const results = await db
         .select({
-          // Rental details
-          id: bookRentals.id,
+          // Rental details with explicit column names
+          rentalId: bookRentals.id,
           bookId: bookRentals.bookId,
           borrowerId: bookRentals.borrowerId,
           lenderId: bookRentals.lenderId,
           startDate: bookRentals.startDate,
           endDate: bookRentals.endDate,
+          actualReturnDate: bookRentals.actualReturnDate,
           status: bookRentals.status,
+          paymentStatus: bookRentals.paymentStatus,
           totalAmount: bookRentals.totalAmount,
           lenderAmount: bookRentals.lenderAmount,
           platformFee: bookRentals.platformFee,
           securityDeposit: bookRentals.securityDeposit,
-          createdAt: bookRentals.createdAt,
+          rentalCreatedAt: bookRentals.createdAt,
           // Book details
-          book: {
-            id: books.id,
-            title: books.title,
-            author: books.author,
-            genre: books.genre,
-            condition: books.condition,
-            dailyFee: books.dailyFee,
-            description: books.description,
-            isAvailable: books.isAvailable,
-            ownerId: books.ownerId,
-            societyId: books.societyId,
-            createdAt: books.createdAt
-          },
+          bookTitle: books.title,
+          bookAuthor: books.author,
+          bookGenre: books.genre,
+          bookCondition: books.condition,
+          bookDailyFee: books.dailyFee,
+          bookDescription: books.description,
+          bookIsAvailable: books.isAvailable,
+          bookOwnerId: books.ownerId,
+          bookSocietyId: books.societyId,
+          bookImageUrl: books.imageUrl,
+          bookIsbn: books.isbn,
+          bookCreatedAt: books.createdAt,
           // Borrower details
-          borrower: {
-            id: users.id,
-            name: users.name
-          }
+          borrowerName: users.name
         })
         .from(bookRentals)
         .innerJoin(books, eq(bookRentals.bookId, books.id))
@@ -430,9 +461,44 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(bookRentals.createdAt));
       
       console.log('📚 Found lent books:', results.length);
+      if (results.length > 0) {
+        console.log('📖 Sample book:', results[0].bookTitle);
+      }
       
+      // Transform the flat result into the expected structure
       return results.map(row => ({
-        ...row,
+        id: row.rentalId,
+        bookId: row.bookId,
+        borrowerId: row.borrowerId,
+        lenderId: row.lenderId,
+        societyId: row.bookSocietyId,
+        startDate: row.startDate,
+        endDate: row.endDate,
+        actualReturnDate: row.actualReturnDate,
+        status: row.status,
+        paymentStatus: row.paymentStatus,
+        totalAmount: row.totalAmount,
+        lenderAmount: row.lenderAmount,
+        platformFee: row.platformFee,
+        securityDeposit: row.securityDeposit,
+        paymentId: null,
+        createdAt: row.rentalCreatedAt,
+        book: {
+          id: row.bookId,
+          title: row.bookTitle,
+          author: row.bookAuthor,
+          isbn: row.bookIsbn,
+          genre: row.bookGenre,
+          imageUrl: row.bookImageUrl,
+          condition: row.bookCondition,
+          dailyFee: row.bookDailyFee,
+          description: row.bookDescription,
+          isAvailable: row.bookIsAvailable,
+          ownerId: row.bookOwnerId,
+          societyId: row.bookSocietyId,
+          createdAt: row.bookCreatedAt
+        },
+        borrower: { id: row.borrowerId, name: row.borrowerName },
         lender: { id: lenderId, name: 'You' }
       })) as RentalWithDetails[];
     } catch (error) {
