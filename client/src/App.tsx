@@ -49,7 +49,12 @@ function Router() {
   }
 
   if (error || !authData?.user) {
-    return <Auth />;
+    return (
+      <Switch>
+        <Route path="/auth" component={Auth} />
+        <Route component={Auth} />
+      </Switch>
+    );
   }
 
   return <AuthenticatedApp />;
