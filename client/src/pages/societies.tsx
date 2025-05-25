@@ -347,7 +347,7 @@ export default function Societies() {
                           )}
                         </div>
                       </div>
-                      <Button 
+                      <Button
                         size="sm" 
                         onClick={() => handleJoinById(society.id)}
                         disabled={joinByIdMutation.isPending}
@@ -368,18 +368,53 @@ export default function Societies() {
                 <h3 className="text-lg font-semibold text-text-primary mb-2">
                   No Societies Available
                 </h3>
-                <p className="text-text-secondary mb-4">
-                  There are no public societies to join at the moment. Create your own to get started!
+                <p className="text-sm text-text-secondary">
+                  All societies are full or none exist yet. Create a new society to get started!
                 </p>
-                <Button onClick={() => setShowCreateModal(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Society
-                </Button>
               </CardContent>
             </Card>
           )}
         </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <AppLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-text-primary">Societies</h1>
+            <p className="text-sm text-text-secondary mt-1">
+              Join communities and share books with your neighbors
+            </p>
+          </div>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Society
+          </Button>
+        </div>
+
+        <Tabs defaultValue="my-societies" className="w-full">
+          <TabsList>
+            <TabsTrigger value="my-societies">My Societies</TabsTrigger>
+            <TabsTrigger value="available">Available to Join</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="my-societies" className="space-y-4">
+            {renderMySocieties()}
+          </TabsContent>
+
+          <TabsContent value="available" className="space-y-4">
+            {renderAvailableSocieties()}
+          </TabsContent>
+        </Tabs>
+
+        <CreateSocietyModal
+          open={showCreateModal}
+          onOpenChange={setShowCreateModal}
+        />
+      </div>
+    </AppLayout>
   );
 }
