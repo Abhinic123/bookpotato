@@ -129,6 +129,42 @@ export default function AddBookModal({ open, onOpenChange }: AddBookModalProps) 
     addBookMutation.mutate(data);
   };
 
+  const handleBarcodeScanned = async (barcode: string) => {
+    setShowScanner(false);
+    
+    try {
+      // Try to fetch book details from Open Library API using ISBN
+      const response = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${barcode}&format=json&jscmd=data`);
+      const data = await response.json();
+      
+      const bookData = data[`ISBN:${barcode}`];
+      if (bookData) {
+        form.setValue("isbn", barcode);
+        form.setValue("title", bookData.title || "");
+        form.setValue("author", bookData.authors?.[0]?.name || "");
+        form.setValue("genre", bookData.subjects?.[0]?.name || "");
+        
+        toast({
+          title: "Book Details Found!",
+          description: "Book information has been automatically filled",
+        });
+      } else {
+        // Just set the ISBN if no data found
+        form.setValue("isbn", barcode);
+        toast({
+          title: "Barcode Scanned",
+          description: "Please fill in the book details manually",
+        });
+      }
+    } catch (error) {
+      form.setValue("isbn", barcode);
+      toast({
+        title: "Barcode Scanned",
+        description: "Please fill in the book details manually",
+      });
+    }
+  };
+
   const handleBarcodeScan = () => {
     // Simulate barcode scanning - in a real app this would integrate with camera
     toast({
