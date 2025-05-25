@@ -149,12 +149,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8).toUpperCase() + Math.floor(Math.random() * 1000);
       };
 
-      const societyData = insertSocietySchema.parse({
-        ...req.body,
+      // First validate the basic data
+      const validatedData = insertSocietySchema.parse(req.body);
+      
+      // Then add the auto-generated fields
+      const societyData = {
+        ...validatedData,
         code: generateCode(req.body.name || 'SOC'),
         status: 'active',
         createdBy: req.session.userId!
-      });
+      };
       
       const society = await storage.createSociety(societyData);
       

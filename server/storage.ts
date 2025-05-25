@@ -126,10 +126,10 @@ export class DatabaseStorage implements IStorage {
     return availableSocieties.map(s => ({ ...s, isJoined: false }));
   }
 
-  async createSociety(insertSociety: InsertSociety): Promise<Society> {
+  async createSociety(societyData: any): Promise<Society> {
     const [society] = await db
       .insert(societies)
-      .values(insertSociety)
+      .values(societyData)
       .returning();
     return society;
   }
