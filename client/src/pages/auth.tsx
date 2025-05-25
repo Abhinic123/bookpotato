@@ -3,31 +3,25 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { BookOpen } from "lucide-react";
+import { useLocation } from "wouter";
+import { login, register } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { login, register } from "@/lib/auth";
-import { useLocation } from "wouter";
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const signupSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  email: z.string().email("Please enter a valid email"),
-  phone: z.string().min(10, "Please enter a valid phone number"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  address: z.string().min(1, "Address is required"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -54,7 +48,6 @@ export default function Auth() {
       phone: "",
       password: "",
       address: "",
-      referredBy: undefined,
     },
   });
 
@@ -63,14 +56,14 @@ export default function Auth() {
     onSuccess: () => {
       toast({
         title: "Welcome back!",
-        description: "You have been successfully logged in.",
+        description: "You have been logged in successfully.",
       });
       setLocation("/");
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
-        title: "Login failed",
-        description: error.message || "Invalid email or password",
+        title: "Error",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -81,14 +74,14 @@ export default function Auth() {
     onSuccess: () => {
       toast({
         title: "Account created!",
-        description: "Welcome to BookShare. You can now start exploring books.",
+        description: "Your account has been created successfully. You can now log in.",
       });
-      setLocation("/");
+      setIsLogin(true);
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
-        title: "Signup failed",
-        description: error.message || "Failed to create account",
+        title: "Error",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -103,200 +96,180 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center p-6 bg-surface">
-      <div className="max-w-md mx-auto w-full">
-        <div className="text-center mb-8">
-          <BookOpen className="h-12 w-12 text-primary mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-text-primary mb-2">
-            Welcome to BookShare
-          </h1>
-          <p className="text-text-secondary">
-            {isLogin ? "Sign in to your account" : "Join your community library"}
-          </p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>{isLogin ? "Sign In" : "Create Account"}</CardTitle>
+          <CardDescription>
+            {isLogin
+              ? "Welcome back! Please sign in to your account."
+              : "Join BookShare to start lending and borrowing books in your community."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLogin ? (
+            <Form {...loginForm}>
+              <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                <FormField
+                  control={loginForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email" 
+                          placeholder="Enter your email" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-        {isLogin ? (
-          <Form {...loginForm}>
-            <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-              <FormField
-                control={loginForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="email" 
-                        placeholder="Enter your email" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={loginForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Enter your password" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={loginForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="Enter your password" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <Button 
+                  type="submit" 
+                  className="w-full mt-6"
+                  disabled={loginMutation.isPending}
+                >
+                  {loginMutation.isPending ? "Signing in..." : "Sign In"}
+                </Button>
+              </form>
+            </Form>
+          ) : (
+            <Form {...signupForm}>
+              <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-4">
+                <FormField
+                  control={signupForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter your full name" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <Button 
-                type="submit" 
-                className="w-full mt-6"
-                disabled={loginMutation.isPending}
-              >
-                {loginMutation.isPending ? "Signing in..." : "Sign In"}
-              </Button>
-            </form>
-          </Form>
-        ) : (
-          <Form {...signupForm}>
-            <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-4">
-              <FormField
-                control={signupForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter your full name" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={signupForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="email" 
+                          placeholder="Enter your email" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={signupForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="email" 
-                        placeholder="Enter your email" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={signupForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="tel" 
+                          placeholder="Enter your phone number" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={signupForm.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="tel" 
-                        placeholder="Enter your phone number" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={signupForm.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter your address" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={signupForm.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter your address" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={signupForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="password" 
+                          placeholder="Create a password" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={signupForm.control}
-                name="referredBy"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Who helped you get here? (Optional)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number"
-                        placeholder="Enter user number of person who referred you" 
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <Button 
+                  type="submit" 
+                  className="w-full mt-6"
+                  disabled={signupMutation.isPending}
+                >
+                  {signupMutation.isPending ? "Creating account..." : "Create Account"}
+                </Button>
+              </form>
+            </Form>
+          )}
 
-              <FormField
-                control={signupForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="password" 
-                        placeholder="Create a password" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button 
-                type="submit" 
-                className="w-full mt-6"
-                disabled={signupMutation.isPending}
-              >
-                {signupMutation.isPending ? "Creating account..." : "Create Account"}
-              </Button>
-            </form>
-          </Form>
-        )}
-
-        <div className="text-center mt-6">
-          <Button 
-            variant="link" 
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-primary"
-          >
-            {isLogin 
-              ? "Don't have an account? Sign Up" 
-              : "Already have an account? Sign In"
-            }
-          </Button>
-        </div>
-      </div>
+          <div className="text-center">
+            <Button
+              variant="link"
+              className="text-sm"
+              onClick={() => setIsLogin(!isLogin)}
+            >
+              {isLogin
+                ? "Don't have an account? Sign up"
+                : "Already have an account? Sign in"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
