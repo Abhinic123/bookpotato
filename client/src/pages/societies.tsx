@@ -290,46 +290,7 @@ export default function Societies() {
             </DialogContent>
           </Dialog>
 
-          <Dialog open={showJoinModal} onOpenChange={setShowJoinModal}>
-            <DialogTrigger asChild>
-              <Button className="bg-secondary text-white p-4 rounded-xl h-auto flex flex-col items-center space-y-2">
-                <Users className="h-6 w-6" />
-                <span className="text-sm font-medium">Join Society</span>
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-sm">
-              <DialogHeader>
-                <DialogTitle>Join Society</DialogTitle>
-              </DialogHeader>
-              <Form {...joinForm}>
-                <form onSubmit={joinForm.handleSubmit(onJoinSubmit)} className="space-y-4">
-                  <FormField
-                    control={joinForm.control}
-                    name="code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Society Code</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="Enter society code (e.g., GWA2024)" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button 
-                    type="submit" 
-                    className="w-full"
-                    disabled={joinSocietyMutation.isPending}
-                  >
-                    {joinSocietyMutation.isPending ? "Joining..." : "Join Society"}
-                  </Button>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+
         </div>
 
         {/* Available Societies */}
@@ -362,16 +323,23 @@ export default function Societies() {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
-                        <div className={`w-12 h-12 bg-gradient-to-br ${getSocietyColor(society.name)} rounded-xl flex items-center justify-center text-white font-bold`}>
+                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center text-white font-bold">
                           <span>{getInitials(society.name)}</span>
                         </div>
                         <div>
                           <h4 className="font-medium text-text-primary">
                             {society.name}
                           </h4>
-                          <p className="text-sm text-text-secondary">
-                            {society.memberCount} members · {society.bookCount} books
-                          </p>
+                          <div className="flex items-center space-x-4 text-sm text-text-secondary">
+                            <span className="flex items-center">
+                              <Users className="h-3 w-3 mr-1" />
+                              {society.memberCount} members
+                            </span>
+                            <span className="flex items-center">
+                              <Building2 className="h-3 w-3 mr-1" />
+                              {society.bookCount} books
+                            </span>
+                          </div>
                           {society.description && (
                             <p className="text-xs text-text-secondary mt-1">
                               {society.description}
@@ -380,10 +348,12 @@ export default function Societies() {
                         </div>
                       </div>
                       <Button 
+                        size="sm" 
                         onClick={() => handleJoinById(society.id)}
                         disabled={joinByIdMutation.isPending}
-                        size="sm"
+                        className="bg-secondary text-white hover:bg-secondary/90"
                       >
+                        <Check className="h-4 w-4 mr-1" />
                         {joinByIdMutation.isPending ? "Joining..." : "Join"}
                       </Button>
                     </div>
