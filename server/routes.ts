@@ -88,7 +88,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).json({ message: "Session error" });
         }
         res.json({ 
-          user: { id: user.id, name: user.name, email: user.email, phone: user.phone }
+          user: { 
+            id: user.id, 
+            name: user.name, 
+            email: user.email, 
+            phone: user.phone,
+            isAdmin: user.isAdmin 
+          }
         });
       });
     } catch (error) {
