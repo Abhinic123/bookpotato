@@ -319,16 +319,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Book routes
+  // Book routes - Get books from ALL user's societies by default
   app.get("/api/books/society", requireAuth, async (req, res) => {
     try {
-      const mySocieties = await storage.getSocietiesByUser(req.session.userId!);
-      if (!mySocieties || mySocieties.length === 0) {
-        return res.json([]);
-      }
+      // Get ALL books from user's societies for home page
+      const result = await db.execute(sql`
+        SELECT b.*, u.name as owner_name, u.id as owner_id
+        FROM books b
+        JOIN users u ON b.owner_id = u.id
+        JOIN society_members sm ON b.society_id = sm.society_id
+        WHERE sm.user_id = ${req.session.userId!} AND sm.is_active = true
+        ORDER BY b.created_at DESC
+        LIMIT 10
+      `);
       
-      const societyId = mySocieties[0].id;
-      const books = await storage.getBooksBySociety(societyId);
+      const books = result.rows.map((row: any) => ({
+        id: row.id,
+        title: row.title,
+        author: row.author,
+        isbn: row.isbn,
+        genre: row.genre,
+        condition: row.condition,
+        description: row.description,
+        imageUrl: row.image_url,
+        dailyFee: row.daily_fee,
+        isAvailable: row.is_available,
+        ownerId: row.owner_id,
+        societyId: row.society_id,
+        createdAt: row.created_at,
+        owner: {
+          id: row.owner_id,
+          name: row.owner_name
+        }
+      }));
+      
       res.json(books);
     } catch (error) {
       console.error("Get society books error:", error);

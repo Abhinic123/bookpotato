@@ -25,10 +25,10 @@ export default function Browse() {
 
   const currentSociety = selectedSociety || societies?.[0];
   
-  // Set default society when societies load
+  // Set default society to "All" when societies load
   useEffect(() => {
     if (societies && societies.length > 0 && !selectedSociety) {
-      setSelectedSociety(societies[0]);
+      setSelectedSociety({ id: 0, name: "All Societies" });
     }
   }, [societies, selectedSociety]);
 
