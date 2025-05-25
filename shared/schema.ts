@@ -98,6 +98,7 @@ export const insertSocietySchema = createInsertSchema(societies).omit({
   createdAt: true,
   code: true,
   status: true,
+  createdBy: true,
 });
 
 export const insertBookSchema = createInsertSchema(books).omit({
