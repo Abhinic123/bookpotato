@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Filter } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,13 @@ export default function Browse() {
   const [selectedSociety, setSelectedSociety] = useState<any>(null);
   
   const currentSociety = selectedSociety || societies?.[0];
+  
+  // Set default society when societies load
+  useEffect(() => {
+    if (societies && societies.length > 0 && !selectedSociety) {
+      setSelectedSociety(societies[0]);
+    }
+  }, [societies, selectedSociety]);
 
   const { data: books, isLoading } = useQuery({
     queryKey: [
