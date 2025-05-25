@@ -18,12 +18,13 @@ export default function BrowseWorking() {
   
   const user = (userResponse as any)?.user;
 
-  console.log("Browse Debug:", {
-    books,
-    booksLength: (books as any)?.length,
-    isLoading,
-    user
-  });
+  console.log("Browse Debug - Full Response:", books);
+  console.log("Browse Debug - Type:", typeof books);
+  console.log("Browse Debug - Is Array:", Array.isArray(books));
+  
+  // Check if books is wrapped in an object
+  const actualBooks = (books as any)?.books || books;
+  console.log("Browse Debug - Actual Books:", actualBooks);
 
   if (isLoading) {
     return (
@@ -35,7 +36,10 @@ export default function BrowseWorking() {
     );
   }
 
-  const booksArray = Array.isArray(books) ? books : [];
+  // Handle different possible response structures
+  const booksArray = Array.isArray(books) ? books : 
+                     Array.isArray((books as any)?.books) ? (books as any).books :
+                     Array.isArray((books as any)?.data) ? (books as any).data : [];
   
   // Filter books based on search
   const filteredBooks = booksArray.filter((book: any) => {
@@ -73,7 +77,7 @@ export default function BrowseWorking() {
 
       {/* Debug Info */}
       <div className="p-2 bg-yellow-100 text-xs border">
-        Debug: Loaded {Array.isArray(books) ? books.length : 0} books | Filtered: {filteredBooks.length} | Loading: {isLoading ? 'Yes' : 'No'}
+        Debug: Raw Response: {typeof books} | Books Array: {booksArray.length} | Filtered: {filteredBooks.length} | Loading: {isLoading ? 'Yes' : 'No'}
       </div>
 
       {/* Books Grid */}

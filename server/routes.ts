@@ -339,6 +339,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  // Get all books from user's societies
+  app.get("/api/books/all", requireAuth, async (req, res) => {
+    try {
+      // Get all societies the user is a member of
+      const userSocieties = await storage.getSocietiesByUser(req.session.userId!);
+      console.log("User societies:", userSocieties);
+      
+      let allBooks: any[] = [];
+      for (const society of userSocieties) {
+        const societyBooks = await storage.getBooksBySociety(society.id);
+        allBooks.push(...societyBooks);
+      }
+      
+      console.log("All books found:", allBooks.length);
+      res.json(allBooks);
+    } catch (error) {
+      console.error("Get all books error:", error);
+      res.status(500).json({ message: "Failed to fetch books" });
+    }
+  });
+
   app.get("/api/books/society/:societyId", requireAuth, async (req, res) => {
     try {
       const societyId = parseInt(req.params.societyId);
