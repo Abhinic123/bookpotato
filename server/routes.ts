@@ -69,7 +69,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email, password } = loginSchema.parse(req.body);
       
       const user = await storage.getUserByEmail(email);
-      if (!user || user.password !== password) {
+      if (!user) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Simple password comparison (in production, use proper hashing)
+      if (user.password !== password) {
+        console.log(`Password mismatch for ${email}. Stored: ${user.password}, Provided: ${password}`);
         return res.status(401).json({ message: "Invalid email or password" });
       }
 
