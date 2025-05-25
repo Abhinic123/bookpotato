@@ -153,15 +153,22 @@ export default function Home() {
           </Button>
         </div>
 
-        {recentBooksLimited.length > 0 ? (
+        {(recentBooks as any[])?.length > 0 ? (
           <div className="space-y-3">
-            {recentBooksLimited.map((book: BookWithOwner) => (
-              <BookCard
-                key={book.id}
-                book={book}
-                onBorrow={handleBorrowBook}
-                variant="list"
-              />
+            {(recentBooks as any[]).slice(0, 3).map((book: any) => (
+              <Card key={book.id} className="p-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded flex items-center justify-center">
+                    <BookOpen className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm">{book.title}</h4>
+                    <p className="text-xs text-text-secondary">by {book.author}</p>
+                    <p className="text-xs text-text-secondary">Owner: {book.owner?.name}</p>
+                    <span className="text-xs font-semibold text-primary">₹{book.dailyFee}/day</span>
+                  </div>
+                </div>
+              </Card>
             ))}
           </div>
         ) : (

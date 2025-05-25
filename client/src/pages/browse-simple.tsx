@@ -14,9 +14,11 @@ export default function BrowseSimple() {
     queryKey: ['/api/books/all'],
   });
 
-  const { data: user } = useQuery({
+  const { data: userResponse } = useQuery({
     queryKey: ['/api/auth/me'],
   });
+  
+  const user = (userResponse as any)?.user;
 
   // Filter books based on search
   const filteredBooks = (books as any[])?.filter((book: any) => {
@@ -71,9 +73,16 @@ export default function BrowseSimple() {
         </div>
       </div>
 
+      {/* Debug Info */}
+      <div className="p-2 bg-gray-100 text-xs">
+        Books loaded: {(books as any[])?.length || 0} | 
+        Filtered: {filteredBooks?.length || 0} | 
+        Loading: {isLoading ? 'Yes' : 'No'}
+      </div>
+
       {/* Books Grid */}
       <div className="p-4">
-        {filteredBooks.length === 0 ? (
+        {!isLoading && filteredBooks.length === 0 ? (
           <Card>
             <CardContent className="pt-6 text-center">
               <BookOpen className="h-12 w-12 text-text-secondary mx-auto mb-4" />
@@ -122,7 +131,7 @@ export default function BrowseSimple() {
                       ₹{book.dailyFee}/day
                     </span>
                   </div>
-                  {book.ownerId !== (user as any)?.id && (
+                  {book.ownerId !== user?.id && (
                     <Button 
                       size="sm" 
                       className="w-full"

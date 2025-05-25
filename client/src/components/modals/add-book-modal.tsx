@@ -220,17 +220,19 @@ export default function AddBookModal({ open, onOpenChange }: AddBookModalProps) 
               <p className="text-sm text-text-secondary mb-4">
                 Position the barcode within the frame
               </p>
-              <Button onClick={handleBarcodeScan} className="mb-2">
-                Start Scanning
-              </Button>
-              <br />
-              <Button 
-                variant="outline" 
-                onClick={() => setScanMode(false)}
-                size="sm"
-              >
-                Manual Entry Instead
-              </Button>
+              <div className="space-y-2">
+                <Button onClick={handleBarcodeScan} className="w-full">
+                  <Camera className="h-4 w-4 mr-2" />
+                  Start Camera Scan
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleManualEntry}
+                  className="w-full"
+                >
+                  Enter Details Manually
+                </Button>
+              </div>
             </div>
           </div>
         ) : (
