@@ -450,24 +450,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("🔍 API: Fetching borrowed books for user:", req.session.userId!);
       console.log("📊 DEBUG: Session data:", { 
-        userId: req.session.userId, 
-        authenticated: req.isAuthenticated() 
+        userId: req.session.userId
       });
-      
-      // Force a direct database query to debug
-      const directQuery = `
-        SELECT br.*, b.title, b.author, u.name as lender_name 
-        FROM book_rentals br 
-        JOIN books b ON br.book_id = b.id 
-        JOIN users u ON br.lender_id = u.id 
-        WHERE br.borrower_id = $1
-      `;
       
       const rentals = await storage.getRentalsByBorrower(req.session.userId!);
       console.log("📚 API: Borrowed books result:", rentals.length, "books");
       if (rentals.length > 0) {
         console.log("📖 First book:", rentals[0].book?.title);
       }
+      
+      // Force no cache for debugging
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
       res.json(rentals);
     } catch (error) {
       console.error("❌ API: Get borrowed books error:", error);
@@ -483,6 +479,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (rentals.length > 0) {
         console.log("📖 First book:", rentals[0].book?.title);
       }
+      
+      // Force no cache for debugging
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache'); 
+      res.setHeader('Expires', '0');
+      
       res.json(rentals);
     } catch (error) {
       console.error("❌ API: Get lent books error:", error);
