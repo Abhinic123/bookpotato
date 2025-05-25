@@ -6,10 +6,16 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useQuery } from "@tanstack/react-query";
 import NotFound from "@/pages/not-found";
 import Auth from "@/pages/auth";
+import Welcome from "@/pages/welcome";
+import EnhancedAuth from "@/pages/enhanced-auth";
 import Home from "@/pages/home";
 import Browse from "@/pages/browse";
+import EnhancedBrowse from "@/pages/enhanced-browse";
 import MyBooks from "@/pages/my-books";
 import Societies from "@/pages/societies";
+import Referrals from "@/pages/referrals";
+import EnhancedProfile from "@/pages/enhanced-profile";
+import AdminPanel from "@/pages/admin-panel";
 import AppLayout from "@/components/layout/app-layout";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -18,9 +24,12 @@ function AuthenticatedApp() {
     <AppLayout>
       <Switch>
         <Route path="/" component={Home} />
-        <Route path="/browse" component={Browse} />
+        <Route path="/browse" component={EnhancedBrowse} />
         <Route path="/my-books" component={MyBooks} />
         <Route path="/societies" component={Societies} />
+        <Route path="/referrals" component={Referrals} />
+        <Route path="/profile" component={EnhancedProfile} />
+        <Route path="/admin" component={AdminPanel} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
@@ -51,8 +60,9 @@ function Router() {
   if (error || !authData?.user) {
     return (
       <Switch>
-        <Route path="/auth" component={Auth} />
-        <Route component={Auth} />
+        <Route path="/welcome" component={Welcome} />
+        <Route path="/auth" component={EnhancedAuth} />
+        <Route component={Welcome} />
       </Switch>
     );
   }

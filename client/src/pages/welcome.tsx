@@ -33,7 +33,7 @@ export default function Welcome() {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Redirect to auth page
+      // Redirect to enhanced auth page
       window.location.href = "/auth";
     }
   };
