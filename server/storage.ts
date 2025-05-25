@@ -103,16 +103,25 @@ export class DatabaseStorage implements IStorage {
       })
       .from(societies)
       .innerJoin(societyMembers, eq(societies.id, societyMembers.societyId))
-      .where(eq(societyMembers.userId, userId));
+      .where(and(eq(societyMembers.userId, userId), eq(societyMembers.isActive, true)));
     
     // Calculate dynamic stats for each society
     const societiesWithStats = await Promise.all(
       userSocieties.map(async (society) => {
-        const stats = await this.getSocietyStats(society.id);
+        const [memberCount] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(societyMembers)
+          .where(and(eq(societyMembers.societyId, society.id), eq(societyMembers.isActive, true)));
+
+        const [bookCount] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(books)
+          .where(eq(books.societyId, society.id));
+
         return {
           ...society,
-          memberCount: stats.memberCount,
-          bookCount: stats.bookCount,
+          memberCount: memberCount?.count || 0,
+          bookCount: bookCount?.count || 0,
           isJoined: true
         };
       })
@@ -167,7 +176,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async leaveSociety(societyId: number, userId: number): Promise<boolean> {
-    await db
+    console.log("🔄 Leaving society:", { societyId, userId });
+    
+    const result = await db
       .update(societyMembers)
       .set({ isActive: false })
       .where(and(
@@ -175,6 +186,7 @@ export class DatabaseStorage implements IStorage {
         eq(societyMembers.userId, userId)
       ));
     
+    console.log("✅ Leave result:", result);
     return true;
   }
 

@@ -56,11 +56,11 @@ export default function Societies() {
     },
   });
 
-  const { data: mySocieties, isLoading: isLoadingMy } = useQuery({
+  const { data: mySocieties = [], isLoading: isLoadingMy } = useQuery({
     queryKey: ["/api/societies/my"],
   });
 
-  const { data: availableSocieties, isLoading: isLoadingAvailable } = useQuery({
+  const { data: availableSocieties = [], isLoading: isLoadingAvailable } = useQuery({
     queryKey: ["/api/societies/available"],
   });
 
