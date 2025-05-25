@@ -328,15 +328,117 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRentalsByBorrower(borrowerId: number): Promise<RentalWithDetails[]> {
-    // For now, return empty array as rental queries need complex joins
-    // This will be implemented when rental functionality is fully needed
-    return [];
+    try {
+      console.log('🔍 Fetching borrowed books for user:', borrowerId);
+      
+      const results = await db
+        .select({
+          // Rental details
+          id: bookRentals.id,
+          bookId: bookRentals.bookId,
+          borrowerId: bookRentals.borrowerId,
+          lenderId: bookRentals.lenderId,
+          startDate: bookRentals.startDate,
+          endDate: bookRentals.endDate,
+          status: bookRentals.status,
+          totalAmount: bookRentals.totalAmount,
+          lenderAmount: bookRentals.lenderAmount,
+          platformFee: bookRentals.platformFee,
+          securityDeposit: bookRentals.securityDeposit,
+          createdAt: bookRentals.createdAt,
+          // Book details
+          book: {
+            id: books.id,
+            title: books.title,
+            author: books.author,
+            genre: books.genre,
+            condition: books.condition,
+            dailyFee: books.dailyFee,
+            description: books.description,
+            isAvailable: books.isAvailable,
+            ownerId: books.ownerId,
+            societyId: books.societyId,
+            createdAt: books.createdAt
+          },
+          // Lender details
+          lender: {
+            id: users.id,
+            name: users.name
+          }
+        })
+        .from(bookRentals)
+        .innerJoin(books, eq(bookRentals.bookId, books.id))
+        .innerJoin(users, eq(bookRentals.lenderId, users.id))
+        .where(eq(bookRentals.borrowerId, borrowerId))
+        .orderBy(desc(bookRentals.createdAt));
+      
+      console.log('📚 Found borrowed books:', results.length);
+      
+      return results.map(row => ({
+        ...row,
+        borrower: { id: borrowerId, name: 'You' }
+      })) as RentalWithDetails[];
+    } catch (error) {
+      console.error('❌ Error fetching borrowed books:', error);
+      return [];
+    }
   }
 
   async getRentalsByLender(lenderId: number): Promise<RentalWithDetails[]> {
-    // For now, return empty array as rental queries need complex joins
-    // This will be implemented when rental functionality is fully needed
-    return [];
+    try {
+      console.log('🔍 Fetching lent books for user:', lenderId);
+      
+      const results = await db
+        .select({
+          // Rental details
+          id: bookRentals.id,
+          bookId: bookRentals.bookId,
+          borrowerId: bookRentals.borrowerId,
+          lenderId: bookRentals.lenderId,
+          startDate: bookRentals.startDate,
+          endDate: bookRentals.endDate,
+          status: bookRentals.status,
+          totalAmount: bookRentals.totalAmount,
+          lenderAmount: bookRentals.lenderAmount,
+          platformFee: bookRentals.platformFee,
+          securityDeposit: bookRentals.securityDeposit,
+          createdAt: bookRentals.createdAt,
+          // Book details
+          book: {
+            id: books.id,
+            title: books.title,
+            author: books.author,
+            genre: books.genre,
+            condition: books.condition,
+            dailyFee: books.dailyFee,
+            description: books.description,
+            isAvailable: books.isAvailable,
+            ownerId: books.ownerId,
+            societyId: books.societyId,
+            createdAt: books.createdAt
+          },
+          // Borrower details
+          borrower: {
+            id: users.id,
+            name: users.name
+          }
+        })
+        .from(bookRentals)
+        .innerJoin(books, eq(bookRentals.bookId, books.id))
+        .innerJoin(users, eq(bookRentals.borrowerId, users.id))
+        .where(eq(bookRentals.lenderId, lenderId))
+        .orderBy(desc(bookRentals.createdAt));
+      
+      console.log('📚 Found lent books:', results.length);
+      
+      return results.map(row => ({
+        ...row,
+        lender: { id: lenderId, name: 'You' }
+      })) as RentalWithDetails[];
+    } catch (error) {
+      console.error('❌ Error fetching lent books:', error);
+      return [];
+    }
   }
 
   async getActiveRentals(userId: number): Promise<RentalWithDetails[]> {

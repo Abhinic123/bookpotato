@@ -348,9 +348,25 @@ export default function MyBooks() {
         </TabsContent>
       </Tabs>
       
+      {/* Book Details Modal */}
+      <BookDetailsModal
+        isOpen={showBookDetails}
+        onClose={() => setShowBookDetails(false)}
+        book={selectedBook}
+        user={user}
+        onEdit={handleEditBook}
+      />
+
+      {/* Add/Edit Book Modal */}
       <AddBookModal 
         open={showAddModal} 
-        onOpenChange={setShowAddModal} 
+        onOpenChange={(open) => {
+          setShowAddModal(open);
+          if (!open) {
+            setEditingBook(null);
+          }
+        }}
+        editBook={editingBook}
       />
     </div>
   );
