@@ -11,6 +11,17 @@ declare module "express-session" {
   }
 }
 
+// Extend Express Request to include session
+declare global {
+  namespace Express {
+    interface Request {
+      session: import("express-session").Session & Partial<import("express-session").SessionData> & {
+        userId?: number;
+      };
+    }
+  }
+}
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
