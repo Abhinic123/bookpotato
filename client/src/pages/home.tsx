@@ -159,7 +159,7 @@ export default function Home() {
               <Card key={book.id} className="p-3">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded flex items-center justify-center">
-                    <BookOpen className="h-6 w-6 text-primary" />
+                    <div className="text-2xl">📚</div>
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-sm">{book.title}</h4>
