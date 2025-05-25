@@ -9,7 +9,7 @@ import Auth from "@/pages/auth";
 import Welcome from "@/pages/welcome";
 import EnhancedAuth from "@/pages/enhanced-auth";
 import Home from "@/pages/home";
-import Browse from "@/pages/browse";
+import BrowseSimple from "@/pages/browse-simple";
 import EnhancedBrowse from "@/pages/enhanced-browse";
 import MyBooks from "@/pages/my-books";
 import Societies from "@/pages/societies";
@@ -24,7 +24,7 @@ function AuthenticatedApp() {
     <AppLayout>
       <Switch>
         <Route path="/" component={Home} />
-        <Route path="/browse" component={EnhancedBrowse} />
+        <Route path="/browse" component={BrowseSimple} />
         <Route path="/my-books" component={MyBooks} />
         <Route path="/societies" component={Societies} />
         <Route path="/referrals" component={Referrals} />
