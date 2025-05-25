@@ -32,22 +32,15 @@ import type { SocietyWithStats } from "@shared/schema";
 const createSocietySchema = z.object({
   name: z.string().min(1, "Society name is required"),
   description: z.string().optional(),
-  code: z.string().min(1, "Society code is required"),
   city: z.string().min(1, "City is required"),
   apartmentCount: z.number().min(90, "Society must have at least 90 apartments"),
   location: z.string().optional(),
 });
 
-const joinSocietySchema = z.object({
-  code: z.string().min(1, "Society code is required"),
-});
-
 type CreateSocietyFormData = z.infer<typeof createSocietySchema>;
-type JoinSocietyFormData = z.infer<typeof joinSocietySchema>;
 
 export default function Societies() {
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showJoinModal, setShowJoinModal] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -64,19 +57,13 @@ export default function Societies() {
     defaultValues: {
       name: "",
       description: "",
-      code: "",
       city: "",
       apartmentCount: 90,
       location: "",
     },
   });
 
-  const joinForm = useForm<JoinSocietyFormData>({
-    resolver: zodResolver(joinSocietySchema),
-    defaultValues: {
-      code: "",
-    },
-  });
+
 
   const createSocietyMutation = useMutation({
     mutationFn: async (data: CreateSocietyFormData) => {
@@ -101,28 +88,7 @@ export default function Societies() {
     },
   });
 
-  const joinSocietyMutation = useMutation({
-    mutationFn: async (data: JoinSocietyFormData) => {
-      const response = await apiRequest("POST", "/api/societies/join", data);
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Joined Successfully",
-        description: "You have successfully joined the society!",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/societies"] });
-      joinForm.reset();
-      setShowJoinModal(false);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to join society",
-        variant: "destructive",
-      });
-    },
-  });
+
 
   const joinByIdMutation = useMutation({
     mutationFn: async (societyId: number) => {
@@ -149,9 +115,7 @@ export default function Societies() {
     createSocietyMutation.mutate(data);
   };
 
-  const onJoinSubmit = (data: JoinSocietyFormData) => {
-    joinSocietyMutation.mutate(data);
-  };
+
 
   const handleJoinById = (societyId: number) => {
     joinByIdMutation.mutate(societyId);
@@ -224,12 +188,12 @@ export default function Societies() {
 
       {/* Society Management */}
       <div className="p-4">
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="mb-6">
           <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
             <DialogTrigger asChild>
-              <Button className="bg-primary text-white p-4 rounded-xl h-auto flex flex-col items-center space-y-2">
+              <Button className="bg-primary text-white p-4 rounded-xl h-auto flex items-center space-x-2 w-full">
                 <Plus className="h-6 w-6" />
-                <span className="text-sm font-medium">Create Society</span>
+                <span className="text-sm font-medium">Create New Society</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-sm">
@@ -251,19 +215,7 @@ export default function Societies() {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={createForm.control}
-                    name="code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Society Code</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. GWA2024" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+
                   <FormField
                     control={createForm.control}
                     name="city"
