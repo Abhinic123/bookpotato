@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -30,7 +31,9 @@ export default function Auth() {
         title: "Welcome back!",
         description: "You have been logged in successfully.",
       });
-      setLocation("/");
+      // Invalidate auth cache and redirect
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      setTimeout(() => setLocation("/"), 100);
     },
     onError: (error) => {
       toast({
