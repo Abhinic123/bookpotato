@@ -89,7 +89,7 @@ export default function Home() {
           <div>
             <h3 className="font-semibold">{currentSociety.name}</h3>
             <p className="text-sm opacity-90">
-              {societyStats?.memberCount || 0} members
+              {currentSociety?.memberCount || 0} members
             </p>
           </div>
         </div>
