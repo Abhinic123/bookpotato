@@ -17,13 +17,12 @@ export default function Browse() {
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
   const [showBorrowModal, setShowBorrowModal] = useState(false);
+  const [selectedSociety, setSelectedSociety] = useState<any>(null);
 
   const { data: societies } = useQuery({
     queryKey: ["/api/societies/my"],
   });
 
-  const [selectedSociety, setSelectedSociety] = useState<any>(null);
-  
   const currentSociety = selectedSociety || societies?.[0];
   
   // Set default society when societies load
