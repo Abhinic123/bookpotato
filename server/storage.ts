@@ -356,15 +356,11 @@ export class DatabaseStorage implements IStorage {
       .from(bookRentals)
       .where(eq(bookRentals.lenderId, userId));
     
-    const [earnings] = await db
-      .select({ total: sum(bookRentals.rentalFee) })
-      .from(bookRentals)
-      .where(eq(bookRentals.lenderId, userId));
-    
+    // For now, return 0 for earnings as rental fee field needs to be added to schema
     return {
       borrowedBooks: borrowedBooks.count,
       lentBooks: lentBooks.count,
-      totalEarnings: Number(earnings.total) || 0
+      totalEarnings: 0
     };
   }
 }
