@@ -30,7 +30,7 @@ export default function EnhancedBrowse() {
   const filteredBooks = allBooks.filter((book: any) => {
     const matchesTitle = book.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesAuthor = book.author.toLowerCase().includes(authorSearch.toLowerCase());
-    const matchesGenre = !selectedGenre || book.genre === selectedGenre;
+    const matchesGenre = !selectedGenre || selectedGenre === "all" || book.genre === selectedGenre;
     const matchesSociety = selectedSociety === "0" || book.societyId.toString() === selectedSociety;
 
     return matchesTitle && matchesAuthor && matchesGenre && matchesSociety;
@@ -115,7 +115,7 @@ export default function EnhancedBrowse() {
                   <SelectValue placeholder="All genres" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Genres</SelectItem>
+                  <SelectItem value="all">All Genres</SelectItem>
                   {genres.map((genre: string) => (
                     <SelectItem key={genre} value={genre}>
                       {genre}
@@ -168,7 +168,7 @@ export default function EnhancedBrowse() {
                 onClick={() => {
                   setSearchTerm("");
                   setAuthorSearch("");
-                  setSelectedGenre("");
+                  setSelectedGenre("all");
                   setSelectedSociety("0");
                   setSortBy("newest");
                 }}
@@ -234,7 +234,7 @@ export default function EnhancedBrowse() {
               onClick={() => {
                 setSearchTerm("");
                 setAuthorSearch("");
-                setSelectedGenre("");
+                setSelectedGenre("all");
                 setSelectedSociety("0");
               }}
             >
