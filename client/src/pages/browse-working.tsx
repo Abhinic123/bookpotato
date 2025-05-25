@@ -25,12 +25,16 @@ export default function BrowseWorking() {
 
   const borrowMutation = useMutation({
     mutationFn: async (bookId: number) => {
-      const response = await fetch("/api/rentals", {
+      const response = await fetch("/api/rentals/borrow", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ bookId })
+        body: JSON.stringify({ 
+          bookId, 
+          duration: 7, // Default 7 days
+          paymentMethod: "mock" // For testing
+        })
       });
       if (!response.ok) {
         throw new Error("Failed to borrow book");
