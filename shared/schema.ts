@@ -8,6 +8,10 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   phone: text("phone").notNull(),
   password: text("password").notNull(),
+  address: text("address"),
+  userNumber: integer("user_number").unique(),
+  referredBy: integer("referred_by"),
+  isAdmin: boolean("is_admin").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -16,9 +20,13 @@ export const societies = pgTable("societies", {
   name: text("name").notNull(),
   description: text("description"),
   code: text("code").notNull().unique(),
+  city: text("city").notNull(),
+  apartmentCount: integer("apartment_count").notNull(),
+  location: text("location"),
   createdBy: integer("created_by").notNull(),
   memberCount: integer("member_count").default(1).notNull(),
   bookCount: integer("book_count").default(0).notNull(),
+  status: text("status").default("pending").notNull(), // pending, approved, rejected
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

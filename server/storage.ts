@@ -5,6 +5,8 @@ import {
   type SocietyMember, type InsertSocietyMember, type Notification, type InsertNotification,
   type BookWithOwner, type RentalWithDetails, type SocietyWithStats
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, or, not, inArray, ilike, desc, count, sum, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -59,9 +61,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    // Auto-assign user number
+    const userCount = await db.select({ count: count() }).from(users);
+    const userNumber = (userCount[0]?.count || 0) + 1;
+    
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values({
+        ...insertUser,
+        userNumber,
+        isAdmin: insertUser.email === 'abhay.maheshwari0812@gmail.com'
+      })
       .returning();
     return user;
   }
@@ -83,6 +93,13 @@ export class DatabaseStorage implements IStorage {
         name: societies.name,
         code: societies.code,
         description: societies.description,
+        city: societies.city,
+        apartmentCount: societies.apartmentCount,
+        location: societies.location,
+        createdBy: societies.createdBy,
+        memberCount: societies.memberCount,
+        bookCount: societies.bookCount,
+        status: societies.status,
         createdAt: societies.createdAt,
         isJoined: sql<boolean>`true`
       })
@@ -144,6 +161,7 @@ export class DatabaseStorage implements IStorage {
         condition: books.condition,
         dailyFee: books.dailyFee,
         description: books.description,
+        imageUrl: books.imageUrl,
         isAvailable: books.isAvailable,
         ownerId: books.ownerId,
         societyId: books.societyId,
