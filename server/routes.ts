@@ -152,13 +152,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // First validate the basic data
       const validatedData = insertSocietySchema.parse(req.body);
       
+      // Generate the code
+      const generatedCode = generateCode(req.body.name || 'SOC');
+      console.log('Generated code:', generatedCode, 'from name:', req.body.name);
+      
       // Then add the auto-generated fields
       const societyData = {
         ...validatedData,
-        code: generateCode(req.body.name || 'SOC'),
+        code: generatedCode,
         status: 'active',
         createdBy: req.session.userId!
       };
+      
+      console.log('Final society data:', societyData);
       
       const society = await storage.createSociety(societyData);
       
