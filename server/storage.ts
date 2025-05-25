@@ -182,7 +182,11 @@ export class DatabaseStorage implements IStorage {
     const [member] = await db
       .select()
       .from(societyMembers)
-      .where(and(eq(societyMembers.societyId, societyId), eq(societyMembers.userId, userId)));
+      .where(and(
+        eq(societyMembers.societyId, societyId), 
+        eq(societyMembers.userId, userId),
+        eq(societyMembers.isActive, true)
+      ));
     return !!member;
   }
 
