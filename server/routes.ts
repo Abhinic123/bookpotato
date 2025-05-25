@@ -340,12 +340,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const societyId = parseInt(req.params.societyId);
       const { search, genre } = req.query;
+
+      const result = await db.execute(sql`
+        SELECT b.*, u.name as owner_name, u.email as owner_email 
+        FROM books b
+        JOIN users u ON b.owner_id = u.id
+        WHERE b.society_id = ${societyId}
+        AND (${!search} OR LOWER(b.title) LIKE LOWER(${'%' + (search as string) + '%'})
+            OR LOWER(b.author) LIKE LOWER(${'%' + (search as string) + '%'}))
+        AND (${!genre || genre === 'All'} OR b.genre = ${genre})
+        ORDER BY b.created_at DESC
+      `);
+
+      const books = result.rows.map(row => ({
+        id: row.id,
+        title: row.title,
+        author: row.author,
+        isbn: row.isbn,
+        genre: row.genre,
+        description: row.description,
+        dailyFee: row.daily_fee,
+        isAvailable: row.is_available,
+        societyId: row.society_id,
+        ownerId: row.owner_id,
+        owner: {
+          name: row.owner_name,
+          email: row.owner_email
+        }
+      }));
       
-      const books = await storage.searchBooks(
-        societyId, 
-        search as string, 
-        genre as string
-      );
       res.json(books);
     } catch (error) {
       console.error("Get society books error:", error);
