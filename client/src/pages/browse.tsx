@@ -113,9 +113,9 @@ export default function Browse() {
               </Card>
             ))}
           </div>
-        ) : books && books.length > 0 ? (
+        ) : books && (books as any[]).length > 0 ? (
           <div className="grid grid-cols-2 gap-4">
-            {books.map((book: BookWithOwner) => (
+            {(books as any[]).map((book: BookWithOwner) => (
               <BookCard
                 key={book.id}
                 book={book}

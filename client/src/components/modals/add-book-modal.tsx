@@ -174,7 +174,7 @@ export default function AddBookModal({ open, onOpenChange }: AddBookModalProps) 
     setScanMode(false);
   };
 
-  if (!societies?.length) {
+  if (!(societies as any[])?.length) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-sm">
@@ -265,7 +265,7 @@ export default function AddBookModal({ open, onOpenChange }: AddBookModalProps) 
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {societies?.map((society: any) => (
+                          {(societies as any[])?.map((society: any) => (
                             <SelectItem key={society.id} value={society.id.toString()}>
                               {society.name}
                             </SelectItem>
