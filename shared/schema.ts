@@ -171,28 +171,4 @@ export type SocietyWithStats = Society & {
   isJoined?: boolean;
 };
 
-export type Message = typeof messages.$inferSelect;
-export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
-export type ReferralReward = typeof referralRewards.$inferSelect;
-export type InsertReferralReward = z.infer<typeof insertReferralRewardSchema>;
-
-export type SocietyRequest = typeof societyRequests.$inferSelect;
-export type InsertSocietyRequest = z.infer<typeof insertSocietyRequestSchema>;
-
-// Add the insert schemas
-export const insertMessageSchema = createInsertSchema(messages).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertReferralRewardSchema = createInsertSchema(referralRewards).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertSocietyRequestSchema = createInsertSchema(societyRequests).omit({
-  id: true,
-  createdAt: true,
-  reviewedAt: true,
-});
