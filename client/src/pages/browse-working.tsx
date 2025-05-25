@@ -54,7 +54,7 @@ export default function BrowseWorking() {
       <div className="p-4 bg-gradient-to-r from-primary to-secondary text-white">
         <h1 className="text-xl font-bold mb-2">Browse Books</h1>
         <p className="text-sm opacity-90">
-          {booksArray.length} books available for borrowing
+          {Array.isArray(books) ? books.length : 0} books available for borrowing
         </p>
       </div>
 
@@ -73,7 +73,7 @@ export default function BrowseWorking() {
 
       {/* Debug Info */}
       <div className="p-2 bg-yellow-100 text-xs border">
-        Debug: Loaded {booksArray.length} books | Filtered: {filteredBooks.length} | Loading: {isLoading ? 'Yes' : 'No'}
+        Debug: Loaded {Array.isArray(books) ? books.length : 0} books | Filtered: {filteredBooks.length} | Loading: {isLoading ? 'Yes' : 'No'}
       </div>
 
       {/* Books Grid */}
