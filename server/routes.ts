@@ -546,6 +546,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const rental = await storage.createRental(rentalData);
       
+      // Mark book as unavailable
+      await storage.updateBook(bookId, { isAvailable: false });
+      
       // Create notification for lender
       await storage.createNotification({
         userId: book.ownerId,
