@@ -18,13 +18,11 @@ export default function BrowseWorking() {
   
   const user = (userResponse as any)?.user;
 
-  console.log("Browse Debug - Full Response:", books);
-  console.log("Browse Debug - Type:", typeof books);
-  console.log("Browse Debug - Is Array:", Array.isArray(books));
-  
-  // Check if books is wrapped in an object
-  const actualBooks = (books as any)?.books || books;
-  console.log("Browse Debug - Actual Books:", actualBooks);
+  console.log("🔍 Browse Debug - Full Response:", books);
+  console.log("🔍 Browse Debug - Type:", typeof books);
+  console.log("🔍 Browse Debug - Is Array:", Array.isArray(books));
+  console.log("🔍 Browse Debug - Response keys:", books ? Object.keys(books) : "No response");
+  console.log("🔍 Browse Debug - Response length:", books ? (books as any).length : "No length");
 
   if (isLoading) {
     return (
