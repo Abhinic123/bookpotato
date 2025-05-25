@@ -21,7 +21,7 @@ export default function Home() {
     queryKey: ["/api/user/stats"],
   });
 
-  const currentSociety = societies?.[0];
+  const currentSociety = (societies as any[])?.[0];
 
   const { data: societyStats } = useQuery({
     queryKey: ["/api/societies", currentSociety?.id, "stats"],
@@ -37,10 +37,10 @@ export default function Home() {
   });
 
   // Filter recent books (limit to 3 most recent)
-  const recentBooksLimited = recentBooks?.slice(0, 3) || [];
+  const recentBooksLimited = (recentBooks as any[])?.slice(0, 3) || [];
 
   // Find due soon rentals
-  const dueSoonRentals = activeRentals?.filter((rental: RentalWithDetails) => {
+  const dueSoonRentals = (activeRentals as any[])?.filter((rental: RentalWithDetails) => {
     const dueDate = new Date(rental.endDate);
     const now = new Date();
     const diffInDays = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
@@ -99,7 +99,7 @@ export default function Home() {
         <Card>
           <CardContent className="pt-6 text-center">
             <div className="text-2xl font-bold text-primary">
-              {societyStats?.bookCount || 0}
+              {(societyStats as any)?.bookCount || 0}
             </div>
             <div className="text-sm text-text-secondary">Available Books</div>
           </CardContent>
@@ -107,7 +107,7 @@ export default function Home() {
         <Card className="cursor-pointer" onClick={() => window.location.href = '/my-books?tab=borrowed'}>
           <CardContent className="pt-6 text-center">
             <div className="text-2xl font-bold text-secondary">
-              {userStats?.borrowedBooks || 0}
+              {(userStats as any)?.borrowedBooks || 0}
             </div>
             <div className="text-sm text-text-secondary">Your Borrows</div>
           </CardContent>

@@ -23,17 +23,27 @@ export default function Browse() {
     queryKey: ["/api/societies/my"],
   });
 
-  const currentSociety = selectedSociety || societies?.[0];
+  const currentSociety = selectedSociety || (societies as any[])?.[0];
   
   // Set default society to "All" when societies load
   useEffect(() => {
-    if (societies && societies.length > 0 && !selectedSociety) {
+    if ((societies as any[]) && (societies as any[]).length > 0 && !selectedSociety) {
       setSelectedSociety({ id: 0, name: "All Societies" });
     }
   }, [societies, selectedSociety]);
 
   const { data: books = [], isLoading } = useQuery({
-    queryKey: ["/api/books/all"],
+    queryKey: ["/api/books", currentSociety?.id || "all"],
+    queryFn: async () => {
+      if (currentSociety?.id === 0) {
+        // Fetch all books from all societies
+        return await fetch('/api/books/all').then(res => res.json());
+      } else if (currentSociety?.id) {
+        // Fetch books from specific society
+        return await fetch(`/api/books/society/${currentSociety.id}`).then(res => res.json());
+      }
+      return [];
+    },
     enabled: !!currentSociety,
   });
 
