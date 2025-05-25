@@ -328,7 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         FROM books b
         JOIN users u ON b.owner_id = u.id
         JOIN society_members sm ON b.society_id = sm.society_id
-        WHERE sm.user_id = ${req.session.userId!} AND sm.is_active = true
+        WHERE sm.user_id = ${req.session.userId} AND sm.is_active = ${true}
         ORDER BY b.created_at DESC
         LIMIT 10
       `);
@@ -374,7 +374,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           FROM books b
           JOIN users u ON b.owner_id = u.id
           JOIN society_members sm ON b.society_id = sm.society_id
-          WHERE sm.user_id = ${req.session.userId!} AND sm.is_active = true
+          WHERE sm.user_id = ${req.session.userId} AND sm.is_active = ${true}
           ORDER BY b.created_at DESC
         `);
       } else {
@@ -392,16 +392,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: row.id,
         title: row.title,
         author: row.author,
-        isbn: row.isbn,
-        genre: row.genre,
-        description: row.description,
+        isbn: row.isbn || "",
+        genre: row.genre || "",
+        condition: row.condition || "good",
+        description: row.description || "",
+        imageUrl: row.image_url || "",
         dailyFee: row.daily_fee,
         isAvailable: row.is_available,
         societyId: row.society_id,
         ownerId: row.owner_id,
+        createdAt: row.created_at,
         owner: {
-          name: row.owner_name,
-          email: row.owner_email
+          id: row.owner_id,
+          name: row.owner_name
         }
       }));
       
