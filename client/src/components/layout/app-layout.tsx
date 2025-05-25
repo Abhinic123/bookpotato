@@ -60,11 +60,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </Badge>
               )}
             </Button>
-            <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                {authData?.user ? getInitials(authData.user.name) : "?"}
-              </AvatarFallback>
-            </Avatar>
+            <Button variant="ghost" className="p-0" onClick={() => alert('Profile functionality coming soon!')}>
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                  {authData?.user ? getInitials(authData.user.name) : "?"}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
           </div>
         </div>
       </header>

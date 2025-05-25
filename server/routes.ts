@@ -144,10 +144,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const society = await storage.createSociety(societyData);
+      
+      // Auto-join the creator to the society
+      await storage.joinSociety(society.id, req.session.userId!);
+      
       res.json(society);
     } catch (error) {
       console.error("Create society error:", error);
-      res.status(400).json({ message: "Invalid society data" });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Please fill all required fields", errors: error.errors });
+      }
+      res.status(400).json({ message: "Failed to create society" });
     }
   });
 
@@ -239,7 +246,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(book);
     } catch (error) {
       console.error("Create book error:", error);
-      res.status(400).json({ message: "Invalid book data" });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Please fill all required fields", errors: error.errors });
+      }
+      res.status(400).json({ message: "Failed to create book" });
     }
   });
 
