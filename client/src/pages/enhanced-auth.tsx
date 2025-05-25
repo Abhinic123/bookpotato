@@ -64,7 +64,22 @@ export default function EnhancedAuth() {
   });
 
   const loginMutation = useMutation({
-    mutationFn: (data: LoginData) => apiRequest("/api/auth/login", { method: "POST", body: data }),
+    mutationFn: async (data: LoginData) => {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Login failed");
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Success", description: "Logged in successfully!" });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });

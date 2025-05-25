@@ -328,45 +328,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let result;
       
+      let books;
       if (societyId === 0) {
         // Get ALL books from user's societies for "All" option
-        result = await db.execute(sql`
-          SELECT b.*, u.name as owner_name
-          FROM books b
-          JOIN users u ON b.owner_id = u.id
-          JOIN society_members sm ON b.society_id = sm.society_id
-          WHERE sm.user_id = ${req.session.userId}
-          ORDER BY b.created_at DESC
-        `);
+        const userSocieties = await storage.getSocietiesByUser(req.session.userId!);
+        books = [];
+        for (const society of userSocieties) {
+          const societyBooks = await storage.getBooksBySociety(society.id);
+          books.push(...societyBooks);
+        }
       } else {
         // Get books for specific society
-        result = await db.execute(sql`
-          SELECT b.*, u.name as owner_name
-          FROM books b
-          JOIN users u ON b.owner_id = u.id
-          WHERE b.society_id = ${societyId}
-          ORDER BY b.created_at DESC
-        `);
+        books = await storage.getBooksBySociety(societyId);
       }
 
-      const books = result.rows.map((row: any) => ({
-        id: row.id,
-        title: row.title,
-        author: row.author,
-        isbn: row.isbn || "",
-        genre: row.genre || "",
-        condition: row.condition || "good",
-        description: row.description || "",
-        imageUrl: row.image_url || "",
-        dailyFee: row.daily_fee,
-        isAvailable: row.is_available,
-        societyId: row.society_id,
-        ownerId: row.owner_id,
-        createdAt: row.created_at,
-        owner: {
-          id: row.owner_id,
-          name: row.owner_name
-        }
+      const formattedBooks = books.map((book: any) => ({
+        id: book.id,
+        title: book.title,
+        author: book.author,
+        isbn: book.isbn || "",
+        genre: book.genre || "",
+        condition: book.condition || "good",
+        description: book.description || "",
+        imageUrl: book.imageUrl || "",
+        dailyFee: book.dailyFee,
+        isAvailable: book.isAvailable,
+        societyId: book.societyId,
+        ownerId: book.ownerId,
+        createdAt: book.createdAt,
+        owner: book.owner
       }));
       
       res.json(books);
