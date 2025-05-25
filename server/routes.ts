@@ -217,44 +217,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/societies/:id/join", requireAuth, async (req, res) => {
+    console.log("🚀 JOIN ROUTE HIT - societyId:", req.params.id, "userId:", req.session.userId);
+    
     try {
       const societyId = parseInt(req.params.id);
-      console.log("Join society request:", { societyId, userId: req.session.userId });
       
       if (!societyId || isNaN(societyId)) {
+        console.log("❌ Invalid society ID");
         return res.status(400).json({ message: "Valid society ID required" });
       }
 
       // Check if society exists
       const society = await storage.getSociety(societyId);
       if (!society) {
+        console.log("❌ Society not found");
         return res.status(404).json({ message: "Society not found" });
       }
 
       // Check if already a member
       const isMember = await storage.isMemberOfSociety(societyId, req.session.userId!);
       if (isMember) {
+        console.log("❌ Already a member");
         return res.status(400).json({ message: "Already a member of this society" });
       }
 
       const member = await storage.joinSociety(societyId, req.session.userId!);
-      console.log("Successfully joined society:", member);
+      console.log("✅ Successfully joined society:", member);
       
-      // Verify the join was successful
-      const isNowMember = await storage.isMemberOfSociety(societyId, req.session.userId!);
-      console.log("Verification - is now member:", isNowMember);
-      
-      // Ensure we return JSON
-      res.setHeader('Content-Type', 'application/json');
       return res.json({ 
         success: true, 
         member: member,
-        message: "Successfully joined society",
-        verified: isNowMember
+        message: "Successfully joined society"
       });
-    } catch (error) {
-      console.error("Join society error:", error);
-      res.setHeader('Content-Type', 'application/json');
+    } catch (error: any) {
+      console.error("❌ Join society error:", error);
       return res.status(500).json({ 
         success: false,
         message: "Failed to join society: " + error.message 
