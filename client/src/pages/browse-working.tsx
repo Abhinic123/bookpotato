@@ -4,9 +4,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function BrowseWorking() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: books, isLoading } = useQuery({
     queryKey: ['/api/books/all'],
@@ -18,11 +23,32 @@ export default function BrowseWorking() {
   
   const user = (userResponse as any)?.user;
 
-  console.log("🔍 Browse Debug - Full Response:", books);
-  console.log("🔍 Browse Debug - Type:", typeof books);
-  console.log("🔍 Browse Debug - Is Array:", Array.isArray(books));
-  console.log("🔍 Browse Debug - Response keys:", books ? Object.keys(books) : "No response");
-  console.log("🔍 Browse Debug - Response length:", books ? (books as any).length : "No length");
+  const borrowMutation = useMutation({
+    mutationFn: async (bookId: number) => {
+      return apiRequest("/api/rentals", {
+        method: "POST",
+        body: { bookId }
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Borrow Request Sent",
+        description: "The book owner will be notified of your request."
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/books/all'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Borrow Failed",
+        description: error.message || "Failed to borrow book",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleBorrow = (book: any) => {
+    borrowMutation.mutate(book.id);
+  };
 
   if (isLoading) {
     return (
@@ -129,6 +155,7 @@ export default function BrowseWorking() {
                       size="sm" 
                       className="w-full"
                       disabled={!book.isAvailable}
+                      onClick={() => handleBorrow(book)}
                     >
                       {book.isAvailable ? "Borrow" : "Not Available"}
                     </Button>
