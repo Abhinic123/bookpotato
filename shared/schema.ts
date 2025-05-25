@@ -1,0 +1,148 @@
+import { pgTable, text, serial, integer, boolean, timestamp, decimal } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  phone: text("phone").notNull(),
+  password: text("password").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const societies = pgTable("societies", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  code: text("code").notNull().unique(),
+  createdBy: integer("created_by").notNull(),
+  memberCount: integer("member_count").default(1).notNull(),
+  bookCount: integer("book_count").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const societyMembers = pgTable("society_members", {
+  id: serial("id").primaryKey(),
+  societyId: integer("society_id").notNull(),
+  userId: integer("user_id").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+});
+
+export const books = pgTable("books", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  author: text("author").notNull(),
+  isbn: text("isbn"),
+  genre: text("genre").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"),
+  condition: text("condition").notNull(),
+  dailyFee: decimal("daily_fee", { precision: 10, scale: 2 }).notNull(),
+  ownerId: integer("owner_id").notNull(),
+  societyId: integer("society_id").notNull(),
+  isAvailable: boolean("is_available").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const bookRentals = pgTable("book_rentals", {
+  id: serial("id").primaryKey(),
+  bookId: integer("book_id").notNull(),
+  borrowerId: integer("borrower_id").notNull(),
+  lenderId: integer("lender_id").notNull(),
+  societyId: integer("society_id").notNull(),
+  startDate: timestamp("start_date").defaultNow().notNull(),
+  endDate: timestamp("end_date").notNull(),
+  actualReturnDate: timestamp("actual_return_date"),
+  totalAmount: decimal("total_amount", { precision: 10, scale: 2 }).notNull(),
+  platformFee: decimal("platform_fee", { precision: 10, scale: 2 }).notNull(),
+  lenderAmount: decimal("lender_amount", { precision: 10, scale: 2 }).notNull(),
+  securityDeposit: decimal("security_deposit", { precision: 10, scale: 2 }).notNull(),
+  status: text("status").notNull(), // 'active', 'returned', 'overdue'
+  paymentStatus: text("payment_status").notNull(), // 'pending', 'completed', 'refunded'
+  paymentId: text("payment_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull(), // 'reminder', 'overdue', 'return_request', 'payment'
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Insert schemas
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSocietySchema = createInsertSchema(societies).omit({
+  id: true,
+  memberCount: true,
+  bookCount: true,
+  createdAt: true,
+});
+
+export const insertBookSchema = createInsertSchema(books).omit({
+  id: true,
+  isAvailable: true,
+  createdAt: true,
+});
+
+export const insertBookRentalSchema = createInsertSchema(bookRentals).omit({
+  id: true,
+  actualReturnDate: true,
+  paymentId: true,
+  createdAt: true,
+});
+
+export const insertSocietyMemberSchema = createInsertSchema(societyMembers).omit({
+  id: true,
+  isActive: true,
+  joinedAt: true,
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  isRead: true,
+  createdAt: true,
+});
+
+// Types
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export type Society = typeof societies.$inferSelect;
+export type InsertSociety = z.infer<typeof insertSocietySchema>;
+
+export type Book = typeof books.$inferSelect;
+export type InsertBook = z.infer<typeof insertBookSchema>;
+
+export type BookRental = typeof bookRentals.$inferSelect;
+export type InsertBookRental = z.infer<typeof insertBookRentalSchema>;
+
+export type SocietyMember = typeof societyMembers.$inferSelect;
+export type InsertSocietyMember = z.infer<typeof insertSocietyMemberSchema>;
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+// Extended types for API responses
+export type BookWithOwner = Book & {
+  owner: Pick<User, 'id' | 'name'>;
+};
+
+export type RentalWithDetails = BookRental & {
+  book: Book;
+  borrower: Pick<User, 'id' | 'name'>;
+  lender: Pick<User, 'id' | 'name'>;
+};
+
+export type SocietyWithStats = Society & {
+  isJoined?: boolean;
+};
