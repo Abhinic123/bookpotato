@@ -4,14 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import PaymentModal from "@/components/modals/payment-modal";
 
 export default function BrowseWorking() {
   const [searchQuery, setSearchQuery] = useState("");
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [selectedBook, setSelectedBook] = useState<any>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   const { data: books, isLoading } = useQuery({
     queryKey: ['/api/books/all'],
@@ -23,42 +21,9 @@ export default function BrowseWorking() {
   
   const user = (userResponse as any)?.user;
 
-  const borrowMutation = useMutation({
-    mutationFn: async (bookId: number) => {
-      const response = await fetch("/api/rentals/borrow", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          bookId, 
-          duration: 7, // Default 7 days
-          paymentMethod: "mock" // For testing
-        })
-      });
-      if (!response.ok) {
-        throw new Error("Failed to borrow book");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Borrow Request Sent",
-        description: "The book owner will be notified of your request."
-      });
-      queryClient.invalidateQueries({ queryKey: ['/api/books/all'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Borrow Failed",
-        description: error.message || "Failed to borrow book",
-        variant: "destructive"
-      });
-    }
-  });
-
   const handleBorrow = (book: any) => {
-    borrowMutation.mutate(book.id);
+    setSelectedBook(book);
+    setShowPaymentModal(true);
   };
 
   if (isLoading) {
@@ -177,6 +142,16 @@ export default function BrowseWorking() {
           </div>
         )}
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        book={selectedBook}
+        onSuccess={() => {
+          // Refresh the books list
+        }}
+      />
     </div>
   );
 }
