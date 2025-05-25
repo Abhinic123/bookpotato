@@ -12,6 +12,14 @@ export const users = pgTable("users", {
   userNumber: integer("user_number").unique(),
   referredBy: integer("referred_by"),
   isAdmin: boolean("is_admin").default(false).notNull(),
+  referralCode: text("referral_code").unique(),
+  totalReferrals: integer("total_referrals").default(0).notNull(),
+  referralEarnings: decimal("referral_earnings", { precision: 10, scale: 2 }).default("0").notNull(),
+  commissionFreeUntil: timestamp("commission_free_until"),
+  booksUploaded: integer("books_uploaded").default(0).notNull(),
+  profilePicture: text("profile_picture"),
+  resetToken: text("reset_token"),
+  resetTokenExpiry: timestamp("reset_token_expiry"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -162,3 +170,29 @@ export type RentalWithDetails = BookRental & {
 export type SocietyWithStats = Society & {
   isJoined?: boolean;
 };
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+export type ReferralReward = typeof referralRewards.$inferSelect;
+export type InsertReferralReward = z.infer<typeof insertReferralRewardSchema>;
+
+export type SocietyRequest = typeof societyRequests.$inferSelect;
+export type InsertSocietyRequest = z.infer<typeof insertSocietyRequestSchema>;
+
+// Add the insert schemas
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReferralRewardSchema = createInsertSchema(referralRewards).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSocietyRequestSchema = createInsertSchema(societyRequests).omit({
+  id: true,
+  createdAt: true,
+  reviewedAt: true,
+});

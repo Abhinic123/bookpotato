@@ -349,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `);
       }
 
-      const books = result.rows.map(row => ({
+      const books = result.rows.map((row: any) => ({
         id: row.id,
         title: row.title,
         author: row.author,
