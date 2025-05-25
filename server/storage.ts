@@ -131,26 +131,38 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAvailableSocieties(userId: number): Promise<SocietyWithStats[]> {
-    const joinedSocietyIds = await db
-      .select({ societyId: societyMembers.societyId })
-      .from(societyMembers)
-      .where(and(eq(societyMembers.userId, userId), eq(societyMembers.isActive, true)));
-    
-    const joinedIds = joinedSocietyIds.map(s => s.societyId);
-    
     const availableSocieties = await db
       .select()
       .from(societies)
-      .where(joinedIds.length > 0 ? not(inArray(societies.id, joinedIds)) : undefined);
+      .where(
+        notExists(
+          db.select()
+            .from(societyMembers)
+            .where(and(
+              eq(societyMembers.societyId, societies.id),
+              eq(societyMembers.userId, userId),
+              eq(societyMembers.isActive, true)
+            ))
+        )
+      );
     
     // Calculate dynamic stats for each society
     const societiesWithStats = await Promise.all(
       availableSocieties.map(async (society) => {
-        const stats = await this.getSocietyStats(society.id);
+        const [memberCount] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(societyMembers)
+          .where(and(eq(societyMembers.societyId, society.id), eq(societyMembers.isActive, true)));
+
+        const [bookCount] = await db
+          .select({ count: sql<number>`count(*)` })
+          .from(books)
+          .where(eq(books.societyId, society.id));
+
         return {
           ...society,
-          memberCount: stats.memberCount,
-          bookCount: stats.bookCount,
+          memberCount: memberCount?.count || 0,
+          bookCount: bookCount?.count || 0,
           isJoined: false
         };
       })
