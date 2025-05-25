@@ -166,6 +166,18 @@ export class DatabaseStorage implements IStorage {
     return member;
   }
 
+  async leaveSociety(societyId: number, userId: number): Promise<boolean> {
+    await db
+      .update(societyMembers)
+      .set({ isActive: false })
+      .where(and(
+        eq(societyMembers.societyId, societyId),
+        eq(societyMembers.userId, userId)
+      ));
+    
+    return true;
+  }
+
   async isMemberOfSociety(societyId: number, userId: number): Promise<boolean> {
     const [member] = await db
       .select()
