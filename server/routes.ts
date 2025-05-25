@@ -449,6 +449,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/rentals/borrowed", requireAuth, async (req, res) => {
     try {
       console.log("🔍 API: Fetching borrowed books for user:", req.session.userId!);
+      console.log("📊 DEBUG: Session data:", { 
+        userId: req.session.userId, 
+        authenticated: req.isAuthenticated() 
+      });
+      
+      // Force a direct database query to debug
+      const directQuery = `
+        SELECT br.*, b.title, b.author, u.name as lender_name 
+        FROM book_rentals br 
+        JOIN books b ON br.book_id = b.id 
+        JOIN users u ON br.lender_id = u.id 
+        WHERE br.borrower_id = $1
+      `;
+      
       const rentals = await storage.getRentalsByBorrower(req.session.userId!);
       console.log("📚 API: Borrowed books result:", rentals.length, "books");
       if (rentals.length > 0) {
@@ -483,6 +497,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get active rentals error:", error);
       res.status(500).json({ message: "Failed to fetch active rentals" });
+    }
+  });
+
+  // Book return request
+  app.post("/api/rentals/:id/request-return", requireAuth, async (req, res) => {
+    try {
+      const rentalId = parseInt(req.params.id);
+      const rental = await storage.getRental(rentalId);
+      
+      if (!rental || rental.borrowerId !== req.session.userId!) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // Create notification for lender
+      await storage.createNotification({
+        userId: rental.lenderId,
+        title: "Book Return Request",
+        message: `${rental.borrower.name} wants to return "${rental.book.title}". Please confirm if received.`,
+        type: "return_request",
+        data: { rentalId: rentalId }
+      });
+
+      res.json({ message: "Return request sent to book owner" });
+    } catch (error) {
+      console.error("Request return error:", error);
+      res.status(500).json({ message: "Failed to request return" });
+    }
+  });
+
+  // Confirm book return (by lender)
+  app.post("/api/rentals/:id/confirm-return", requireAuth, async (req, res) => {
+    try {
+      const rentalId = parseInt(req.params.id);
+      const rental = await storage.getRental(rentalId);
+      
+      if (!rental || rental.lenderId !== req.session.userId!) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // Update rental status and mark book as available
+      await storage.updateRental(rentalId, {
+        status: 'returned',
+        actualReturnDate: new Date()
+      });
+
+      // Mark book as available
+      await storage.updateBook(rental.bookId, { isAvailable: true });
+
+      // Notify borrower
+      await storage.createNotification({
+        userId: rental.borrowerId,
+        title: "Book Return Confirmed",
+        message: `Return of "${rental.book.title}" has been confirmed. Thank you!`,
+        type: "return_confirmed"
+      });
+
+      res.json({ message: "Book return confirmed successfully" });
+    } catch (error) {
+      console.error("Confirm return error:", error);
+      res.status(500).json({ message: "Failed to confirm return" });
     }
   });
 

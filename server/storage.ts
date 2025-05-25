@@ -329,7 +329,19 @@ export class DatabaseStorage implements IStorage {
 
   async getRentalsByBorrower(borrowerId: number): Promise<RentalWithDetails[]> {
     try {
-      console.log('🔍 Fetching borrowed books for user:', borrowerId);
+      console.log('🔍 DatabaseStorage: Fetching borrowed books for user:', borrowerId);
+      
+      // First, let's check if there are any rentals at all
+      const allRentals = await db.select().from(bookRentals);
+      console.log('📊 Total rentals in database:', allRentals.length);
+      
+      const userRentals = allRentals.filter(r => r.borrowerId === borrowerId);
+      console.log('📊 User rentals found:', userRentals.length);
+      
+      if (userRentals.length === 0) {
+        console.log('❌ No rentals found for user', borrowerId);
+        return [];
+      }
       
       const results = await db
         .select({
@@ -370,9 +382,9 @@ export class DatabaseStorage implements IStorage {
         .where(eq(bookRentals.borrowerId, borrowerId))
         .orderBy(desc(bookRentals.createdAt));
       
-      console.log('📚 Found borrowed books:', results.length);
+      console.log('📚 DatabaseStorage: Found borrowed books after join:', results.length);
       if (results.length > 0) {
-        console.log('📖 Sample book:', results[0].bookTitle);
+        console.log('📖 DatabaseStorage: Sample book:', results[0].bookTitle);
       }
       
       // Transform the flat result into the expected structure
@@ -412,8 +424,8 @@ export class DatabaseStorage implements IStorage {
         lender: { id: row.lenderId, name: row.lenderName }
       })) as RentalWithDetails[];
     } catch (error) {
-      console.error('❌ Error fetching borrowed books:', error);
-      return [];
+      console.error('❌ DatabaseStorage: Error fetching borrowed books:', error);
+      throw error;
     }
   }
 
