@@ -258,6 +258,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Leave society
+  app.post("/api/societies/:id/leave", requireAuth, async (req, res) => {
+    try {
+      const societyId = parseInt(req.params.id);
+      
+      if (!societyId || isNaN(societyId)) {
+        return res.status(400).json({ message: "Valid society ID required" });
+      }
+
+      // Check if user is a member
+      const isMember = await storage.isMemberOfSociety(societyId, req.session.userId!);
+      if (!isMember) {
+        return res.status(400).json({ message: "Not a member of this society" });
+      }
+
+      // Remove membership by setting isActive to false
+      await storage.leaveSociety(societyId, req.session.userId!);
+      
+      res.json({ success: true, message: "Successfully left society" });
+    } catch (error: any) {
+      console.error("Leave society error:", error);
+      res.status(500).json({ message: "Failed to leave society" });
+    }
+  });
+
   app.get("/api/societies/:id/stats", requireAuth, async (req, res) => {
     try {
       const societyId = parseInt(req.params.id);

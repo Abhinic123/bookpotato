@@ -112,6 +112,18 @@ export default function Societies() {
     createMutation.mutate(data);
   };
 
+  const handleUnjoinSociety = async (societyId: number) => {
+    try {
+      const response = await apiRequest("POST", `/api/societies/${societyId}/leave`);
+      if (response.ok) {
+        queryClient.invalidateQueries({ queryKey: ['/api/societies/my'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/societies/available'] });
+      }
+    } catch (error) {
+      console.error('Error leaving society:', error);
+    }
+  };
+
   const handleJoinById = (societyId: number) => {
     joinByIdMutation.mutate(societyId);
   };
@@ -200,6 +212,7 @@ export default function Societies() {
                     variant="outline" 
                     size="sm"
                     className="text-red-600 border-red-200 hover:bg-red-50"
+                    onClick={() => handleUnjoinSociety(society.id)}
                   >
                     Unjoin
                   </Button>

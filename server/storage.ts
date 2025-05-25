@@ -21,6 +21,7 @@ export interface IStorage {
   getAvailableSocieties(userId: number): Promise<SocietyWithStats[]>;
   createSociety(society: InsertSociety): Promise<Society>;
   joinSociety(societyId: number, userId: number): Promise<SocietyMember>;
+  leaveSociety(societyId: number, userId: number): Promise<boolean>;
   isMemberOfSociety(societyId: number, userId: number): Promise<boolean>;
   
   // Books
