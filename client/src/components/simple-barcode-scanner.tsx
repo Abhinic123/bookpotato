@@ -21,9 +21,19 @@ export default function SimpleBarcodeScanner({ onScan, onClose, isOpen }: Simple
     }
   };
 
-  const handleCameraRequest = () => {
-    // Show user that camera access is needed
-    alert("Camera access needed for barcode scanning. Please allow camera permissions when prompted.\n\nFor now, you can enter the barcode manually below.");
+  const handleCameraRequest = async () => {
+    try {
+      // Request camera access
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      
+      // If successful, show a simple success message
+      alert("Camera access granted! Camera scanning functionality would be implemented here. For now, please enter the barcode manually below.");
+      
+      // Stop the stream
+      stream.getTracks().forEach(track => track.stop());
+    } catch (error) {
+      alert("Camera access denied or not available. Please enter the barcode manually below.");
+    }
   };
 
   return (
@@ -43,7 +53,7 @@ export default function SimpleBarcodeScanner({ onScan, onClose, isOpen }: Simple
             </div>
             <Button onClick={handleCameraRequest} className="w-full mb-4">
               <Camera className="h-4 w-4 mr-2" />
-              Request Camera Access
+              Start Camera Scan
             </Button>
           </div>
           
