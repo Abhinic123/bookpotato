@@ -131,22 +131,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAvailableSocieties(userId: number): Promise<SocietyWithStats[]> {
+    // Get all societies
     const allSocieties = await db.select().from(societies);
-    const userSocieties = await db
+    
+    // Get societies user is actively part of
+    const joinedSocieties = await db
       .select({ societyId: societyMembers.societyId })
       .from(societyMembers)
       .where(and(eq(societyMembers.userId, userId), eq(societyMembers.isActive, true)));
     
-    const joinedSocietyIds = userSocieties.map(s => s.societyId);
+    const joinedIds = joinedSocieties.map(s => s.societyId);
     
-    return allSocieties
-      .filter(society => !joinedSocietyIds.includes(society.id))
-      .map(society => ({
-        ...society,
-        memberCount: society.memberCount || 0,
-        bookCount: society.bookCount || 0,
-        isJoined: false
-      }));
+    // Filter out joined societies
+    const available = allSocieties.filter(society => !joinedIds.includes(society.id));
+    
+    return available.map(society => ({
+      ...society,
+      memberCount: society.memberCount,
+      bookCount: society.bookCount,
+      isJoined: false
+    }));
   }
 
   async createSociety(societyData: any): Promise<Society> {
@@ -886,3 +890,5 @@ export class MemStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+// Expose db for direct queries when needed
+(storage as any).db = db;
