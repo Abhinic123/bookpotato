@@ -104,6 +104,8 @@ export const insertBookSchema = createInsertSchema(books).omit({
   id: true,
   isAvailable: true,
   createdAt: true,
+}).extend({
+  dailyFee: z.union([z.string(), z.number()]).transform(val => String(val))
 });
 
 export const insertBookRentalSchema = createInsertSchema(bookRentals).omit({

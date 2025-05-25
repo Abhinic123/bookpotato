@@ -144,6 +144,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/societies", requireAuth, async (req, res) => {
     try {
+      console.log('Raw request body:', req.body);
+      
       // Auto-generate a simple code from the society name
       const generateCode = (name: string) => {
         return name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8).toUpperCase() + Math.floor(Math.random() * 1000);
@@ -151,6 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // First validate the basic data
       const validatedData = insertSocietySchema.parse(req.body);
+      console.log('Validated data:', validatedData);
       
       // Generate the code
       const generatedCode = generateCode(req.body.name || 'SOC');
