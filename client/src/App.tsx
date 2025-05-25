@@ -60,7 +60,6 @@ function Router() {
   if (error || !authData?.user) {
     return (
       <Switch>
-        <Route path="/welcome" component={Welcome} />
         <Route path="/auth" component={EnhancedAuth} />
         <Route component={Welcome} />
       </Switch>
