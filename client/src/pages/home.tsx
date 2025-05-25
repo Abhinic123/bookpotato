@@ -29,8 +29,7 @@ export default function Home() {
   });
 
   const { data: recentBooks } = useQuery({
-    queryKey: ["/api/books/society", currentSociety?.id],
-    enabled: !!currentSociety?.id,
+    queryKey: ["/api/books/all"],
   });
 
   const { data: activeRentals } = useQuery({

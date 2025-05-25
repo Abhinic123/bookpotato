@@ -128,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: user.name, 
         email: user.email, 
         phone: user.phone, 
-        isAdmin: user.isAdmin 
+        isAdmin: user.isAdmin || false
       }
     });
   });
