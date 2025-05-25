@@ -341,16 +341,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const societyId = parseInt(req.params.societyId);
       const { search, genre } = req.query;
 
-      const result = await db.execute(sql`
-        SELECT b.*, u.name as owner_name, u.email as owner_email 
-        FROM books b
-        JOIN users u ON b.owner_id = u.id
-        WHERE b.society_id = ${societyId}
-        AND (${!search} OR LOWER(b.title) LIKE LOWER(${'%' + (search as string) + '%'})
-            OR LOWER(b.author) LIKE LOWER(${'%' + (search as string) + '%'}))
-        AND (${!genre || genre === 'All'} OR b.genre = ${genre})
-        ORDER BY b.created_at DESC
-      `);
+      let result;
+      
+      if (societyId === 0) {
+        // Get ALL books from user's societies for "All" option
+        result = await db.execute(sql`
+          SELECT b.*, u.name as owner_name, u.id as owner_id
+          FROM books b
+          JOIN users u ON b.owner_id = u.id
+          JOIN society_members sm ON b.society_id = sm.society_id
+          WHERE sm.user_id = ${req.session.userId!} AND sm.is_active = true
+          ORDER BY b.created_at DESC
+        `);
+      } else {
+        // Get books for specific society
+        result = await db.execute(sql`
+          SELECT b.*, u.name as owner_name, u.id as owner_id
+          FROM books b
+          JOIN users u ON b.owner_id = u.id
+          WHERE b.society_id = ${societyId}
+          ORDER BY b.created_at DESC
+        `);
+      }
 
       const books = result.rows.map(row => ({
         id: row.id,
