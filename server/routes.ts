@@ -216,6 +216,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/societies/:id/join", requireAuth, async (req, res) => {
+    try {
+      const societyId = parseInt(req.params.id);
+      console.log("Join society request:", { societyId, userId: req.session.userId });
+      
+      if (!societyId || isNaN(societyId)) {
+        return res.status(400).json({ message: "Valid society ID required" });
+      }
+
+      // Check if society exists
+      const society = await storage.getSociety(societyId);
+      if (!society) {
+        return res.status(404).json({ message: "Society not found" });
+      }
+
+      // Check if already a member
+      const isMember = await storage.isMemberOfSociety(societyId, req.session.userId!);
+      if (isMember) {
+        return res.status(400).json({ message: "Already a member of this society" });
+      }
+
+      const member = await storage.joinSociety(societyId, req.session.userId!);
+      console.log("Successfully joined society:", member);
+      res.json(member);
+    } catch (error) {
+      console.error("Join society error:", error);
+      res.status(500).json({ message: "Failed to join society: " + error.message });
+    }
+  });
+
   app.get("/api/societies/:id/stats", requireAuth, async (req, res) => {
     try {
       const societyId = parseInt(req.params.id);

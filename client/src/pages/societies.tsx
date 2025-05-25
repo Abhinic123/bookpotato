@@ -66,10 +66,8 @@ export default function Societies() {
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateSocietyFormData) => {
-      return await apiRequest("/api/societies", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("POST", "/api/societies", data);
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -91,9 +89,8 @@ export default function Societies() {
 
   const joinByIdMutation = useMutation({
     mutationFn: async (societyId: number) => {
-      return await apiRequest(`/api/societies/${societyId}/join`, {
-        method: "POST",
-      });
+      const response = await apiRequest("POST", `/api/societies/${societyId}/join`);
+      return await response.json();
     },
     onSuccess: () => {
       toast({
