@@ -22,7 +22,9 @@ export default function Browse() {
     queryKey: ["/api/societies/my"],
   });
 
-  const currentSociety = societies?.[0];
+  const [selectedSociety, setSelectedSociety] = useState<any>(null);
+  
+  const currentSociety = selectedSociety || societies?.[0];
 
   const { data: books, isLoading } = useQuery({
     queryKey: [
