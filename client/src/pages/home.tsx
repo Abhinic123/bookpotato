@@ -183,13 +183,13 @@ export default function Home() {
       </div>
 
       {/* Earnings Summary */}
-      {userStats?.totalEarnings && userStats.totalEarnings > 0 && (
+      {(userStats as any)?.totalEarnings && (userStats as any).totalEarnings > 0 && (
         <div className="p-4">
           <Card className="gradient-secondary text-white">
             <CardContent className="pt-6">
               <div className="text-center">
                 <div className="text-2xl font-bold mb-1">
-                  {formatCurrency(userStats.totalEarnings)}
+                  {formatCurrency((userStats as any).totalEarnings)}
                 </div>
                 <div className="text-sm opacity-90">Total Earnings</div>
               </div>

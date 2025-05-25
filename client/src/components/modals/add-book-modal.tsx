@@ -227,7 +227,7 @@ export default function AddBookModal({ open, onOpenChange }: AddBookModalProps) 
                 </Button>
                 <Button 
                   variant="outline" 
-                  onClick={handleManualEntry}
+                  onClick={() => setScanMode(false)}
                   className="w-full"
                 >
                   Enter Details Manually
