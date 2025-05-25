@@ -32,6 +32,10 @@ import type { SocietyWithStats } from "@shared/schema";
 const createSocietySchema = z.object({
   name: z.string().min(1, "Society name is required"),
   description: z.string().optional(),
+  code: z.string().min(1, "Society code is required"),
+  city: z.string().min(1, "City is required"),
+  apartmentCount: z.number().min(90, "Society must have at least 90 apartments"),
+  location: z.string().optional(),
 });
 
 const joinSocietySchema = z.object({
@@ -60,6 +64,10 @@ export default function Societies() {
     defaultValues: {
       name: "",
       description: "",
+      code: "",
+      city: "",
+      apartmentCount: 90,
+      location: "",
     },
   });
 
@@ -245,6 +253,63 @@ export default function Societies() {
                   />
                   <FormField
                     control={createForm.control}
+                    name="code"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Society Code</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. GWA2024" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>City</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter city name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="apartmentCount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Number of Apartments</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="Minimum 90 apartments"
+                            {...field}
+                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Location (Optional)</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Specific area or locality" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
                     name="description"
                     render={({ field }) => (
                       <FormItem>
@@ -253,7 +318,7 @@ export default function Societies() {
                           <Textarea 
                             placeholder="Brief description of your society"
                             className="resize-none"
-                            rows={3}
+                            rows={2}
                             {...field}
                           />
                         </FormControl>
