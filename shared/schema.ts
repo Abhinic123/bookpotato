@@ -86,8 +86,43 @@ export const notifications = pgTable("notifications", {
   userId: integer("user_id").notNull(),
   title: text("title").notNull(),
   message: text("message").notNull(),
-  type: text("type").notNull(), // 'reminder', 'overdue', 'return_request', 'payment'
+  type: text("type").notNull(),
   isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  rentalId: integer("rental_id").notNull(),
+  senderId: integer("sender_id").notNull(),
+  receiverId: integer("receiver_id").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const referralRewards = pgTable("referral_rewards", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  rewardType: text("reward_type").notNull(),
+  description: text("description").notNull(),
+  value: text("value").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const societyRequests = pgTable("society_requests", {
+  id: serial("id").primaryKey(),
+  requestedBy: integer("requested_by").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  city: text("city").notNull(),
+  apartmentCount: integer("apartment_count").notNull(),
+  location: text("location"),
+  status: text("status").default("pending").notNull(),
+  rejectionReason: text("rejection_reason"),
+  reviewedBy: integer("reviewed_by"),
+  reviewedAt: timestamp("reviewed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -170,5 +205,30 @@ export type RentalWithDetails = BookRental & {
 export type SocietyWithStats = Society & {
   isJoined?: boolean;
 };
+
+export const insertMessageSchema = createInsertSchema(messages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReferralRewardSchema = createInsertSchema(referralRewards).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertSocietyRequestSchema = createInsertSchema(societyRequests).omit({
+  id: true,
+  createdAt: true,
+  reviewedAt: true,
+});
+
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+export type ReferralReward = typeof referralRewards.$inferSelect;
+export type InsertReferralReward = z.infer<typeof insertReferralRewardSchema>;
+
+export type SocietyRequest = typeof societyRequests.$inferSelect;
+export type InsertSocietyRequest = z.infer<typeof insertSocietyRequestSchema>;
 
 

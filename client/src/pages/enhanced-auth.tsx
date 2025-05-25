@@ -1,0 +1,390 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { BookOpen, Mail, Phone, User, Chrome, Facebook, Github } from "lucide-react";
+
+const INDIAN_CITIES = [
+  "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad",
+  "Surat", "Jaipur", "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal",
+  "Visakhapatnam", "Pimpri-Chinchwad", "Patna", "Vadodara", "Ghaziabad", "Ludhiana",
+  "Agra", "Nashik", "Faridabad", "Meerut", "Rajkot", "Kalyan-Dombivli", "Vasai-Virar",
+  "Varanasi", "Srinagar", "Dhanbad", "Jodhpur", "Amritsar", "Raipur", "Allahabad",
+  "Coimbatore", "Jabalpur", "Gwalior", "Vijayawada", "Madurai", "Guwahati", "Chandigarh",
+  "Hubli-Dharwad", "Mysore", "Tiruchirappalli", "Bareilly", "Aligarh", "Tiruppur"
+];
+
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+const registerSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  address: z.string().min(5, "Address must be at least 5 characters"),
+  city: z.string().min(1, "Please select a city"),
+  referredBy: z.string().optional(),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
+type LoginData = z.infer<typeof loginSchema>;
+type RegisterData = z.infer<typeof registerSchema>;
+type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
+
+export default function EnhancedAuth() {
+  const [activeTab, setActiveTab] = useState("login");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const loginForm = useForm<LoginData>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const registerForm = useForm<RegisterData>({
+    resolver: zodResolver(registerSchema),
+  });
+
+  const forgotPasswordForm = useForm<ForgotPasswordData>({
+    resolver: zodResolver(forgotPasswordSchema),
+  });
+
+  const loginMutation = useMutation({
+    mutationFn: (data: LoginData) => apiRequest("/api/auth/login", { method: "POST", body: data }),
+    onSuccess: () => {
+      toast({ title: "Success", description: "Logged in successfully!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      window.location.href = "/";
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Login failed",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: (data: RegisterData) => apiRequest("/api/auth/register", { method: "POST", body: data }),
+    onSuccess: () => {
+      toast({ title: "Success", description: "Account created successfully!" });
+      setActiveTab("login");
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Registration failed",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const forgotPasswordMutation = useMutation({
+    mutationFn: (data: ForgotPasswordData) => apiRequest("/api/auth/forgot-password", { method: "POST", body: data }),
+    onSuccess: () => {
+      toast({ 
+        title: "Success", 
+        description: "Password reset email sent! Check your inbox." 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to send reset email",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const handleSocialLogin = (provider: string) => {
+    // Implement Google OAuth
+    window.location.href = `/api/auth/${provider}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-4">
+            <BookOpen className="w-12 h-12 text-blue-600" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">BookShare</h1>
+          <p className="text-gray-600 mt-2">Connect, Share, Read</p>
+        </div>
+
+        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login">Sign In</TabsTrigger>
+              <TabsTrigger value="register">Sign Up</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="login" className="space-y-4 p-6">
+              <CardHeader className="text-center p-0 mb-4">
+                <CardTitle>Welcome Back</CardTitle>
+                <CardDescription>Sign in to your account</CardDescription>
+              </CardHeader>
+
+              {/* Social Login Options */}
+              <div className="space-y-3">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => handleSocialLogin("google")}
+                >
+                  <Chrome className="w-4 h-4 mr-2" />
+                  Continue with Google
+                </Button>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-muted-foreground">Or continue with</span>
+                  </div>
+                </div>
+              </div>
+
+              <form onSubmit={loginForm.handleSubmit((data) => loginMutation.mutate(data))}>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      {...loginForm.register("email")}
+                      className="mt-1"
+                    />
+                    {loginForm.formState.errors.email && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {loginForm.formState.errors.email.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      {...loginForm.register("password")}
+                      className="mt-1"
+                    />
+                    {loginForm.formState.errors.password && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {loginForm.formState.errors.password.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="p-0 h-auto text-sm"
+                    onClick={() => setActiveTab("forgot")}
+                  >
+                    Forgot your password?
+                  </Button>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    disabled={loginMutation.isPending}
+                  >
+                    {loginMutation.isPending ? "Signing in..." : "Sign In"}
+                  </Button>
+                </div>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="register" className="space-y-4 p-6">
+              <CardHeader className="text-center p-0 mb-4">
+                <CardTitle>Create Account</CardTitle>
+                <CardDescription>Join the BookShare community</CardDescription>
+              </CardHeader>
+
+              <form onSubmit={registerForm.handleSubmit((data) => registerMutation.mutate(data))}>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      {...registerForm.register("name")}
+                      className="mt-1"
+                    />
+                    {registerForm.formState.errors.name && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {registerForm.formState.errors.name.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      {...registerForm.register("email")}
+                      className="mt-1"
+                    />
+                    {registerForm.formState.errors.email && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {registerForm.formState.errors.email.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      {...registerForm.register("phone")}
+                      className="mt-1"
+                    />
+                    {registerForm.formState.errors.phone && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {registerForm.formState.errors.phone.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="city">City</Label>
+                    <Select onValueChange={(value) => registerForm.setValue("city", value)}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder="Select your city" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {INDIAN_CITIES.map((city) => (
+                          <SelectItem key={city} value={city}>
+                            {city}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {registerForm.formState.errors.city && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {registerForm.formState.errors.city.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      {...registerForm.register("address")}
+                      className="mt-1"
+                    />
+                    {registerForm.formState.errors.address && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {registerForm.formState.errors.address.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="referredBy">Who helped you get here? (Optional)</Label>
+                    <Input
+                      id="referredBy"
+                      placeholder="Enter their user number"
+                      {...registerForm.register("referredBy")}
+                      className="mt-1"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Enter the user number of the person who referred you
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      {...registerForm.register("password")}
+                      className="mt-1"
+                    />
+                    {registerForm.formState.errors.password && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {registerForm.formState.errors.password.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    disabled={registerMutation.isPending}
+                  >
+                    {registerMutation.isPending ? "Creating Account..." : "Create Account"}
+                  </Button>
+                </div>
+              </form>
+            </TabsContent>
+          </Tabs>
+
+          {activeTab === "forgot" && (
+            <div className="p-6">
+              <CardHeader className="text-center p-0 mb-4">
+                <CardTitle>Reset Password</CardTitle>
+                <CardDescription>Enter your email to receive reset instructions</CardDescription>
+              </CardHeader>
+
+              <form onSubmit={forgotPasswordForm.handleSubmit((data) => forgotPasswordMutation.mutate(data))}>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="forgot-email">Email</Label>
+                    <Input
+                      id="forgot-email"
+                      type="email"
+                      {...forgotPasswordForm.register("email")}
+                      className="mt-1"
+                    />
+                    {forgotPasswordForm.formState.errors.email && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {forgotPasswordForm.formState.errors.email.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    disabled={forgotPasswordMutation.isPending}
+                  >
+                    {forgotPasswordMutation.isPending ? "Sending..." : "Send Reset Email"}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="w-full"
+                    onClick={() => setActiveTab("login")}
+                  >
+                    Back to Sign In
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
+        </Card>
+      </div>
+    </div>
+  );
+}
