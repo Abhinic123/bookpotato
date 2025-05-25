@@ -324,7 +324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Get ALL books from user's societies for home page
       const result = await db.execute(sql`
-        SELECT b.*, u.name as owner_name, u.id as owner_id
+        SELECT b.*, u.name as owner_name
         FROM books b
         JOIN users u ON b.owner_id = u.id
         JOIN society_members sm ON b.society_id = sm.society_id
@@ -337,11 +337,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: row.id,
         title: row.title,
         author: row.author,
-        isbn: row.isbn,
-        genre: row.genre,
-        condition: row.condition,
-        description: row.description,
-        imageUrl: row.image_url,
+        isbn: row.isbn || "",
+        genre: row.genre || "",
+        condition: row.condition || "good",
+        description: row.description || "",
+        imageUrl: row.image_url || "",
         dailyFee: row.daily_fee,
         isAvailable: row.is_available,
         ownerId: row.owner_id,
@@ -370,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (societyId === 0) {
         // Get ALL books from user's societies for "All" option
         result = await db.execute(sql`
-          SELECT b.*, u.name as owner_name, u.id as owner_id
+          SELECT b.*, u.name as owner_name
           FROM books b
           JOIN users u ON b.owner_id = u.id
           JOIN society_members sm ON b.society_id = sm.society_id
@@ -380,7 +380,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         // Get books for specific society
         result = await db.execute(sql`
-          SELECT b.*, u.name as owner_name, u.id as owner_id
+          SELECT b.*, u.name as owner_name
           FROM books b
           JOIN users u ON b.owner_id = u.id
           WHERE b.society_id = ${societyId}

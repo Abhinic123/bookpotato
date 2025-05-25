@@ -32,21 +32,13 @@ export default function Browse() {
     }
   }, [societies, selectedSociety]);
 
-  const { data: books, isLoading } = useQuery({
-    queryKey: [
-      "/api/books/society", 
-      currentSociety?.id, 
-      { search: searchQuery, genre: selectedGenre }
-    ],
+  const { data: books = [], isLoading } = useQuery({
+    queryKey: ["/api/books/society", currentSociety?.id || 0],
     queryFn: () => {
-      const params = new URLSearchParams();
-      if (searchQuery) params.set('search', searchQuery);
-      if (selectedGenre && selectedGenre !== 'all') params.set('genre', selectedGenre);
-      
-      return fetch(`/api/books/society/${currentSociety?.id}?${params.toString()}`)
+      return fetch(`/api/books/society/${currentSociety?.id || 0}`)
         .then(res => res.json());
     },
-    enabled: !!currentSociety?.id,
+    enabled: !!currentSociety,
   });
 
   const debouncedSearch = debounce((value: string) => {
