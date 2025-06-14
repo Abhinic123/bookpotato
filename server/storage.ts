@@ -48,6 +48,17 @@ export interface IStorage {
   // Statistics
   getSocietyStats(societyId: number): Promise<{ memberCount: number; bookCount: number; activeRentals: number }>;
   getUserStats(userId: number): Promise<{ borrowedBooks: number; lentBooks: number; totalEarnings: number }>;
+  
+  // Admin statistics
+  getTotalUsers(): Promise<number>;
+  getTotalBooks(): Promise<number>;
+  getTotalSocieties(): Promise<number>;
+  getActiveRentalsCount(): Promise<number>;
+  getSocietyRequests(): Promise<any[]>;
+  reviewSocietyRequest(requestId: number, approved: boolean, reason?: string): Promise<void>;
+  createReferralReward(data: any): Promise<any>;
+  getSocietiesByLocation(city: string): Promise<any[]>;
+  createSocietyRequest(data: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {

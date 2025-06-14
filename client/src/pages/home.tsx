@@ -154,7 +154,12 @@ export default function Home() {
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Recently Added</h3>
-          <Button variant="ghost" size="sm" className="text-primary">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-primary"
+            onClick={() => navigate("/browse")}
+          >
             View All
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>

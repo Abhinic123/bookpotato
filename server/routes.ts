@@ -562,6 +562,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin routes
+  app.get("/api/admin/stats", requireAuth, async (req, res) => {
+    try {
+      // Check if user is admin
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin && user?.email !== 'abhinic@gmail.com') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // Get platform statistics
+      const totalUsers = await storage.getTotalUsers();
+      const totalBooks = await storage.getTotalBooks();  
+      const totalSocieties = await storage.getTotalSocieties();
+      const activeRentals = await storage.getActiveRentalsCount();
+
+      res.json({
+        totalUsers,
+        totalBooks,
+        totalSocieties,
+        activeRentals
+      });
+    } catch (error) {
+      console.error("Admin stats error:", error);
+      res.status(500).json({ message: "Failed to fetch admin statistics" });
+    }
+  });
+
+  app.get("/api/admin/society-requests", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin && user?.email !== 'abhinic@gmail.com') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const requests = await storage.getSocietyRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Society requests error:", error);
+      res.status(500).json({ message: "Failed to fetch society requests" });
+    }
+  });
+
+  app.post("/api/admin/society-requests/review", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin && user?.email !== 'abhinic@gmail.com') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { requestId, approved, reason } = req.body;
+      await storage.reviewSocietyRequest(requestId, approved, reason);
+      
+      res.json({ message: "Society request reviewed successfully" });
+    } catch (error) {
+      console.error("Review society request error:", error);
+      res.status(500).json({ message: "Failed to review society request" });
+    }
+  });
+
+  app.post("/api/admin/referral-rewards", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin && user?.email !== 'abhinic@gmail.com') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const reward = await storage.createReferralReward(req.body);
+      res.json(reward);
+    } catch (error) {
+      console.error("Create referral reward error:", error);
+      res.status(500).json({ message: "Failed to create referral reward" });
+    }
+  });
+
   app.post("/api/rentals/borrow", requireAuth, async (req, res) => {
     try {
       const { bookId, duration, paymentMethod } = borrowBookSchema.parse(req.body);
