@@ -65,7 +65,7 @@ export default function Home() {
           <p className="text-text-secondary mb-6">
             You need to join a society to start borrowing and lending books.
           </p>
-          <Button>
+          <Button onClick={() => navigate("/societies")}>
             Explore Societies
           </Button>
         </div>
@@ -79,7 +79,12 @@ export default function Home() {
       <div className="gradient-primary p-4 text-white">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold">Current Society</h2>
-          <Button variant="ghost" size="sm" className="text-white opacity-90">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-white opacity-90"
+            onClick={() => navigate("/societies")}
+          >
             Change
           </Button>
         </div>

@@ -128,13 +128,39 @@ export default function MyBooks() {
               
               <div className="flex space-x-2 mt-3">
                 <Button 
-                  onClick={() => handleReturnBook(rental.id)}
+                  onClick={() => {
+                    // Request return from lender
+                    apiRequest("POST", `/api/rentals/${rental.id}/request-return`)
+                      .then(() => {
+                        toast({
+                          title: "Return Request Sent",
+                          description: `Return request sent to ${rental.lender.name}. They will be notified to confirm receipt.`,
+                        });
+                      })
+                      .catch(() => {
+                        toast({
+                          title: "Error", 
+                          description: "Failed to send return request",
+                          variant: "destructive",
+                        });
+                      });
+                  }}
                   disabled={returnBookMutation.isPending}
                   className="flex-1"
                 >
-                  {returnBookMutation.isPending ? "Returning..." : "Return"}
+                  Request Return
                 </Button>
-                <Button variant="outline" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    // TODO: Open extend request modal
+                    toast({
+                      title: "Extend Request",
+                      description: "Extension request feature will be implemented",
+                    });
+                  }}
+                >
                   Extend
                 </Button>
               </div>
@@ -210,10 +236,44 @@ export default function MyBooks() {
               </div>
               
               <div className="flex space-x-2 mt-3">
-                <Button variant="outline" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    // Send reminder to borrower
+                    const daysUntilDue = Math.ceil((new Date(rental.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                    apiRequest("POST", "/api/notifications", {
+                      userId: rental.borrowerId,
+                      title: "Return Reminder",
+                      message: `Reminder: "${rental.book.title}" is due in ${daysUntilDue} days. Please coordinate return with lender.`,
+                      type: "reminder"
+                    }).then(() => {
+                      toast({
+                        title: "Reminder Sent",
+                        description: `Reminder sent to ${rental.borrower.name}`,
+                      });
+                    }).catch(() => {
+                      toast({
+                        title: "Error",
+                        description: "Failed to send reminder",
+                        variant: "destructive",
+                      });
+                    });
+                  }}
+                >
                   Send Reminder
                 </Button>
-                <Button variant="outline" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    // Show borrower details
+                    toast({
+                      title: "Borrower Details",
+                      description: `Name: ${rental.borrower.name}\nPhone: Contact through app notifications\nDue: ${new Date(rental.endDate).toLocaleDateString()}`,
+                    });
+                  }}
+                >
                   Details
                 </Button>
               </div>

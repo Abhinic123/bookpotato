@@ -296,7 +296,7 @@ export default function Societies() {
                     )}
                   </div>
                 </div>
-                <Button 
+                <Button
                   size="sm" 
                   onClick={() => handleJoinById(society.id)}
                   disabled={joinByIdMutation.isPending}
@@ -342,10 +342,10 @@ export default function Societies() {
           <TabsContent value="available" className="space-y-4">
             {renderAvailableSocieties()}
           </TabsContent>
-        </Tabs>
+      </Tabs>
 
-        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-          <DialogContent>
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Society</DialogTitle>
             </DialogHeader>
@@ -402,7 +402,7 @@ export default function Societies() {
                     <FormItem>
                       <FormLabel>Location (Optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter specific location" {...field} />
+                        <Input placeholder="Enter area/location" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
