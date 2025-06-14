@@ -1,5 +1,5 @@
 import { 
-  users, societies, books, bookRentals, societyMembers, notifications,
+  users, societies, books, bookRentals, societyMembers, notifications, societyRequests, referralRewards,
   type User, type InsertUser, type Society, type InsertSociety, 
   type Book, type InsertBook, type BookRental, type InsertBookRental,
   type SocietyMember, type InsertSocietyMember, type Notification, type InsertNotification,
