@@ -152,7 +152,7 @@ export default function Societies() {
       );
     }
 
-    if (!mySocieties || mySocieties.length === 0) {
+    if (!mySocieties || (mySocieties as any[]).length === 0) {
       return (
         <Card>
           <CardContent className="pt-6 text-center">
@@ -174,7 +174,7 @@ export default function Societies() {
 
     return (
       <div className="space-y-3">
-        {mySocieties.map((society: SocietyWithStats) => (
+        {(mySocieties as SocietyWithStats[]).map((society: SocietyWithStats) => (
           <Card key={society.id}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -249,7 +249,7 @@ export default function Societies() {
       );
     }
 
-    if (!availableSocieties || availableSocieties.length === 0) {
+    if (!availableSocieties || (availableSocieties as any[]).length === 0) {
       return (
         <Card>
           <CardContent className="pt-6 text-center">
@@ -267,7 +267,7 @@ export default function Societies() {
 
     return (
       <div className="space-y-3">
-        {availableSocieties.map((society: SocietyWithStats) => (
+        {(availableSocieties as SocietyWithStats[]).map((society: SocietyWithStats) => (
           <Card key={society.id}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -314,20 +314,20 @@ export default function Societies() {
   }
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-text-primary">Societies</h1>
-            <p className="text-sm text-text-secondary mt-1">
-              Join communities and share books with your neighbors
-            </p>
-          </div>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Society
-          </Button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">Societies</h1>
+          <p className="text-sm text-text-secondary mt-1">
+            Join communities and share books with your neighbors
+          </p>
         </div>
+        <Button onClick={() => setShowCreateModal(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Society
+        </Button>
+      </div>
 
         <Tabs defaultValue="my-societies" className="w-full">
           <TabsList>
@@ -342,10 +342,10 @@ export default function Societies() {
           <TabsContent value="available" className="space-y-4">
             {renderAvailableSocieties()}
           </TabsContent>
-        </Tabs>
+      </Tabs>
 
-        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-          <DialogContent>
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Society</DialogTitle>
             </DialogHeader>
@@ -432,7 +432,6 @@ export default function Societies() {
             </Form>
           </DialogContent>
         </Dialog>
-      </div>
-    </AppLayout>
+    </div>
   );
 }
