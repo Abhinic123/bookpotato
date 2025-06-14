@@ -1,123 +1,181 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, BookOpen, Users, Shield, Coins } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { 
+  BookOpen, 
+  Users, 
+  MapPin, 
+  Star,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
+import { useLocation } from "wouter";
+
+const welcomeScreens = [
+  {
+    id: 1,
+    title: "Welcome to BookShare",
+    subtitle: "Your Community Library Platform",
+    description: "Connect with your neighbors and share books within your society. Discover new reads while building a stronger community.",
+    icon: BookOpen,
+    gradient: "from-blue-500 to-cyan-500",
+    image: "/api/placeholder/400/300"
+  },
+  {
+    id: 2,
+    title: "Join Your Society",
+    subtitle: "Connect with Your Community",
+    description: "Find and join your residential society to start sharing books with your neighbors. Build lasting connections through literature.",
+    icon: Users,
+    gradient: "from-purple-500 to-pink-500",
+    image: "/api/placeholder/400/300"
+  },
+  {
+    id: 3,
+    title: "Discover Local Books",
+    subtitle: "Browse Nearby Collections",
+    description: "Explore books available in your society. From bestsellers to classics, find your next great read just steps away from home.",
+    icon: MapPin,
+    gradient: "from-green-500 to-teal-500",
+    image: "/api/placeholder/400/300"
+  },
+  {
+    id: 4,
+    title: "Earn While Sharing",
+    subtitle: "Share Books, Earn Money",
+    description: "Lend your books to community members and earn daily rental fees. Turn your personal library into a source of income.",
+    icon: Star,
+    gradient: "from-orange-500 to-red-500",
+    image: "/api/placeholder/400/300"
+  }
+];
 
 export default function Welcome() {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentScreen, setCurrentScreen] = useState(0);
+  const [, navigate] = useLocation();
 
-  const steps = [
-    {
-      icon: <BookOpen className="w-16 h-16 text-blue-600" />,
-      title: "Share Your Books",
-      description: "Upload your physical books and set daily rental fees. Use our barcode scanner to quickly add book details and make them available to your community."
-    },
-    {
-      icon: <Users className="w-16 h-16 text-teal-600" />,
-      title: "Join Communities",
-      description: "Connect with readers in your society or apartment complex. Create or join societies with 90+ apartments to access a vast collection of books."
-    },
-    {
-      icon: <Coins className="w-16 h-16 text-blue-600" />,
-      title: "Earn & Save",
-      description: "Lend your books to earn money and borrow others' books at affordable daily rates. Our platform takes a small commission to keep the service running."
-    },
-    {
-      icon: <Shield className="w-16 h-16 text-teal-600" />,
-      title: "Safe & Secure",
-      description: "Built-in messaging, payment processing, and security deposits ensure safe transactions. Track your borrowed and lent books easily."
+  useEffect(() => {
+    // Check if user has seen welcome screens before
+    const hasSeenWelcome = localStorage.getItem("hasSeenWelcome");
+    if (hasSeenWelcome) {
+      navigate("/");
     }
-  ];
+  }, [navigate]);
 
-  const nextStep = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+  const nextScreen = () => {
+    if (currentScreen < welcomeScreens.length - 1) {
+      setCurrentScreen(currentScreen + 1);
     } else {
-      // Redirect to enhanced auth page
-      window.location.href = "/auth";
+      completeWelcome();
     }
   };
 
-  const prevStep = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
+  const prevScreen = () => {
+    if (currentScreen > 0) {
+      setCurrentScreen(currentScreen - 1);
     }
   };
+
+  const completeWelcome = () => {
+    localStorage.setItem("hasSeenWelcome", "true");
+    navigate("/");
+  };
+
+  const skipWelcome = () => {
+    completeWelcome();
+  };
+
+  const screen = welcomeScreens[currentScreen];
+  const Icon = screen.icon;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-teal-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Welcome to <span className="text-blue-600">BookShare</span>
-          </h1>
-          <p className="text-xl text-gray-600">
-            Your Community-Driven Digital Library Platform
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md mx-auto shadow-2xl border-0 overflow-hidden">
+        {/* Progress Bar */}
+        <div className="h-1 bg-gray-200">
+          <div 
+            className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-300"
+            style={{ width: `${((currentScreen + 1) / welcomeScreens.length) * 100}%` }}
+          />
         </div>
 
-        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-          <CardHeader className="text-center pb-4">
-            <div className="flex justify-center mb-4">
-              {steps[currentStep].icon}
+        <CardContent className="p-0">
+          {/* Header */}
+          <div className="flex justify-between items-center p-6 pb-0">
+            <div className="text-sm text-gray-500">
+              {currentScreen + 1} of {welcomeScreens.length}
             </div>
-            <CardTitle className="text-2xl font-bold text-gray-900">
-              {steps[currentStep].title}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-center space-y-6">
-            <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto">
-              {steps[currentStep].description}
-            </p>
+            <Button variant="ghost" size="sm" onClick={skipWelcome}>
+              Skip
+            </Button>
+          </div>
 
-            {/* Progress indicators */}
-            <div className="flex justify-center space-x-2">
-              {steps.map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-3 h-3 rounded-full transition-colors ${
-                    index === currentStep ? "bg-blue-600" : "bg-gray-300"
-                  }`}
-                />
-              ))}
+          {/* Main Content */}
+          <div className="p-6 text-center space-y-6">
+            {/* Icon */}
+            <div className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-r ${screen.gradient} flex items-center justify-center`}>
+              <Icon className="w-10 h-10 text-white" />
             </div>
 
-            {/* Navigation buttons */}
-            <div className="flex justify-between items-center pt-6">
+            {/* Text Content */}
+            <div className="space-y-3">
+              <h1 className="text-2xl font-bold text-gray-900">
+                {screen.title}
+              </h1>
+              <h2 className="text-lg font-medium text-gray-600">
+                {screen.subtitle}
+              </h2>
+              <p className="text-gray-500 leading-relaxed">
+                {screen.description}
+              </p>
+            </div>
+
+            {/* Illustration Placeholder */}
+            <div className="w-full h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
+              <Icon className="w-16 h-16 text-gray-400" />
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <div className="p-6 pt-0">
+            <div className="flex items-center justify-between">
               <Button
-                variant="outline"
-                onClick={prevStep}
-                disabled={currentStep === 0}
-                className="px-6"
+                variant="ghost"
+                onClick={prevScreen}
+                disabled={currentScreen === 0}
+                className="flex items-center space-x-1"
               >
-                Previous
+                <ChevronLeft className="w-4 h-4" />
+                <span>Back</span>
               </Button>
 
-              <span className="text-sm text-gray-500">
-                {currentStep + 1} of {steps.length}
-              </span>
+              {/* Dots Indicator */}
+              <div className="flex space-x-2">
+                {welcomeScreens.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentScreen(index)}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      index === currentScreen 
+                        ? 'bg-blue-500 w-6' 
+                        : 'bg-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
 
               <Button
-                onClick={nextStep}
-                className="px-6 bg-blue-600 hover:bg-blue-700"
+                onClick={nextScreen}
+                className="flex items-center space-x-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
               >
-                {currentStep === steps.length - 1 ? "Get Started" : "Next"}
-                <ArrowRight className="w-4 h-4 ml-2" />
+                <span>{currentScreen === welcomeScreens.length - 1 ? 'Get Started' : 'Next'}</span>
+                <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        <div className="text-center mt-8">
-          <Button
-            variant="link"
-            onClick={() => window.location.href = "/auth"}
-            className="text-blue-600 hover:text-blue-700"
-          >
-            Skip Introduction →
-          </Button>
-        </div>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

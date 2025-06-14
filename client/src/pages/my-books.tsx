@@ -11,6 +11,7 @@ import type { RentalWithDetails, Book } from "@shared/schema";
 import { BookOpen, Plus, Edit } from "lucide-react";
 import AddBookModal from "@/components/modals/add-book-modal";
 import BookDetailsModal from "@/components/modals/book-details-modal";
+import ExtendRequestModal from "@/components/modals/extend-request-modal";
 
 export default function MyBooks() {
   const { toast } = useToast();
@@ -19,6 +20,8 @@ export default function MyBooks() {
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [showBookDetails, setShowBookDetails] = useState(false);
   const [editingBook, setEditingBook] = useState<any>(null);
+  const [selectedRental, setSelectedRental] = useState<any>(null);
+  const [showExtendModal, setShowExtendModal] = useState(false);
 
   const { data: borrowedBooks, isLoading: loadingBorrowed } = useQuery({
     queryKey: ["/api/rentals/borrowed"],
@@ -154,11 +157,8 @@ export default function MyBooks() {
                   variant="outline" 
                   className="flex-1"
                   onClick={() => {
-                    // TODO: Open extend request modal
-                    toast({
-                      title: "Extend Request",
-                      description: "Extension request feature will be implemented",
-                    });
+                    setSelectedRental(rental);
+                    setShowExtendModal(true);
                   }}
                 >
                   Extend
@@ -427,6 +427,17 @@ export default function MyBooks() {
           }
         }}
         editBook={editingBook}
+      />
+
+      {/* Extend Request Modal */}
+      <ExtendRequestModal
+        isOpen={showExtendModal}
+        onClose={() => {
+          setShowExtendModal(false);
+          setSelectedRental(null);
+        }}
+        rental={selectedRental}
+        borrowerName={user?.name || "You"}
       />
     </div>
   );

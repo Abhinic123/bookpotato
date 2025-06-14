@@ -625,6 +625,132 @@ export class DatabaseStorage implements IStorage {
       totalEarnings: 0
     };
   }
+
+  async getTotalUsers(): Promise<number> {
+    try {
+      const result = await db.select({ count: sql<number>`count(*)` }).from(users);
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error('Error fetching total users:', error);
+      return 0;
+    }
+  }
+
+  async getTotalBooks(): Promise<number> {
+    try {
+      const result = await db.select({ count: sql<number>`count(*)` }).from(books);
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error('Error fetching total books:', error);
+      return 0;
+    }
+  }
+
+  async getTotalSocieties(): Promise<number> {
+    try {
+      const result = await db.select({ count: sql<number>`count(*)` }).from(societies);
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error('Error fetching total societies:', error);
+      return 0;
+    }
+  }
+
+  async getActiveRentalsCount(): Promise<number> {
+    try {
+      const result = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(bookRentals)
+        .where(eq(bookRentals.status, 'active'));
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error('Error fetching active rentals count:', error);
+      return 0;
+    }
+  }
+
+  async getSocietyRequests(): Promise<any[]> {
+    try {
+      const requests = await db.select().from(societyRequests).orderBy(desc(societyRequests.createdAt));
+      return requests;
+    } catch (error) {
+      console.error('Error fetching society requests:', error);
+      return [];
+    }
+  }
+
+  async reviewSocietyRequest(requestId: number, approved: boolean, reason?: string): Promise<void> {
+    try {
+      await db
+        .update(societyRequests)
+        .set({ 
+          status: approved ? 'approved' : 'rejected',
+          reviewReason: reason,
+          reviewedAt: new Date()
+        })
+        .where(eq(societyRequests.id, requestId));
+
+      if (approved) {
+        const [request] = await db.select().from(societyRequests).where(eq(societyRequests.id, requestId));
+        if (request) {
+          await this.createSociety({
+            name: request.name,
+            description: request.description,
+            city: request.city,
+            apartmentCount: request.apartmentCount,
+            location: request.location,
+            createdBy: request.requestedBy
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error reviewing society request:', error);
+      throw error;
+    }
+  }
+
+  async createReferralReward(data: any): Promise<any> {
+    try {
+      const [reward] = await db
+        .insert(referralRewards)
+        .values({
+          ...data,
+          createdAt: new Date()
+        })
+        .returning();
+      return reward;
+    } catch (error) {
+      console.error('Error creating referral reward:', error);
+      throw error;
+    }
+  }
+
+  async getSocietiesByLocation(city: string): Promise<any[]> {
+    try {
+      const societies = await db.select().from(societies).where(eq(societies.city, city));
+      return societies;
+    } catch (error) {
+      console.error('Error fetching societies by location:', error);
+      return [];
+    }
+  }
+
+  async createSocietyRequest(data: any): Promise<any> {
+    try {
+      const [request] = await db
+        .insert(societyRequests)
+        .values({
+          ...data,
+          status: 'pending',
+          createdAt: new Date()
+        })
+        .returning();
+      return request;
+    } catch (error) {
+      console.error('Error creating society request:', error);
+      throw error;
+    }
+  }
 }
 
 export class MemStorage implements IStorage {

@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import NotFound from "@/pages/not-found";
 import Auth from "@/pages/auth";
 import Welcome from "@/pages/welcome";
+import AutofillSuggestions from "@/pages/autofill-suggestions";
 import EnhancedAuth from "@/pages/enhanced-auth";
 import Home from "@/pages/home";
 import BrowseWorking from "@/pages/browse-working";
