@@ -537,7 +537,8 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
           {/* Help Text */}
           <div className="text-xs text-gray-500 text-center space-y-1">
             <p>Manual entry is most reliable - ISBN format: 9780140449136</p>
-            <p>Camera scanning works best with good lighting and steady hands</p>
+            <p>For camera: tap video or use "Focus Camera" if image is blurry</p>
+            <p>Position barcode clearly within the frame for best results</p>
           </div>
         </div>
       </DialogContent>
