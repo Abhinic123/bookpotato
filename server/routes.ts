@@ -547,33 +547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Book return request
-  app.post("/api/rentals/:id/request-return", requireAuth, async (req, res) => {
-    try {
-      const rentalId = parseInt(req.params.id);
-      const rental = await storage.getRental(rentalId);
-      
-      if (!rental || rental.borrowerId !== req.session.userId!) {
-        return res.status(403).json({ message: "Unauthorized" });
-      }
-
-      // Create notification for lender
-      await storage.createNotification({
-        userId: rental.lenderId,
-        title: "Book Return Request",
-        message: `${rental.borrower.name} wants to return "${rental.book.title}". Please confirm if received.`,
-        type: "return_request",
-        data: { rentalId: rentalId }
-      });
-
-      res.json({ message: "Return request sent to book owner" });
-    } catch (error) {
-      console.error("Request return error:", error);
-      res.status(500).json({ message: "Failed to request return" });
-    }
-  });
-
-  // Request book return (by borrower)
+  // Book return request (by borrower)
   app.post("/api/rentals/:id/request-return", requireAuth, async (req, res) => {
     try {
       const rentalId = parseInt(req.params.id);
@@ -585,17 +559,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { notes } = req.body;
 
+      // Get borrower and lender details including phone numbers
+      const borrower = await storage.getUser(rental.borrowerId);
+      const lender = await storage.getUser(rental.lenderId);
+
+      if (!borrower || !lender) {
+        return res.status(400).json({ message: "User details not found" });
+      }
+
       // Update rental status to indicate return request
       await storage.updateRental(rentalId, {
         status: 'return_requested'
       });
 
-      // Notify lender
+      // Create comprehensive notification for lender with coordination details
       await storage.createNotification({
         userId: rental.lenderId,
-        title: "Return Request",
-        message: `${rental.borrower.name} has requested to return "${rental.book.title}"${notes ? `. Message: ${notes}` : ''}`,
-        type: "return_request"
+        title: "Book Return Request",
+        message: `${borrower.name} wants to return "${rental.book.title}". Please coordinate a meeting spot for the book return. Once you receive the book, confirm the return to complete the transaction.${notes ? ` Borrower's message: ${notes}` : ''}`,
+        type: "return_request",
+        data: JSON.stringify({
+          rentalId: rentalId,
+          borrowerName: borrower.name,
+          borrowerPhone: borrower.phone,
+          lenderPhone: lender.phone,
+          bookTitle: rental.book.title,
+          notes: notes || null
+        })
       });
 
       res.json({ message: "Return request sent successfully" });
@@ -629,27 +619,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lateFee = daysLate * dailyLateFee;
       }
 
+      // Calculate payments (fake payment processing)
+      const securityDepositAmount = parseFloat(rental.securityDeposit);
+      const lenderEarnings = parseFloat(rental.lenderAmount);
+      const totalRefund = Math.max(0, securityDepositAmount - lateFee);
+      
       // Update rental status and mark book as available
       await storage.updateRental(rentalId, {
         status: 'returned',
         actualReturnDate: new Date(),
-        lateFee: lateFee
+        paymentStatus: 'completed'
       });
 
       // Mark book as available
       await storage.updateBook(rental.bookId, { isAvailable: true });
 
-      // Notify borrower
+      // Notify borrower about return confirmation and payment details
       await storage.createNotification({
         userId: rental.borrowerId,
-        title: "Book Return Confirmed",
-        message: `Return of "${rental.book.title}" has been confirmed${lateFee > 0 ? `. Late fee: ₹${lateFee.toFixed(2)}` : ''}. Thank you!`,
-        type: "return_confirmed"
+        title: "Book Return Confirmed - Payment Processed",
+        message: `Return of "${rental.book.title}" confirmed! Security deposit: ₹${securityDepositAmount.toFixed(2)}${lateFee > 0 ? `, Late fee: ₹${lateFee.toFixed(2)}` : ''}, Refund: ₹${totalRefund.toFixed(2)} has been processed.`,
+        type: "return_confirmed",
+        data: JSON.stringify({
+          rentalId: rentalId,
+          securityDeposit: securityDepositAmount,
+          lateFee: lateFee,
+          refundAmount: totalRefund,
+          bookTitle: rental.book.title
+        })
+      });
+
+      // Notify borrower about lender payment (fake payment notification)
+      await storage.createNotification({
+        userId: rental.lenderId,
+        title: "Rental Payment Received",
+        message: `Payment of ₹${lenderEarnings.toFixed(2)} for "${rental.book.title}" rental has been processed to your account.`,
+        type: "payment_received",
+        data: JSON.stringify({
+          rentalId: rentalId,
+          amount: lenderEarnings,
+          bookTitle: rental.book.title
+        })
       });
 
       res.json({ 
-        message: "Book return confirmed successfully",
-        lateFee: lateFee 
+        message: "Book return confirmed and payments processed successfully",
+        securityDeposit: securityDepositAmount,
+        lateFee: lateFee,
+        refundAmount: totalRefund,
+        lenderEarnings: lenderEarnings
       });
     } catch (error) {
       console.error("Confirm return error:", error);

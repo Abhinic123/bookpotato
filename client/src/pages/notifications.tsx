@@ -16,6 +16,15 @@ interface ExtensionData {
   proposedEndDate: string;
 }
 
+interface ReturnRequestData {
+  rentalId: number;
+  borrowerName: string;
+  borrowerPhone: string;
+  lenderPhone: string;
+  bookTitle: string;
+  notes?: string;
+}
+
 export default function NotificationsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -66,6 +75,31 @@ export default function NotificationsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+    },
+  });
+
+  const confirmReturnMutation = useMutation({
+    mutationFn: async ({ rentalId }: { rentalId: number }) => {
+      const response = await apiRequest("POST", `/api/rentals/${rentalId}/confirm-return`, {});
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Return Confirmed",
+        description: "Book return has been confirmed and payments have been processed.",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/rentals/lent"] });
+      setProcessingId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to confirm return",
+        variant: "destructive",
+      });
+      setProcessingId(null);
     },
   });
 
