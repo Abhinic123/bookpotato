@@ -26,7 +26,7 @@ function AuthenticatedApp() {
     <AppLayout>
       <Switch>
         <Route path="/" component={Home} />
-        <Route path="/browse" component={BrowseWorking} />
+        <Route path="/browse" component={EnhancedBrowse} />
         <Route path="/my-books" component={MyBooks} />
         <Route path="/societies" component={Societies} />
         <Route path="/referrals" component={Referrals} />
