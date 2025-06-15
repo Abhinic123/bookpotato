@@ -818,8 +818,8 @@ export class DatabaseStorage implements IStorage {
 
   async getSocietiesByLocation(city: string): Promise<any[]> {
     try {
-      const societies = await db.select().from(societies).where(eq(societies.city, city));
-      return societies;
+      const societiesData = await db.select().from(societies).where(eq(societies.city, city));
+      return societiesData;
     } catch (error) {
       console.error('Error fetching societies by location:', error);
       return [];
