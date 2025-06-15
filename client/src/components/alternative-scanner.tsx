@@ -1,8 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Camera, Upload, Type, X, Loader2 } from "lucide-react";
+import { Camera, Upload, Type, X, Loader2, Video } from "lucide-react";
 
 interface AlternativeScannerProps {
   onScan: (barcode: string, bookData?: any) => void;
@@ -15,7 +15,12 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string>("");
+  const [showWebCamera, setShowWebCamera] = useState(false);
+  const [isCameraInitializing, setIsCameraInitializing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   // Function to fetch book information from ISBN
   const fetchBookInfo = async (isbn: string) => {
@@ -197,6 +202,145 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
     }
   };
 
+  // Start web camera for in-browser photo capture
+  const startWebCamera = useCallback(async () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+
+    setIsCameraInitializing(true);
+    setError(null);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1920, max: 1920 },
+          height: { ideal: 1080, max: 1080 }
+        }
+      });
+
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await new Promise<void>((resolve) => {
+          if (videoRef.current) {
+            videoRef.current.onloadedmetadata = () => {
+              setIsCameraInitializing(false);
+              setShowWebCamera(true);
+              resolve();
+            };
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Camera access failed:', error);
+      setError("Camera access denied. Please allow camera permissions or try manual entry.");
+      setIsCameraInitializing(false);
+    }
+  }, []);
+
+  // Stop web camera
+  const stopWebCamera = useCallback(() => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setShowWebCamera(false);
+  }, []);
+
+  // Capture photo from web camera
+  const capturePhoto = useCallback(async () => {
+    if (!videoRef.current || !canvasRef.current || !streamRef.current) {
+      setError("Camera not ready. Please try again.");
+      return;
+    }
+
+    setIsProcessing(true);
+    setError(null);
+    setUploadStatus("Capturing image...");
+
+    try {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+
+      if (!context) {
+        throw new Error('Could not get canvas context');
+      }
+
+      // Set canvas size and capture frame
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Convert to data URL for OCR processing
+      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+      
+      setUploadStatus("Starting text recognition...");
+      
+      // Process with OCR
+      const Tesseract = await import('tesseract.js');
+      
+      const { data: { text } } = await Tesseract.recognize(imageDataUrl, 'eng', {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            const progress = Math.round(m.progress * 100);
+            setUploadStatus(`Reading text: ${progress}%`);
+          }
+        }
+      });
+
+      console.log('OCR detected text from camera:', text);
+
+      // Extract ISBN patterns
+      const isbnPatterns = [
+        /ISBN[-:\s]*(\d{3}[-\s]?\d{1}[-\s]?\d{3}[-\s]?\d{5}[-\s]?\d{1})/gi,
+        /ISBN[-:\s]*(\d{1}[-\s]?\d{3}[-\s]?\d{5}[-\s]?\d{1})/gi,
+        /ISBN[-:\s]*(\d{13})/gi,
+        /ISBN[-:\s]*(\d{10})/gi,
+        /(\d{13})/g,
+        /(\d{10})/g,
+      ];
+
+      let detectedIsbn = null;
+
+      for (const pattern of isbnPatterns) {
+        const matches = text.match(pattern);
+        if (matches) {
+          for (const match of matches) {
+            const cleanIsbn = match.replace(/[^\d]/g, '');
+            if (cleanIsbn.length === 10 || cleanIsbn.length === 13) {
+              detectedIsbn = cleanIsbn;
+              break;
+            }
+          }
+          if (detectedIsbn) break;
+        }
+      }
+
+      if (detectedIsbn) {
+        console.log('Found ISBN from camera:', detectedIsbn);
+        setUploadStatus("Fetching book information...");
+        const bookData = await fetchBookInfo(detectedIsbn);
+        setUploadStatus("Book found! Adding to library...");
+        onScan(detectedIsbn, bookData);
+        handleClose();
+      } else {
+        setError("No ISBN found in the image. Please try positioning the book's ISBN clearly in view.");
+        setIsProcessing(false);
+        setUploadStatus("");
+      }
+
+    } catch (error) {
+      console.error('Photo capture failed:', error);
+      setError("Failed to capture and process photo. Please try again.");
+      setIsProcessing(false);
+      setUploadStatus("");
+    }
+  }, [fetchBookInfo, onScan]);
+
   const triggerPhotoUpload = () => {
     if (fileInputRef.current) {
       console.log('Triggering file input click');
@@ -218,6 +362,8 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    // Stop camera if running
+    stopWebCamera();
     onClose();
   };
 
@@ -265,11 +411,85 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
             </div>
           </div>
 
-          {/* Photo Upload */}
+          {/* Web Camera */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium flex items-center gap-2">
+              <Video className="w-4 h-4" />
+              Camera Scanner (Recommended)
+            </label>
+            
+            {!showWebCamera ? (
+              <Button 
+                onClick={startWebCamera}
+                disabled={isProcessing || isCameraInitializing}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {isCameraInitializing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Starting Camera...
+                  </>
+                ) : (
+                  <>
+                    <Video className="w-4 h-4 mr-2" />
+                    Start Camera
+                  </>
+                )}
+              </Button>
+            ) : (
+              <div className="space-y-3">
+                {/* Camera Video Feed */}
+                <div className="relative bg-black rounded-lg overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-64 object-cover"
+                  />
+                  <div className="absolute inset-0 border-2 border-white/20 rounded-lg pointer-events-none">
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-48 h-24 border-2 border-red-500 rounded bg-red-500/10">
+                      <div className="text-white text-xs text-center mt-1">Position ISBN here</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Camera Controls */}
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={capturePhoto}
+                    disabled={isProcessing}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="w-4 h-4 mr-2" />
+                        Capture
+                      </>
+                    )}
+                  </Button>
+                  <Button 
+                    onClick={stopWebCamera}
+                    disabled={isProcessing}
+                    variant="outline"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Photo Upload Fallback */}
           <div className="space-y-2">
             <label className="text-sm font-medium flex items-center gap-2">
               <Upload className="w-4 h-4" />
-              Take Photo or Upload Image
+              Upload from Gallery
             </label>
             <Button 
               onClick={triggerPhotoUpload}
@@ -284,8 +504,8 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
                 </>
               ) : (
                 <>
-                  <Camera className="w-4 h-4 mr-2" />
-                  Take Photo / Upload Image
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload Photo
                 </>
               )}
             </Button>
@@ -303,15 +523,17 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
               className="hidden"
               style={{ display: 'none' }}
             />
-            {uploadStatus && (
-              <div className="text-xs text-blue-600 text-center bg-blue-50 p-2 rounded">
-                {uploadStatus}
-              </div>
-            )}
-            <div className="text-xs text-gray-500 text-center">
-              After taking photo, wait for processing to complete
-            </div>
           </div>
+
+          {/* Hidden canvas for image processing */}
+          <canvas ref={canvasRef} className="hidden" />
+
+          {/* Status Display */}
+          {uploadStatus && (
+            <div className="text-xs text-blue-600 text-center bg-blue-50 p-2 rounded">
+              {uploadStatus}
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (
