@@ -32,8 +32,6 @@ export default function ReturnConfirmationModal({
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState("");
 
-  if (!rental) return null;
-
   const confirmReturnMutation = useMutation({
     mutationFn: async () => {
       const endpoint = type === "confirm" 
@@ -73,6 +71,10 @@ export default function ReturnConfirmationModal({
   const handleSubmit = () => {
     confirmReturnMutation.mutate();
   };
+
+  if (!rental) {
+    return null;
+  }
 
   const isOverdue = new Date() > new Date(rental.endDate);
 
