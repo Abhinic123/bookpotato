@@ -40,107 +40,94 @@ const createSocietySchema = z.object({
 
 type CreateSocietyFormData = z.infer<typeof createSocietySchema>;
 
+interface MergeData {
+  formData: CreateSocietyFormData;
+  minApartments: number;
+  suggestedSocieties: SocietyWithStats[];
+  message: string;
+}
+
 interface MergeInterfaceProps {
   availableSocieties: SocietyWithStats[];
   onMergeRequest: (targetSocietyId: number, newSocietyName: string, newSocietyDescription?: string) => void;
-  isLoading: boolean;
 }
 
-function MergeInterface({ availableSocieties, onMergeRequest, isLoading }: MergeInterfaceProps) {
-  const [selectedSociety, setSelectedSociety] = useState<SocietyWithStats | null>(null);
+function MergeInterface({ availableSocieties, onMergeRequest }: MergeInterfaceProps) {
+  const [selectedSociety, setSelectedSociety] = useState<number | null>(null);
   const [newSocietyName, setNewSocietyName] = useState("");
   const [newSocietyDescription, setNewSocietyDescription] = useState("");
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
-        <h3 className="font-semibold mb-3">Select a Society to Merge With:</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Choose an existing society in your area. Both society name and location are required for the merge request.
-        </p>
-        
-        {availableSocieties.length > 0 ? (
-          <div className="space-y-3 max-h-60 overflow-y-auto">
-            {availableSocieties.map((society) => (
-              <Card 
-                key={society.id} 
-                className={`p-4 cursor-pointer transition-colors ${
-                  selectedSociety?.id === society.id ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-gray-50'
-                }`}
-                onClick={() => setSelectedSociety(society)}
-              >
+        <h3 className="text-lg font-semibold mb-4">Select Society to Merge With</h3>
+        <div className="space-y-3 max-h-60 overflow-y-auto">
+          {availableSocieties.map((society) => (
+            <Card 
+              key={society.id} 
+              className={`cursor-pointer transition-colors ${
+                selectedSociety === society.id ? 'ring-2 ring-primary' : ''
+              }`}
+              onClick={() => setSelectedSociety(society.id)}
+            >
+              <CardContent className="p-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">{society.name}</h4>
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                      <span className="flex items-center">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {society.city}
-                        {society.location && ` • ${society.location}`}
-                      </span>
-                      <span className="flex items-center">
-                        <Building2 className="w-3 h-3 mr-1" />
-                        {society.apartmentCount} apartments
-                      </span>
-                      <span className="flex items-center">
-                        <Users className="w-3 h-3 mr-1" />
-                        {society.memberCount} members
-                      </span>
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                      {getInitials(society.name)}
+                    </div>
+                    <div>
+                      <h4 className="font-medium">{society.name}</h4>
+                      <div className="flex items-center space-x-4 text-sm text-gray-600">
+                        <span className="flex items-center">
+                          <Users className="h-3 w-3 mr-1" />
+                          {society.memberCount} members
+                        </span>
+                        <span className="flex items-center">
+                          <Building2 className="h-3 w-3 mr-1" />
+                          {society.bookCount} books
+                        </span>
+                      </div>
+                      {society.description && (
+                        <p className="text-xs text-gray-500 mt-1">{society.description}</p>
+                      )}
                     </div>
                   </div>
-                  {selectedSociety?.id === society.id && (
-                    <Check className="w-5 h-5 text-primary" />
+                  {selectedSociety === society.id && (
+                    <Check className="h-5 w-5 text-primary" />
                   )}
                 </div>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card className="p-6 text-center">
-            <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">No societies available for merging.</p>
-            <p className="text-sm text-gray-500 mt-2">
-              Create a new society instead or wait for more societies to be created.
-            </p>
-          </Card>
-        )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {selectedSociety && (
-        <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-          <h4 className="font-medium">Merge Request Details</h4>
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Your Society Name *
-            </label>
+            <label className="block text-sm font-medium mb-2">Your Society Name</label>
             <Input
+              placeholder="Enter your society name"
               value={newSocietyName}
               onChange={(e) => setNewSocietyName(e.target.value)}
-              placeholder="Enter your society name"
-              className="w-full"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description (Optional)
-            </label>
+            <label className="block text-sm font-medium mb-2">Description (Optional)</label>
             <Textarea
+              placeholder="Describe your society..."
               value={newSocietyDescription}
               onChange={(e) => setNewSocietyDescription(e.target.value)}
-              placeholder="Describe your society and reason for merging"
-              className="w-full min-h-[80px]"
+              className="min-h-[80px]"
             />
           </div>
           <Button
-            onClick={() => {
-              if (selectedSociety && newSocietyName.trim()) {
-                onMergeRequest(selectedSociety.id, newSocietyName.trim(), newSocietyDescription.trim() || undefined);
-              }
-            }}
-            disabled={!newSocietyName.trim() || isLoading}
+            onClick={() => onMergeRequest(selectedSociety, newSocietyName, newSocietyDescription)}
+            disabled={!newSocietyName.trim()}
             className="w-full"
           >
-            {isLoading ? "Submitting Request..." : `Request Merge with ${selectedSociety.name}`}
+            Submit Merge Request
           </Button>
         </div>
       )}
@@ -151,7 +138,7 @@ function MergeInterface({ availableSocieties, onMergeRequest, isLoading }: Merge
 export default function Societies() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showMergeOptions, setShowMergeOptions] = useState(false);
-  const [mergeData, setMergeData] = useState<any>(null);
+  const [mergeData, setMergeData] = useState<MergeData | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -177,52 +164,35 @@ export default function Societies() {
   const createMutation = useMutation({
     mutationFn: async (data: CreateSocietyFormData) => {
       const response = await apiRequest("POST", "/api/societies", data);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (errorData.requiresMerge) {
-          // Store merge data and show merge options
-          setMergeData({
-            formData: data,
-            minApartments: errorData.minApartments,
-            suggestedSocieties: errorData.suggestedSocieties,
-            message: errorData.message
-          });
-          setShowMergeOptions(true);
-          setShowCreateModal(false);
-          throw new Error("MERGE_REQUIRED");
-        }
-        throw new Error(errorData.message || "Failed to create society");
-      }
-      
       return await response.json();
     },
-    onSuccess: (data) => {
-      if (data.status === "pending") {
-        toast({
-          title: "Request Submitted",
-          description: "Your society creation request has been submitted for admin approval.",
-        });
-      } else {
-        toast({
-          title: "Success", 
-          description: "Society created successfully!",
-        });
-      }
+    onSuccess: () => {
+      toast({
+        title: "Request Submitted",
+        description: "Your society creation request has been submitted for admin approval.",
+      });
       setShowCreateModal(false);
       form.reset();
       queryClient.invalidateQueries({ queryKey: ["/api/societies"] });
     },
     onError: (error: any) => {
-      if (error.message === "MERGE_REQUIRED") {
-        // Don't show error toast for merge requirement
-        return;
+      if (error.message && error.message.includes("minimum apartment requirement")) {
+        const errorData = JSON.parse(error.message.split(": ")[1]);
+        setMergeData({
+          formData: form.getValues(),
+          minApartments: errorData.minApartments,
+          suggestedSocieties: errorData.suggestedSocieties || [],
+          message: errorData.message
+        });
+        setShowCreateModal(false);
+        setShowMergeOptions(true);
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create society",
+          variant: "destructive",
+        });
       }
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create society",
-        variant: "destructive",
-      });
     },
   });
 
@@ -232,17 +202,20 @@ export default function Societies() {
       newSocietyName: string;
       newSocietyDescription?: string;
     }) => {
-      const response = await apiRequest("POST", "/api/societies/merge", {
+      const response = await apiRequest("POST", "/api/societies/merge-request", {
         targetSocietyId,
         newSocietyName,
-        newSocietyDescription
+        newSocietyDescription,
+        apartmentCount: mergeData?.formData.apartmentCount || 0,
+        city: mergeData?.formData.city || "",
+        location: mergeData?.formData.location || ""
       });
       return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
         title: "Merge Request Submitted",
-        description: `Your request to merge with ${data.targetSociety.name} has been submitted for admin approval.`,
+        description: "Your merge request has been submitted for admin approval.",
       });
       setShowMergeOptions(false);
       setMergeData(null);
@@ -349,10 +322,9 @@ export default function Societies() {
                   });
                   setShowMergeOptions(true);
                 }}
-                className="w-full"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Merge with Existing Society
+                Merge with Existing
               </Button>
             </div>
           </CardContent>
@@ -362,7 +334,7 @@ export default function Societies() {
 
     return (
       <div className="space-y-3">
-        {(mySocieties as SocietyWithStats[])?.map((society: SocietyWithStats) => (
+        {(mySocieties as any[])?.map((society: any) => (
           <Card key={society.id}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -383,28 +355,21 @@ export default function Societies() {
                         <Building2 className="h-3 w-3 mr-1" />
                         {society.bookCount} books
                       </span>
+                      <span className="flex items-center">
+                        <Hash className="h-3 w-3 mr-1" />
+                        {society.code}
+                      </span>
                     </div>
-                    {society.description && (
-                      <p className="text-xs text-text-secondary mt-1">
-                        {society.description}
-                      </p>
-                    )}
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant="secondary">
-                    <Hash className="h-3 w-3 mr-1" />
-                    {society.code}
-                  </Badge>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="text-red-600 border-red-200 hover:bg-red-50"
-                    onClick={() => handleUnjoinSociety(society.id)}
-                  >
-                    Unjoin
-                  </Button>
-                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleUnjoinSociety(society.id)}
+                  className="text-text-secondary hover:text-destructive"
+                >
+                  Leave
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -428,7 +393,7 @@ export default function Societies() {
                       <div className="h-3 bg-gray-200 rounded w-24"></div>
                     </div>
                   </div>
-                  <div className="h-8 bg-gray-200 rounded w-16"></div>
+                  <div className="h-6 bg-gray-200 rounded w-16"></div>
                 </div>
               </CardContent>
             </Card>
@@ -441,11 +406,11 @@ export default function Societies() {
       return (
         <Card>
           <CardContent className="pt-6 text-center">
-            <Building2 className="h-12 w-12 text-text-secondary mx-auto mb-4" />
+            <Users className="h-12 w-12 text-text-secondary mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-text-primary mb-2">
-              No Societies Available
+              No Available Societies
             </h3>
-            <p className="text-sm text-text-secondary">
+            <p className="text-sm text-text-secondary mb-4">
               All societies are full or none exist yet. Create a new society to get started!
             </p>
           </CardContent>
@@ -532,153 +497,151 @@ export default function Societies() {
       </Tabs>
 
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Society</DialogTitle>
-            </DialogHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onCreateSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Society Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter society name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>City</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter city" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="apartmentCount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Number of Apartments</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="Enter apartment count" 
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location (Optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter specific location" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description (Optional)</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Describe your society..." 
-                          className="min-h-[80px]"
-                          {...field} 
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" disabled={createMutation.isPending} className="w-full">
-                  {createMutation.isPending ? "Creating..." : "Create Society"}
-                </Button>
-              </form>
-            </Form>
-          </DialogContent>
-        </Dialog>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Society</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onCreateSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Society Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter society name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>City</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter city name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="apartmentCount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Number of Apartments</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="Enter apartment count"
+                        value={field.value || ""}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter specific location" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe your society..." 
+                        className="min-h-[80px]"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={createMutation.isPending} className="w-full">
+                {createMutation.isPending ? "Creating..." : "Create Society"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
-        {/* Merge Options Dialog */}
-        <Dialog open={showMergeOptions} onOpenChange={setShowMergeOptions}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-                Minimum Apartment Requirement Not Met
-              </DialogTitle>
-            </DialogHeader>
-            
-            {mergeData && (
-              <div className="space-y-6">
-                <Alert>
-                  <AlertTriangle className="w-4 h-4" />
-                  <AlertDescription>
-                    {mergeData.message}
-                  </AlertDescription>
-                </Alert>
+      {/* Merge Options Dialog */}
+      <Dialog open={showMergeOptions} onOpenChange={setShowMergeOptions}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              Minimum Apartment Requirement Not Met
+            </DialogTitle>
+          </DialogHeader>
+          
+          {mergeData && (
+            <div className="space-y-6">
+              <Alert>
+                <AlertTriangle className="w-4 h-4" />
+                <AlertDescription>
+                  {mergeData.message}
+                </AlertDescription>
+              </Alert>
 
-                <MergeInterface 
-                  availableSocieties={availableSocieties as SocietyWithStats[] || []}
-                  onMergeRequest={(targetSocietyId: number, newSocietyName: string, newSocietyDescription?: string) => {
-                    mergeMutation.mutate({
-                      targetSocietyId,
-                      newSocietyName,
-                      newSocietyDescription
-                    });
+              <MergeInterface 
+                availableSocieties={availableSocieties as SocietyWithStats[] || []}
+                onMergeRequest={(targetSocietyId: number, newSocietyName: string, newSocietyDescription?: string) => {
+                  mergeMutation.mutate({
+                    targetSocietyId,
+                    newSocietyName,
+                    newSocietyDescription
+                  });
+                }}
+              />
+
+              <div className="flex gap-4 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowMergeOptions(false);
+                    setMergeData(null);
+                    setShowCreateModal(true);
                   }}
-                  isLoading={mergeMutation.isPending}
-                />
-
-                <div className="flex gap-3 pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowMergeOptions(false);
-                      setMergeData(null);
-                      setShowCreateModal(true);
-                    }}
-                    className="flex-1"
-                  >
-                    Modify Society Details
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setShowMergeOptions(false);
-                      setMergeData(null);
-                    }}
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                </div>
+                  className="flex-1"
+                >
+                  Modify Society Details
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowMergeOptions(false);
+                    setMergeData(null);
+                  }}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
               </div>
-            )}
-          </DialogContent>
-        </Dialog>
-      </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
