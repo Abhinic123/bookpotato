@@ -690,6 +690,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notification endpoints
+  app.post("/api/notifications/:id/respond-extension", requireAuth, async (req, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      const { approved } = req.body;
+      
+      // Get the notification and parse extension data
+      const notifications = await storage.getNotificationsByUser(req.session.userId!);
+      const notification = notifications.find(n => n.id === notificationId);
+      
+      if (!notification || notification.type !== "extension_request") {
+        return res.status(404).json({ message: "Extension request not found" });
+      }
+      
+      const extensionData = JSON.parse(notification.data || "{}");
+      const rental = await storage.getRental(extensionData.rentalId);
+      
+      if (!rental || rental.lenderId !== req.session.userId!) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+      
+      if (approved) {
+        // Approve extension - update rental end date
+        const newEndDate = new Date(extensionData.proposedEndDate);
+        await storage.updateRental(extensionData.rentalId, {
+          endDate: newEndDate
+        });
+        
+        // Create notification for borrower
+        await storage.createNotification({
+          userId: rental.borrowerId,
+          title: "Extension Approved",
+          message: `Your extension request for "${rental.book.title}" has been approved. New return date: ${newEndDate.toLocaleDateString()}`,
+          type: "extension_approved",
+          data: JSON.stringify({
+            rentalId: extensionData.rentalId,
+            newEndDate: newEndDate.toISOString()
+          })
+        });
+      } else {
+        // Decline extension
+        await storage.createNotification({
+          userId: rental.borrowerId,
+          title: "Extension Declined",
+          message: `Your extension request for "${rental.book.title}" has been declined. Please return the book by the original due date: ${new Date(rental.endDate).toLocaleDateString()}`,
+          type: "extension_declined",
+          data: JSON.stringify({
+            rentalId: extensionData.rentalId
+          })
+        });
+      }
+      
+      // Mark the original notification as read
+      await storage.markNotificationAsRead(notificationId);
+      
+      res.json({ message: approved ? "Extension approved" : "Extension declined" });
+    } catch (error) {
+      console.error("Respond to extension error:", error);
+      res.status(500).json({ message: "Failed to respond to extension request" });
+    }
+  });
+
+  app.post("/api/notifications/:id/mark-read", requireAuth, async (req, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      const success = await storage.markNotificationAsRead(notificationId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      res.json({ message: "Notification marked as read" });
+    } catch (error) {
+      console.error("Mark notification read error:", error);
+      res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
   // Admin routes
   app.get("/api/admin/stats", requireAuth, async (req, res) => {
     try {

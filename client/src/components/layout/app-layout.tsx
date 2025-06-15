@@ -83,14 +83,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <h1 className="text-lg font-semibold text-text-primary">BookShare</h1>
           </div>
           <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="sm" className="relative">
-              <Bell className="h-5 w-5 text-text-secondary" />
-              {unreadCount > 0 && (
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                  {unreadCount}
-                </Badge>
-              )}
-            </Button>
+            <Link href="/notifications">
+              <Button variant="ghost" size="sm" className="relative">
+                <Bell className="h-5 w-5 text-text-secondary" />
+                {unreadCount > 0 && (
+                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                    {unreadCount}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-0">
