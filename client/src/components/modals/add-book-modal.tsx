@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Camera, X } from "lucide-react";
-import ManualBarcodeScanner from "@/components/manual-barcode-scanner";
+import AlternativeScanner from "@/components/alternative-scanner";
 import {
   Dialog,
   DialogContent,
@@ -430,7 +430,7 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
           </div>
         )}
         
-        <ManualBarcodeScanner
+        <AlternativeScanner
           isOpen={scanMode}
           onScan={handleBarcodeScanned}
           onClose={() => setScanMode(false)}
