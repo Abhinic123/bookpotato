@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { X, Camera, Loader2, AlertCircle, Type, BookOpen } from "lucide-react";
+import { X, Camera, Loader2, AlertCircle, Type, BookOpen, FileText } from "lucide-react";
 import { BrowserMultiFormatReader } from "@zxing/library";
+import Tesseract from 'tesseract.js';
 
 interface ManualBarcodeScannerProps {
   onScan: (barcode: string, bookData?: any) => void;
@@ -25,6 +26,7 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
   const [isLoadingBookInfo, setIsLoadingBookInfo] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [isFocusing, setIsFocusing] = useState(false);
+  const [isOcrProcessing, setIsOcrProcessing] = useState(false);
 
   // Function to fetch book information from ISBN
   const fetchBookInfo = async (isbn: string) => {
@@ -192,6 +194,7 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
     setError(null);
     setShowCamera(false);
     setIsFocusing(false);
+    setIsOcrProcessing(false);
     onClose();
   };
 
@@ -213,6 +216,100 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
     } catch (error) {
       console.log('Camera restart failed:', error);
       setIsFocusing(false);
+    }
+  };
+
+  // OCR-based ISBN text recognition from camera feed
+  const triggerOcrScan = async () => {
+    if (isOcrProcessing) return;
+    
+    if (!videoRef.current || !canvasRef.current) {
+      setError("Camera not ready. Please try again or use manual input.");
+      return;
+    }
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    
+    if (!context || video.readyState !== video.HAVE_ENOUGH_DATA) {
+      setError("Camera feed not ready. Please try again or use manual input.");
+      return;
+    }
+    
+    setIsOcrProcessing(true);
+    setError(null);
+    
+    try {
+      // Capture high-resolution frame for OCR
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Convert canvas to image data for OCR
+      const imageDataUrl = canvas.toDataURL('image/png');
+      
+      console.log('Starting OCR text recognition...');
+      
+      // Use Tesseract OCR to read text from the image
+      const { data: { text } } = await Tesseract.recognize(imageDataUrl, 'eng', {
+        logger: m => {
+          if (m.status === 'recognizing text') {
+            console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+          }
+        }
+      });
+      
+      console.log('OCR detected text:', text);
+      
+      // Extract ISBN patterns from the recognized text
+      const isbnPatterns = [
+        /ISBN[-\s]*:?\s*(\d{13})/gi,  // ISBN: 1234567890123
+        /ISBN[-\s]*:?\s*(\d{10})/gi,  // ISBN: 1234567890
+        /(\d{13})/g,                  // Any 13-digit number
+        /(\d{10})/g,                  // Any 10-digit number
+        /(\d{3}[-\s]?\d{1}[-\s]?\d{3}[-\s]?\d{5}[-\s]?\d{1})/g, // ISBN-13 pattern
+        /(\d{1}[-\s]?\d{3}[-\s]?\d{5}[-\s]?\d{1})/g  // ISBN-10 pattern
+      ];
+      
+      let detectedIsbn = null;
+      
+      for (const pattern of isbnPatterns) {
+        const matches = text.match(pattern);
+        if (matches) {
+          for (const match of matches) {
+            // Clean the match (remove non-digits)
+            const cleanIsbn = match.replace(/[^\d]/g, '');
+            
+            // Validate ISBN length
+            if (cleanIsbn.length === 10 || cleanIsbn.length === 13) {
+              console.log('Found potential ISBN:', cleanIsbn);
+              detectedIsbn = cleanIsbn;
+              break;
+            }
+          }
+          if (detectedIsbn) break;
+        }
+      }
+      
+      if (detectedIsbn) {
+        console.log('OCR detected ISBN:', detectedIsbn);
+        
+        // Fetch book info and pass to callback
+        const bookData = await fetchBookInfo(detectedIsbn);
+        onScan(detectedIsbn, bookData);
+        handleClose();
+        return;
+      }
+      
+      // If no ISBN found, show helpful error
+      setError("No ISBN number found in the image. Try positioning the book's ISBN clearly in view.");
+      setIsOcrProcessing(false);
+      
+    } catch (error) {
+      console.error('OCR scanning failed:', error);
+      setError("Text recognition failed. Please try again or use manual input.");
+      setIsOcrProcessing(false);
     }
   };
 
@@ -549,24 +646,44 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
 
               {/* Camera Controls */}
               <div className="space-y-2">
-                <Button 
-                  onClick={triggerCameraScan} 
-                  className="w-full"
-                  disabled={isProcessing || !isScanning}
-                  size="lg"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Scanning...
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="w-4 h-4 mr-2" />
-                      Scan Barcode Now
-                    </>
-                  )}
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    onClick={triggerCameraScan} 
+                    className="w-full"
+                    disabled={isProcessing || !isScanning}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Barcode...
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="w-4 h-4 mr-2" />
+                        Scan Barcode
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button 
+                    onClick={triggerOcrScan} 
+                    className="w-full"
+                    disabled={isOcrProcessing || !isScanning}
+                    variant="outline"
+                  >
+                    {isOcrProcessing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Reading...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-4 h-4 mr-2" />
+                        Read ISBN Text
+                      </>
+                    )}
+                  </Button>
+                </div>
                 
                 <div className="grid grid-cols-3 gap-2">
                   <Button 
@@ -609,8 +726,8 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
           {/* Help Text */}
           <div className="text-xs text-gray-500 text-center space-y-1">
             <p>Manual entry is most reliable - ISBN format: 9780140449136</p>
-            <p>Camera tips: Tap video or use Focus button if blurry • Use Restart if camera seems frozen</p>
-            <p>Hold steady and position barcode clearly within the dashed frame</p>
+            <p>Camera: "Scan Barcode" reads barcode patterns • "Read ISBN Text" reads printed ISBN numbers</p>
+            <p>Position ISBN clearly in view and hold steady for best results</p>
           </div>
         </div>
       </DialogContent>
