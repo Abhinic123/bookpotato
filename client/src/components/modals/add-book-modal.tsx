@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Camera, X } from "lucide-react";
-import WorkingBarcodeScanner from "@/components/working-barcode-scanner";
+import EnhancedBarcodeScanner from "@/components/enhanced-barcode-scanner";
 import {
   Dialog,
   DialogContent,
@@ -133,32 +133,27 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
     addBookMutation.mutate(data);
   };
 
-  const handleBarcodeScanned = async (barcode: string) => {
+  const handleBarcodeScanned = async (barcode: string, bookData?: any) => {
     console.log("Barcode scanned:", barcode);
     
     try {
-      // Show loading toast
-      toast({
-        title: "Fetching book details...",
-        description: "Please wait while we find information about this book.",
-      });
-
-      // Fetch book details from Open Library
-      const response = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${barcode}&format=json&jscmd=data`);
-      const data = await response.json();
-      
-      const bookData = data[`ISBN:${barcode}`];
       if (bookData) {
+        // Use book data provided by enhanced scanner
         form.setValue("isbn", barcode);
         form.setValue("title", bookData.title || "");
-        form.setValue("author", bookData.authors?.[0]?.name || "");
+        form.setValue("author", bookData.author || "");
+        form.setValue("description", bookData.description || "");
         
-        // Map to our available genres
+        // Map categories to our available genres
         let genre = "Fiction";
-        if (bookData.subjects && bookData.subjects.length > 0) {
-          const subject = bookData.subjects[0].name || bookData.subjects[0];
-          if (genres.includes(subject)) {
-            genre = subject;
+        if (bookData.categories && bookData.categories.length > 0) {
+          const category = bookData.categories[0];
+          const mappedGenre = genres.find(g => 
+            category.toLowerCase().includes(g.toLowerCase()) ||
+            g.toLowerCase().includes(category.toLowerCase())
+          );
+          if (mappedGenre) {
+            genre = mappedGenre;
           }
         }
         form.setValue("genre", genre);
@@ -435,7 +430,7 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
           </div>
         )}
         
-        <WorkingBarcodeScanner
+        <EnhancedBarcodeScanner
           isOpen={scanMode}
           onScan={handleBarcodeScanned}
           onClose={() => setScanMode(false)}
