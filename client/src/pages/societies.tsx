@@ -41,6 +41,114 @@ const createSocietySchema = z.object({
 
 type CreateSocietyFormData = z.infer<typeof createSocietySchema>;
 
+interface MergeInterfaceProps {
+  availableSocieties: SocietyWithStats[];
+  onMergeRequest: (targetSocietyId: number, newSocietyName: string, newSocietyDescription?: string) => void;
+  isLoading: boolean;
+}
+
+function MergeInterface({ availableSocieties, onMergeRequest, isLoading }: MergeInterfaceProps) {
+  const [selectedSociety, setSelectedSociety] = useState<SocietyWithStats | null>(null);
+  const [newSocietyName, setNewSocietyName] = useState("");
+  const [newSocietyDescription, setNewSocietyDescription] = useState("");
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-semibold mb-3">Select a Society to Merge With:</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Choose an existing society in your area. Both society name and location are required for the merge request.
+        </p>
+        
+        {availableSocieties.length > 0 ? (
+          <div className="space-y-3 max-h-60 overflow-y-auto">
+            {availableSocieties.map((society) => (
+              <Card 
+                key={society.id} 
+                className={`p-4 cursor-pointer transition-colors ${
+                  selectedSociety?.id === society.id ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-gray-50'
+                }`}
+                onClick={() => setSelectedSociety(society)}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium">{society.name}</h4>
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                      <span className="flex items-center">
+                        <MapPin className="w-3 h-3 mr-1" />
+                        {society.city}
+                        {society.location && ` • ${society.location}`}
+                      </span>
+                      <span className="flex items-center">
+                        <Building2 className="w-3 h-3 mr-1" />
+                        {society.apartmentCount} apartments
+                      </span>
+                      <span className="flex items-center">
+                        <Users className="w-3 h-3 mr-1" />
+                        {society.memberCount} members
+                      </span>
+                    </div>
+                  </div>
+                  {selectedSociety?.id === society.id && (
+                    <Check className="w-5 h-5 text-primary" />
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="p-6 text-center">
+            <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">No societies available for merging.</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Create a new society instead or wait for more societies to be created.
+            </p>
+          </Card>
+        )}
+      </div>
+
+      {selectedSociety && (
+        <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+          <h4 className="font-medium">Merge Request Details</h4>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Your Society Name *
+            </label>
+            <Input
+              value={newSocietyName}
+              onChange={(e) => setNewSocietyName(e.target.value)}
+              placeholder="Enter your society name"
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Description (Optional)
+            </label>
+            <Textarea
+              value={newSocietyDescription}
+              onChange={(e) => setNewSocietyDescription(e.target.value)}
+              placeholder="Describe your society and reason for merging"
+              className="w-full min-h-[80px]"
+            />
+          </div>
+          <Button
+            onClick={() => {
+              if (selectedSociety && newSocietyName.trim()) {
+                onMergeRequest(selectedSociety.id, newSocietyName.trim(), newSocietyDescription.trim() || undefined);
+              }
+            }}
+            disabled={!newSocietyName.trim() || isLoading}
+            className="w-full"
+          >
+            {isLoading ? "Submitting Request..." : `Request Merge with ${selectedSociety.name}`}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Societies() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showMergeOptions, setShowMergeOptions] = useState(false);
