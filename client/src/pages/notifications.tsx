@@ -108,11 +108,25 @@ export default function NotificationsPage() {
     respondToExtensionMutation.mutate({ notificationId: notification.id, approved });
   };
 
+  const handleConfirmReturn = (rentalId: number) => {
+    setProcessingId(rentalId);
+    confirmReturnMutation.mutate({ rentalId });
+  };
+
   const handleMarkAsRead = (notificationId: number) => {
     markAsReadMutation.mutate(notificationId);
   };
 
   const parseExtensionData = (dataString: string | null): ExtensionData | null => {
+    if (!dataString) return null;
+    try {
+      return JSON.parse(dataString);
+    } catch {
+      return null;
+    }
+  };
+
+  const parseReturnRequestData = (dataString: string | null): ReturnRequestData | null => {
     if (!dataString) return null;
     try {
       return JSON.parse(dataString);
@@ -129,6 +143,12 @@ export default function NotificationsPage() {
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case "extension_declined":
         return <XCircle className="w-5 h-5 text-red-500" />;
+      case "return_request":
+        return <BookOpen className="w-5 h-5 text-orange-500" />;
+      case "return_confirmed":
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case "payment_received":
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
       case "book_returned":
         return <BookOpen className="w-5 h-5 text-gray-500" />;
       default:
@@ -174,7 +194,9 @@ export default function NotificationsPage() {
           ) : (
             notifications.map((notification: Notification) => {
               const extensionData = parseExtensionData(notification.data);
+              const returnRequestData = parseReturnRequestData(notification.data);
               const isExtensionRequest = notification.type === "extension_request";
+              const isReturnRequest = notification.type === "return_request";
               const isProcessing = processingId === notification.id;
 
               return (
@@ -229,6 +251,68 @@ export default function NotificationsPage() {
                           <span className="text-gray-600 text-sm">Reason:</span>
                           <p className="text-gray-800 text-sm mt-1 italic">"{extensionData.reason}"</p>
                         </div>
+                      </div>
+                    )}
+
+                    {isReturnRequest && returnRequestData && (
+                      <div className="bg-orange-50 rounded-lg p-4 mb-4 border border-orange-200">
+                        <h4 className="font-medium text-gray-900 mb-3">Return Coordination Details</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
+                          <div className="flex items-center space-x-2">
+                            <BookOpen className="w-4 h-4 text-orange-500" />
+                            <span className="text-gray-600">Book:</span>
+                            <span className="font-medium">{returnRequestData.bookTitle}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-gray-600">Borrower:</span>
+                            <span className="font-medium">{returnRequestData.borrowerName}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white rounded border p-3 mb-4">
+                          <h5 className="font-medium text-gray-900 mb-2">Contact Information</h5>
+                          <div className="space-y-2 text-sm">
+                            <div>
+                              <span className="text-gray-600">Borrower's Phone:</span>
+                              <span className="font-mono ml-2 text-blue-600">{returnRequestData.borrowerPhone}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Your Phone:</span>
+                              <span className="font-mono ml-2 text-blue-600">{returnRequestData.lenderPhone}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {returnRequestData.notes && (
+                          <div className="mb-4">
+                            <span className="text-gray-600 text-sm">Borrower's message:</span>
+                            <p className="text-gray-800 text-sm mt-1 italic bg-white p-2 rounded border">"{returnRequestData.notes}"</p>
+                          </div>
+                        )}
+
+                        <div className="bg-yellow-50 border border-yellow-200 rounded p-3 mb-4 text-sm">
+                          <p className="text-yellow-800">
+                            <strong>Next Steps:</strong> Contact the borrower to arrange a meeting spot for the book return. 
+                            Once you receive the book back, click "Confirm Return" below to complete the transaction and process payments.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {isReturnRequest && !notification.isRead && returnRequestData && (
+                      <div className="flex justify-center">
+                        <Button
+                          onClick={() => handleConfirmReturn(returnRequestData.rentalId)}
+                          disabled={isProcessing}
+                          className="bg-green-600 hover:bg-green-700 px-6"
+                        >
+                          {isProcessing ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                          )}
+                          Confirm Book Received & Complete Return
+                        </Button>
                       </div>
                     )}
                     
