@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Camera, X } from "lucide-react";
-import AlternativeScanner from "@/components/alternative-scanner";
+import SimpleISBNScanner from "@/components/simple-isbn-scanner";
 import {
   Dialog,
   DialogContent,
@@ -430,7 +430,7 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
           </div>
         )}
         
-        <AlternativeScanner
+        <SimpleISBNScanner
           isOpen={scanMode}
           onScan={handleBarcodeScanned}
           onClose={() => setScanMode(false)}
