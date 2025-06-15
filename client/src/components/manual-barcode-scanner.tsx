@@ -24,6 +24,7 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
   const [bookInfo, setBookInfo] = useState<any>(null);
   const [isLoadingBookInfo, setIsLoadingBookInfo] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [isFocusing, setIsFocusing] = useState(false);
 
   // Function to fetch book information from ISBN
   const fetchBookInfo = async (isbn: string) => {
@@ -86,14 +87,16 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
       setError(null);
       setIsInitializing(true);
       
-      // Maximum resolution camera constraints for sharp image quality
+      // Camera constraints optimized for focus and clarity
       const constraints = {
         video: {
           facingMode: "environment",
-          width: { ideal: 3840, min: 1920 }, // Request 4K if available
-          height: { ideal: 2160, min: 1080 }, // Request 4K if available
-          frameRate: { ideal: 30 }, // Stable frame rate for better quality
-          aspectRatio: { ideal: 16/9 }
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          frameRate: { ideal: 30 },
+          aspectRatio: { ideal: 16/9 },
+          focusMode: "continuous",
+          focusDistance: { min: 0.1, ideal: 0.3, max: 1.0 }
         }
       };
 
@@ -106,8 +109,23 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
         await new Promise<void>((resolve, reject) => {
           if (!videoRef.current) return reject();
           
-          const handleLoadedMetadata = () => {
+          const handleLoadedMetadata = async () => {
             videoRef.current?.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            
+            // Set up camera focus settings for better clarity
+            const track = stream.getVideoTracks()[0];
+            if (track) {
+              try {
+                // Try to enable continuous autofocus
+                await track.applyConstraints({
+                  focusMode: 'continuous',
+                  focusDistance: 0.3
+                } as any);
+              } catch (error) {
+                console.log('Advanced focus settings not supported');
+              }
+            }
+            
             setIsInitializing(false);
             setIsScanning(true);
             resolve();
@@ -163,7 +181,27 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
     setBookInfo(null);
     setError(null);
     setShowCamera(false);
+    setIsFocusing(false);
     onClose();
+  };
+
+  // Tap to focus functionality - simplified approach
+  const handleVideoClick = async (event: React.MouseEvent<HTMLVideoElement>) => {
+    if (!streamRef.current || isFocusing) return;
+    
+    setIsFocusing(true);
+    
+    try {
+      const track = streamRef.current.getVideoTracks()[0];
+      if (track) {
+        // Try to trigger autofocus by restarting the camera constraints
+        await track.applyConstraints({} as any);
+      }
+    } catch (error) {
+      console.log('Focus adjustment failed:', error);
+    } finally {
+      setTimeout(() => setIsFocusing(false), 1000);
+    }
   };
 
   // Manual scan button for camera detection with enhanced image processing
@@ -397,7 +435,8 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-full block"
+                  onClick={handleVideoClick}
+                  className="w-full h-full block cursor-pointer"
                   style={{ 
                     objectFit: 'cover',
                     imageRendering: 'crisp-edges'
@@ -425,22 +464,29 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
                   </div>
                 )}
 
+                {/* Focus indicator */}
+                {isFocusing && (
+                  <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    <div className="w-16 h-16 border-2 border-yellow-400 rounded-full animate-pulse"></div>
+                  </div>
+                )}
+
                 {/* Scanning overlay for better visibility */}
                 {isScanning && (
                   <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-32 border-2 border-white border-dashed rounded-lg opacity-50"></div>
                     <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                      Position barcode within frame
+                      Position barcode within frame • Tap to focus
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Camera Controls */}
-              <div className="flex gap-2">
+              <div className="space-y-2">
                 <Button 
                   onClick={triggerCameraScan} 
-                  className="flex-1"
+                  className="w-full"
                   disabled={isProcessing || !isScanning}
                   size="lg"
                 >
@@ -456,12 +502,24 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
                     </>
                   )}
                 </Button>
-                <Button 
-                  onClick={() => setShowCamera(false)} 
-                  variant="outline"
-                >
-                  Hide Camera
-                </Button>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleVideoClick as any}
+                    variant="outline"
+                    className="flex-1"
+                    disabled={isFocusing}
+                  >
+                    {isFocusing ? "Focusing..." : "Focus Camera"}
+                  </Button>
+                  <Button 
+                    onClick={() => setShowCamera(false)} 
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Hide Camera
+                  </Button>
+                </div>
               </div>
             </div>
           )}
