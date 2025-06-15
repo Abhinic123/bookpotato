@@ -22,6 +22,8 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [scanAttempts, setScanAttempts] = useState(0);
+  const [lastScannedCode, setLastScannedCode] = useState<string>("");
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const stopCamera = useCallback(() => {
     if (intervalRef.current) {
@@ -41,6 +43,8 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
     setIsScanning(false);
     setIsInitializing(false);
     setScanAttempts(0);
+    setLastScannedCode("");
+    setIsProcessing(false);
   }, []);
 
   // Simplified pattern matching for common book barcodes
@@ -96,7 +100,7 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
   }, []);
 
   const captureAndAnalyze = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current) return;
+    if (!videoRef.current || !canvasRef.current || isProcessing) return;
     
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -117,14 +121,24 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
     // Try to detect barcode
     const detectedCode = detectBarcode(imageData);
     
-    if (detectedCode) {
-      console.log('Barcode detected:', detectedCode);
+    if (detectedCode && detectedCode !== lastScannedCode && !isProcessing) {
+      console.log('New barcode detected:', detectedCode);
+      setIsProcessing(true);
+      setLastScannedCode(detectedCode);
+      
+      // Stop scanning to prevent multiple scans
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      
+      // Call onScan and close
       onScan(detectedCode);
       return true;
     }
     
     return false;
-  }, [detectBarcode, onScan]);
+  }, [detectBarcode, onScan, lastScannedCode, isProcessing]);
 
   const startCamera = useCallback(async () => {
     try {
@@ -154,11 +168,11 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
             setIsInitializing(false);
             setIsScanning(true);
             
-            // Start scanning every 500ms
+            // Start scanning every 2 seconds to prevent rapid scanning
             intervalRef.current = setInterval(() => {
               setScanAttempts(prev => prev + 1);
               captureAndAnalyze();
-            }, 500);
+            }, 2000);
             
             resolve();
           };
@@ -209,8 +223,19 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
 
   // Quick scan button for testing
   const triggerQuickScan = () => {
+    if (isProcessing) return;
+    
+    setIsProcessing(true);
     const testCode = "9780140449136"; // Les Miserables ISBN
     console.log('Quick scan triggered:', testCode);
+    setLastScannedCode(testCode);
+    
+    // Stop any ongoing scanning
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
     onScan(testCode);
   };
 
@@ -279,8 +304,17 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
                     </div>
                     
                     <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-80 rounded-lg px-4 py-2 text-center">
-                      <p className="text-white text-sm font-medium">Scanning... {scanAttempts} attempts</p>
-                      <p className="text-green-300 text-xs mt-1">Hold barcode steady in frame</p>
+                      {isProcessing ? (
+                        <>
+                          <p className="text-green-400 text-sm font-medium">Barcode Found!</p>
+                          <p className="text-green-300 text-xs mt-1">Processing...</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-white text-sm font-medium">Scanning... {scanAttempts} attempts</p>
+                          <p className="text-green-300 text-xs mt-1">Hold barcode steady in frame</p>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
