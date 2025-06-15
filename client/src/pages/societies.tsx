@@ -70,21 +70,81 @@ export default function Societies() {
   const createMutation = useMutation({
     mutationFn: async (data: CreateSocietyFormData) => {
       const response = await apiRequest("POST", "/api/societies", data);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.requiresMerge) {
+          // Store merge data and show merge options
+          setMergeData({
+            formData: data,
+            minApartments: errorData.minApartments,
+            suggestedSocieties: errorData.suggestedSocieties,
+            message: errorData.message
+          });
+          setShowMergeOptions(true);
+          setShowCreateModal(false);
+          throw new Error("MERGE_REQUIRED");
+        }
+        throw new Error(errorData.message || "Failed to create society");
+      }
+      
       return await response.json();
     },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Society created successfully!",
-      });
+    onSuccess: (data) => {
+      if (data.status === "pending") {
+        toast({
+          title: "Request Submitted",
+          description: "Your society creation request has been submitted for admin approval.",
+        });
+      } else {
+        toast({
+          title: "Success", 
+          description: "Society created successfully!",
+        });
+      }
       setShowCreateModal(false);
       form.reset();
       queryClient.invalidateQueries({ queryKey: ["/api/societies"] });
     },
     onError: (error: any) => {
+      if (error.message === "MERGE_REQUIRED") {
+        // Don't show error toast for merge requirement
+        return;
+      }
       toast({
         title: "Error",
         description: error.message || "Failed to create society",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const mergeMutation = useMutation({
+    mutationFn: async ({ targetSocietyId, newSocietyName, newSocietyDescription }: {
+      targetSocietyId: number;
+      newSocietyName: string;
+      newSocietyDescription?: string;
+    }) => {
+      const response = await apiRequest("POST", "/api/societies/merge", {
+        targetSocietyId,
+        newSocietyName,
+        newSocietyDescription
+      });
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Merge Request Submitted",
+        description: `Your request to merge with ${data.targetSociety.name} has been submitted for admin approval.`,
+      });
+      setShowMergeOptions(false);
+      setMergeData(null);
+      form.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit merge request",
         variant: "destructive",
       });
     },
@@ -433,6 +493,95 @@ export default function Societies() {
                 </Button>
               </form>
             </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Merge Options Dialog */}
+        <Dialog open={showMergeOptions} onOpenChange={setShowMergeOptions}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                Minimum Apartment Requirement Not Met
+              </DialogTitle>
+            </DialogHeader>
+            
+            {mergeData && (
+              <div className="space-y-6">
+                <Alert>
+                  <AlertTriangle className="w-4 h-4" />
+                  <AlertDescription>
+                    {mergeData.message}
+                  </AlertDescription>
+                </Alert>
+
+                <div>
+                  <h3 className="font-semibold mb-3">Suggested Societies to Merge With:</h3>
+                  {mergeData.suggestedSocieties.length > 0 ? (
+                    <div className="space-y-3">
+                      {mergeData.suggestedSocieties.map((society: any) => (
+                        <Card key={society.id} className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-medium">{society.name}</h4>
+                              <p className="text-sm text-gray-600 mt-1">
+                                {society.location} • {society.apartmentCount} apartments • {society.memberCount} members
+                              </p>
+                            </div>
+                            <Button
+                              onClick={() => {
+                                mergeMutation.mutate({
+                                  targetSocietyId: society.id,
+                                  newSocietyName: mergeData.formData.name,
+                                  newSocietyDescription: mergeData.formData.description
+                                });
+                              }}
+                              disabled={mergeMutation.isPending}
+                              size="sm"
+                            >
+                              {mergeMutation.isPending ? "Requesting..." : "Request Merge"}
+                            </Button>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <Card className="p-6 text-center">
+                      <p className="text-gray-600">
+                        No societies found in your city ({mergeData.formData.city}) to merge with.
+                      </p>
+                      <p className="text-sm text-gray-500 mt-2">
+                        You can try creating a society in a different city or wait for more societies to be created in your area.
+                      </p>
+                    </Card>
+                  )}
+                </div>
+
+                <div className="flex gap-3 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowMergeOptions(false);
+                      setMergeData(null);
+                      setShowCreateModal(true);
+                    }}
+                    className="flex-1"
+                  >
+                    Modify Society Details
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowMergeOptions(false);
+                      setMergeData(null);
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
