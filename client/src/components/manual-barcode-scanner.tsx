@@ -86,13 +86,13 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
       setError(null);
       setIsInitializing(true);
       
-      // Enhanced camera constraints for better image quality
+      // Maximum resolution camera constraints for sharp image quality
       const constraints = {
         video: {
           facingMode: "environment",
-          width: { ideal: 1920, min: 1280 },
-          height: { ideal: 1080, min: 720 },
-          frameRate: { ideal: 60, min: 30 },
+          width: { ideal: 3840, min: 1920 }, // Request 4K if available
+          height: { ideal: 2160, min: 1080 }, // Request 4K if available
+          frameRate: { ideal: 30 }, // Stable frame rate for better quality
           aspectRatio: { ideal: 16/9 }
         }
       };
@@ -390,20 +390,17 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
             </Button>
           ) : (
             <div className="space-y-3">
-              {/* Camera View */}
-              <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
+              {/* Camera View - Optimized for Maximum Sharpness */}
+              <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9' }}>
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   muted
-                  className="w-full h-full object-cover"
+                  className="w-full h-full block"
                   style={{ 
-                    imageRendering: 'crisp-edges',
-                    filter: 'contrast(1.3) brightness(1.1) saturate(1.2)',
-                    transform: 'scale(1.0)',
-                    backfaceVisibility: 'hidden',
-                    WebkitBackfaceVisibility: 'hidden'
+                    objectFit: 'cover',
+                    imageRendering: 'crisp-edges'
                   }}
                 />
                 <canvas ref={canvasRef} className="hidden" />

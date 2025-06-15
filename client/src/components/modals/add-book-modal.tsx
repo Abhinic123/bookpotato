@@ -430,7 +430,7 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
           </div>
         )}
         
-        <EnhancedBarcodeScanner
+        <ManualBarcodeScanner
           isOpen={scanMode}
           onScan={handleBarcodeScanned}
           onClose={() => setScanMode(false)}
