@@ -528,6 +528,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Request book return (by borrower)
+  app.post("/api/rentals/:id/request-return", requireAuth, async (req, res) => {
+    try {
+      const rentalId = parseInt(req.params.id);
+      const rental = await storage.getRental(rentalId);
+      
+      if (!rental || rental.borrowerId !== req.session.userId!) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const { notes } = req.body;
+
+      // Update rental status to indicate return request
+      await storage.updateRental(rentalId, {
+        status: 'return_requested'
+      });
+
+      // Notify lender
+      await storage.createNotification({
+        userId: rental.lenderId,
+        title: "Return Request",
+        message: `${rental.borrower.name} has requested to return "${rental.book.title}"${notes ? `. Message: ${notes}` : ''}`,
+        type: "return_request"
+      });
+
+      res.json({ message: "Return request sent successfully" });
+    } catch (error) {
+      console.error("Request return error:", error);
+      res.status(500).json({ message: "Failed to request return" });
+    }
+  });
+
   // Confirm book return (by lender)
   app.post("/api/rentals/:id/confirm-return", requireAuth, async (req, res) => {
     try {
@@ -538,10 +570,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
+      const { notes } = req.body;
+
+      // Check if overdue and calculate late fees
+      const endDate = new Date(rental.endDate);
+      const currentDate = new Date();
+      const isOverdue = currentDate > endDate;
+      let lateFee = 0;
+
+      if (isOverdue) {
+        const daysLate = Math.ceil((currentDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
+        const dailyLateFee = (rental.book?.dailyFee || 10) * 0.5; // 50% of daily fee
+        lateFee = daysLate * dailyLateFee;
+      }
+
       // Update rental status and mark book as available
       await storage.updateRental(rentalId, {
         status: 'returned',
-        actualReturnDate: new Date()
+        actualReturnDate: new Date(),
+        lateFee: lateFee
       });
 
       // Mark book as available
@@ -551,14 +598,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createNotification({
         userId: rental.borrowerId,
         title: "Book Return Confirmed",
-        message: `Return of "${rental.book.title}" has been confirmed. Thank you!`,
+        message: `Return of "${rental.book.title}" has been confirmed${lateFee > 0 ? `. Late fee: ₹${lateFee.toFixed(2)}` : ''}. Thank you!`,
         type: "return_confirmed"
       });
 
-      res.json({ message: "Book return confirmed successfully" });
+      res.json({ 
+        message: "Book return confirmed successfully",
+        lateFee: lateFee 
+      });
     } catch (error) {
       console.error("Confirm return error:", error);
       res.status(500).json({ message: "Failed to confirm return" });
+    }
+  });
+
+  // Pay late fees
+  app.post("/api/rentals/:id/pay-late-fees", requireAuth, async (req, res) => {
+    try {
+      const rentalId = parseInt(req.params.id);
+      const rental = await storage.getRental(rentalId);
+      
+      if (!rental || rental.borrowerId !== req.session.userId!) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const { lateFeeAmount } = req.body;
+
+      // Update rental with late fee payment
+      await storage.updateRental(rentalId, {
+        lateFeePaid: true,
+        lateFeeAmount: lateFeeAmount
+      });
+
+      // Create notification for lender
+      await storage.createNotification({
+        userId: rental.lenderId,
+        title: "Late Fee Paid",
+        message: `${rental.borrower.name} has paid ₹${lateFeeAmount.toFixed(2)} in late fees for "${rental.book.title}"`,
+        type: "late_fee_paid"
+      });
+
+      res.json({ message: "Late fees paid successfully" });
+    } catch (error) {
+      console.error("Pay late fees error:", error);
+      res.status(500).json({ message: "Failed to process late fee payment" });
     }
   });
 
@@ -771,6 +854,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get user stats error:", error);
       res.status(500).json({ message: "Failed to fetch user stats" });
+    }
+  });
+
+  // Messaging endpoints
+  app.get("/api/messages/conversations", requireAuth, async (req, res) => {
+    try {
+      const conversations = await storage.getConversations(req.session.userId!);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Get conversations error:", error);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  app.get("/api/messages/:userId", requireAuth, async (req, res) => {
+    try {
+      const otherUserId = parseInt(req.params.userId);
+      const messages = await storage.getMessages(req.session.userId!, otherUserId);
+      res.json(messages);
+    } catch (error) {
+      console.error("Get messages error:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/messages", requireAuth, async (req, res) => {
+    try {
+      const { recipientId, content } = req.body;
+      const message = await storage.createMessage({
+        senderId: req.session.userId!,
+        recipientId,
+        content,
+        read: false
+      });
+      res.json(message);
+    } catch (error) {
+      console.error("Send message error:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.post("/api/messages/mark-read/:userId", requireAuth, async (req, res) => {
+    try {
+      const otherUserId = parseInt(req.params.userId);
+      await storage.markMessagesAsRead(req.session.userId!, otherUserId);
+      res.json({ message: "Messages marked as read" });
+    } catch (error) {
+      console.error("Mark messages read error:", error);
+      res.status(500).json({ message: "Failed to mark messages as read" });
     }
   });
 

@@ -12,6 +12,8 @@ import { BookOpen, Plus, Edit } from "lucide-react";
 import AddBookModal from "@/components/modals/add-book-modal";
 import BookDetailsModal from "@/components/modals/book-details-modal";
 import ExtendRequestModal from "@/components/modals/extend-request-modal";
+import LateFeeModal from "@/components/modals/late-fee-modal";
+import ReturnConfirmationModal from "@/components/modals/return-confirmation-modal";
 
 export default function MyBooks() {
   const { toast } = useToast();
@@ -22,6 +24,9 @@ export default function MyBooks() {
   const [editingBook, setEditingBook] = useState<any>(null);
   const [selectedRental, setSelectedRental] = useState<any>(null);
   const [showExtendModal, setShowExtendModal] = useState(false);
+  const [showLateFeeModal, setShowLateFeeModal] = useState(false);
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [returnModalType, setReturnModalType] = useState<"confirm" | "request">("request");
 
   const { data: borrowedBooks, isLoading: loadingBorrowed } = useQuery({
     queryKey: ["/api/rentals/borrowed"],
@@ -438,6 +443,27 @@ export default function MyBooks() {
         }}
         rental={selectedRental}
         borrowerName={user?.name || "You"}
+      />
+
+      {/* Late Fee Modal */}
+      <LateFeeModal
+        isOpen={showLateFeeModal}
+        onClose={() => {
+          setShowLateFeeModal(false);
+          setSelectedRental(null);
+        }}
+        rental={selectedRental}
+      />
+
+      {/* Return Confirmation Modal */}
+      <ReturnConfirmationModal
+        isOpen={showReturnModal}
+        onClose={() => {
+          setShowReturnModal(false);
+          setSelectedRental(null);
+        }}
+        rental={selectedRental}
+        type={returnModalType}
       />
     </div>
   );

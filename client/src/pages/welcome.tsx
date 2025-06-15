@@ -56,11 +56,7 @@ export default function Welcome() {
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    // Check if user has seen welcome screens before
-    const hasSeenWelcome = localStorage.getItem("hasSeenWelcome");
-    if (hasSeenWelcome) {
-      navigate("/");
-    }
+    // Don't redirect if already on welcome page - let user see welcome screens
   }, [navigate]);
 
   const nextScreen = () => {
@@ -79,11 +75,12 @@ export default function Welcome() {
 
   const completeWelcome = () => {
     localStorage.setItem("hasSeenWelcome", "true");
-    navigate("/");
+    navigate("/auth");
   };
 
   const skipWelcome = () => {
-    completeWelcome();
+    localStorage.setItem("hasSeenWelcome", "true");
+    navigate("/auth");
   };
 
   const screen = welcomeScreens[currentScreen];

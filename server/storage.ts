@@ -59,6 +59,12 @@ export interface IStorage {
   createReferralReward(data: any): Promise<any>;
   getSocietiesByLocation(city: string): Promise<any[]>;
   createSocietyRequest(data: any): Promise<any>;
+  
+  // Messaging
+  getConversations(userId: number): Promise<any[]>;
+  getMessages(userId1: number, userId2: number): Promise<any[]>;
+  createMessage(message: any): Promise<any>;
+  markMessagesAsRead(userId: number, otherUserId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -748,6 +754,49 @@ export class DatabaseStorage implements IStorage {
       return request;
     } catch (error) {
       console.error('Error creating society request:', error);
+      throw error;
+    }
+  }
+
+  async getConversations(userId: number): Promise<any[]> {
+    try {
+      // This would require a more complex query to get conversations with last message and unread counts
+      // For now, return empty array - would need proper implementation
+      return [];
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      return [];
+    }
+  }
+
+  async getMessages(userId1: number, userId2: number): Promise<any[]> {
+    try {
+      // This would require messages table and proper implementation
+      // For now, return empty array
+      return [];
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      return [];
+    }
+  }
+
+  async createMessage(messageData: any): Promise<any> {
+    try {
+      // This would require messages table implementation
+      // For now, return mock response
+      return { id: Date.now(), ...messageData, createdAt: new Date() };
+    } catch (error) {
+      console.error('Error creating message:', error);
+      throw error;
+    }
+  }
+
+  async markMessagesAsRead(userId: number, otherUserId: number): Promise<void> {
+    try {
+      // This would require messages table implementation
+      // For now, do nothing
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
       throw error;
     }
   }
