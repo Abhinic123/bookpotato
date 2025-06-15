@@ -24,6 +24,8 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
   const [bookInfo, setBookInfo] = useState<any>(null);
   const [isLoadingBookInfo, setIsLoadingBookInfo] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [autoScanEnabled, setAutoScanEnabled] = useState(false);
+  const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Function to fetch book information from ISBN
   const fetchBookInfo = async (isbn: string) => {
