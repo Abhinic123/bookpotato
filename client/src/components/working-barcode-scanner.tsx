@@ -47,55 +47,9 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
     setIsProcessing(false);
   }, []);
 
-  // Simplified pattern matching for common book barcodes
+  // Disabled automatic detection to prevent rapid scanning
   const detectBarcode = useCallback((imageData: ImageData) => {
-    const { data, width, height } = imageData;
-    
-    // Simple edge detection for vertical bars (typical in barcodes)
-    const threshold = 100;
-    let verticalLines = 0;
-    let patterns: number[] = [];
-    
-    // Scan horizontal line in the middle of the image
-    const middleY = Math.floor(height / 2);
-    let currentPattern = 0;
-    let lastPixelDark = false;
-    
-    for (let x = 0; x < width; x++) {
-      const i = (middleY * width + x) * 4;
-      const grayscale = (data[i] + data[i + 1] + data[i + 2]) / 3;
-      const isDark = grayscale < threshold;
-      
-      if (isDark !== lastPixelDark) {
-        if (currentPattern > 2) {
-          patterns.push(currentPattern);
-        }
-        currentPattern = 1;
-        lastPixelDark = isDark;
-        verticalLines++;
-      } else {
-        currentPattern++;
-      }
-    }
-    
-    // If we detect enough pattern changes, likely a barcode
-    if (verticalLines > 20 && patterns.length > 10) {
-      // Generate a sample barcode for testing - in real implementation
-      // this would use proper barcode decoding
-      const testBarcodes = [
-        "9780140449136", // Les Miserables
-        "9780061120084", // To Kill a Mockingbird
-        "9780743273565", // The Great Gatsby
-        "9780451524935", // 1984
-        "9780439708180", // Harry Potter
-        "9780316769174", // The Catcher in the Rye
-        "9780062315007", // The Alchemist
-        "9780545010221", // The Hunger Games
-      ];
-      
-      return testBarcodes[Math.floor(Math.random() * testBarcodes.length)];
-    }
-    
+    // Automatic detection disabled - will only work with manual trigger
     return null;
   }, []);
 
@@ -168,11 +122,8 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
             setIsInitializing(false);
             setIsScanning(true);
             
-            // Start scanning every 2 seconds to prevent rapid scanning
-            intervalRef.current = setInterval(() => {
-              setScanAttempts(prev => prev + 1);
-              captureAndAnalyze();
-            }, 2000);
+            // Automatic scanning disabled to prevent rapid detection issues
+            // Camera is ready for manual scanning only
             
             resolve();
           };
@@ -372,17 +323,19 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
                   onClick={triggerQuickScan} 
                   className="w-full"
                   variant="default"
+                  disabled={isProcessing}
                 >
                   <Zap className="w-4 h-4 mr-2" />
-                  Quick Scan (Test)
+                  {isProcessing ? "Processing..." : "Scan Test Barcode"}
                 </Button>
                 <Button 
                   onClick={() => setShowManualInput(true)} 
                   variant="outline" 
                   className="w-full"
+                  disabled={isProcessing}
                 >
                   <Type className="w-4 h-4 mr-2" />
-                  Enter Manually
+                  Enter ISBN Manually
                 </Button>
                 <Button onClick={handleClose} variant="secondary" className="w-full">
                   Cancel
@@ -429,8 +382,8 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
 
           {/* Help Text */}
           <div className="text-xs text-gray-500 text-center space-y-1">
-            <p>Use "Quick Scan" for testing or enter ISBN manually</p>
-            <p>ISBN usually starts with 978 or 979</p>
+            <p>Camera is active - use "Scan Test Barcode" or enter ISBN manually</p>
+            <p>ISBN format: 9780140449136 (13 digits starting with 978/979)</p>
           </div>
         </div>
       </DialogContent>
