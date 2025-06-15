@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +28,14 @@ export default function AdminPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Platform settings state
+  const [platformSettings, setPlatformSettings] = useState({
+    commissionRate: 5,
+    securityDeposit: 100,
+    minApartments: 90,
+    maxRentalDays: 30
+  });
+
   const { data: societyRequests = [] } = useQuery({
     queryKey: ["/api/admin/society-requests"],
   });
@@ -40,9 +48,21 @@ export default function AdminPanel() {
     queryKey: ["/api/admin/stats"],
   });
 
+  // Fetch current platform settings
+  const { data: currentSettings } = useQuery({
+    queryKey: ["/api/admin/settings"]
+  });
+
+  // Update platform settings when data is fetched
+  React.useEffect(() => {
+    if (currentSettings) {
+      setPlatformSettings(currentSettings);
+    }
+  }, [currentSettings]);
+
   const approveSocietyMutation = useMutation({
     mutationFn: (data: { requestId: number; approved: boolean; reason?: string }) =>
-      apiRequest("/api/admin/society-requests/review", { method: "POST", body: data }),
+      apiRequest("POST", "/api/admin/society-requests/review", data),
     onSuccess: () => {
       toast({ title: "Success", description: "Society request reviewed successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/society-requests"] });
@@ -51,10 +71,27 @@ export default function AdminPanel() {
 
   const updateReferralRewardMutation = useMutation({
     mutationFn: (data: any) =>
-      apiRequest("/api/admin/referral-rewards", { method: "POST", body: data }),
+      apiRequest("POST", "/api/admin/referral-rewards", data),
     onSuccess: () => {
       toast({ title: "Success", description: "Referral reward created successfully" });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/referral-settings"] });
+    },
+  });
+
+  // Platform settings save mutation
+  const savePlatformSettingsMutation = useMutation({
+    mutationFn: (data: typeof platformSettings) =>
+      apiRequest("POST", "/api/admin/settings", data),
+    onSuccess: () => {
+      toast({ title: "Success", description: "Platform settings saved successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to save settings",
+        variant: "destructive" 
+      });
     },
   });
 
@@ -295,32 +332,73 @@ export default function AdminPanel() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="commissionRate">Platform Commission (%)</Label>
-                  <Input id="commissionRate" type="number" min="0" max="20" defaultValue="5" />
+                  <Input 
+                    id="commissionRate" 
+                    type="number" 
+                    min="0" 
+                    max="20" 
+                    value={platformSettings.commissionRate}
+                    onChange={(e) => setPlatformSettings(prev => ({
+                      ...prev,
+                      commissionRate: parseFloat(e.target.value) || 0
+                    }))}
+                  />
                   <p className="text-xs text-gray-500 mt-1">Percentage taken from each rental</p>
                 </div>
 
                 <div>
                   <Label htmlFor="securityDeposit">Security Deposit (₹)</Label>
-                  <Input id="securityDeposit" type="number" min="0" defaultValue="100" />
+                  <Input 
+                    id="securityDeposit" 
+                    type="number" 
+                    min="0" 
+                    value={platformSettings.securityDeposit}
+                    onChange={(e) => setPlatformSettings(prev => ({
+                      ...prev,
+                      securityDeposit: parseFloat(e.target.value) || 0
+                    }))}
+                  />
                   <p className="text-xs text-gray-500 mt-1">Fixed security deposit for all rentals</p>
                 </div>
 
                 <div>
                   <Label htmlFor="minApartments">Minimum Apartments for Society</Label>
-                  <Input id="minApartments" type="number" min="1" defaultValue="90" />
+                  <Input 
+                    id="minApartments" 
+                    type="number" 
+                    min="1" 
+                    value={platformSettings.minApartments}
+                    onChange={(e) => setPlatformSettings(prev => ({
+                      ...prev,
+                      minApartments: parseInt(e.target.value) || 1
+                    }))}
+                  />
                   <p className="text-xs text-gray-500 mt-1">Minimum apartments required for society approval</p>
                 </div>
 
                 <div>
                   <Label htmlFor="maxRentalDays">Maximum Rental Days</Label>
-                  <Input id="maxRentalDays" type="number" min="1" defaultValue="30" />
+                  <Input 
+                    id="maxRentalDays" 
+                    type="number" 
+                    min="1" 
+                    value={platformSettings.maxRentalDays}
+                    onChange={(e) => setPlatformSettings(prev => ({
+                      ...prev,
+                      maxRentalDays: parseInt(e.target.value) || 1
+                    }))}
+                  />
                   <p className="text-xs text-gray-500 mt-1">Maximum days a book can be rented</p>
                 </div>
               </div>
 
               <div className="pt-4 border-t">
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  Save Settings
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => savePlatformSettingsMutation.mutate(platformSettings)}
+                  disabled={savePlatformSettingsMutation.isPending}
+                >
+                  {savePlatformSettingsMutation.isPending ? "Saving..." : "Save Settings"}
                 </Button>
               </div>
             </CardContent>

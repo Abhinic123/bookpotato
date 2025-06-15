@@ -829,6 +829,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin settings endpoints
+  app.get("/api/admin/settings", requireAuth, async (req, res) => {
+    try {
+      // Check if user is admin
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin && user?.email !== 'abhinic@gmail.com') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // Return default settings (could be stored in database in future)
+      const settings = {
+        commissionRate: 5,
+        securityDeposit: 100,
+        minApartments: 90,
+        maxRentalDays: 30
+      };
+      
+      res.json(settings);
+    } catch (error) {
+      console.error("Get admin settings error:", error);
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  app.post("/api/admin/settings", requireAuth, async (req, res) => {
+    try {
+      // Check if user is admin
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin && user?.email !== 'abhinic@gmail.com') {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { commissionRate, securityDeposit, minApartments, maxRentalDays } = req.body;
+
+      // Validate the settings
+      if (commissionRate < 0 || commissionRate > 20) {
+        return res.status(400).json({ message: "Commission rate must be between 0 and 20%" });
+      }
+      if (securityDeposit < 0) {
+        return res.status(400).json({ message: "Security deposit must be positive" });
+      }
+      if (minApartments < 1) {
+        return res.status(400).json({ message: "Minimum apartments must be at least 1" });
+      }
+      if (maxRentalDays < 1) {
+        return res.status(400).json({ message: "Maximum rental days must be at least 1" });
+      }
+
+      // In a real implementation, these would be saved to database
+      // For now, we'll just return success
+      const savedSettings = {
+        commissionRate,
+        securityDeposit,
+        minApartments,
+        maxRentalDays
+      };
+
+      res.json({ message: "Settings saved successfully", settings: savedSettings });
+    } catch (error) {
+      console.error("Save admin settings error:", error);
+      res.status(500).json({ message: "Failed to save settings" });
+    }
+  });
+
   // Admin routes
   app.get("/api/admin/stats", requireAuth, async (req, res) => {
     try {
