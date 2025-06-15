@@ -136,8 +136,12 @@ export default function SimpleISBNScanner({ onScan, onClose, isOpen }: SimpleISB
   // Handle photo upload with basic OCR
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log('No file selected');
+      return;
+    }
 
+    console.log('Photo selected:', file.name, file.type, file.size);
     setIsProcessing(true);
     setError(null);
     setUploadStatus("Processing image...");
@@ -171,14 +175,40 @@ export default function SimpleISBNScanner({ onScan, onClose, isOpen }: SimpleISB
           const numberSequences = text.match(/\d+/g) || [];
           console.log('Found number sequences:', numberSequences);
           
+          // Also look for sequences with common OCR misreads
+          const ocrPatterns = [
+            /9[lI]\d{11,}/g,  // 9l or 9I followed by digits
+            /978\d{10}/g,     // Standard ISBN-13 starting with 978
+            /979\d{10}/g,     // Standard ISBN-13 starting with 979
+            /\d{10,13}/g      // Any 10-13 digit sequence
+          ];
+          
+          const additionalSequences = [];
+          for (const pattern of ocrPatterns) {
+            const matches = text.match(pattern);
+            if (matches) {
+              additionalSequences.push(...matches);
+            }
+          }
+          
+          // Combine and process all sequences
+          const allSequences = [...numberSequences, ...additionalSequences];
+          console.log('All number sequences found:', allSequences);
+          
           let detectedISBN = null;
           
           // Look for valid ISBN patterns in the sequences
-          for (const sequence of numberSequences) {
-            const validISBN = validateISBN(sequence);
+          for (const sequence of allSequences) {
+            // Fix common OCR errors before validation
+            let cleanSequence = sequence;
+            if (sequence.match(/^9[lI]/)) {
+              cleanSequence = '978' + sequence.substring(2);
+            }
+            
+            const validISBN = validateISBN(cleanSequence);
             if (validISBN) {
               detectedISBN = validISBN;
-              console.log('Valid ISBN found:', validISBN);
+              console.log('Valid ISBN found:', validISBN, 'from sequence:', sequence);
               break;
             }
           }
@@ -213,8 +243,13 @@ export default function SimpleISBNScanner({ onScan, onClose, isOpen }: SimpleISB
   };
 
   const triggerPhotoUpload = () => {
+    console.log('Triggering photo upload');
     if (fileInputRef.current) {
+      console.log('File input found, clicking...');
       fileInputRef.current.click();
+    } else {
+      console.error('File input ref not found');
+      setError("Photo upload not available. Please try manual entry.");
     }
   };
 
@@ -280,34 +315,63 @@ export default function SimpleISBNScanner({ onScan, onClose, isOpen }: SimpleISB
               <Upload className="w-4 h-4" />
               Or Upload Photo (Experimental)
             </label>
-            <Button 
-              onClick={triggerPhotoUpload}
-              variant="outline"
-              className="w-full"
-              disabled={isProcessing}
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Camera className="w-4 h-4 mr-2" />
-                  Take Photo of ISBN
-                </>
-              )}
-            </Button>
+            
+            <div className="flex gap-2">
+              <Button 
+                onClick={triggerPhotoUpload}
+                variant="outline"
+                className="flex-1"
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4 mr-2" />
+                    Camera
+                  </>
+                )}
+              </Button>
+              
+              <label 
+                htmlFor="photo-upload"
+                className="flex-1 cursor-pointer"
+              >
+                <Button 
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={isProcessing}
+                  asChild
+                >
+                  <span>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Gallery
+                  </span>
+                </Button>
+              </label>
+            </div>
+            
             <input
+              id="photo-upload"
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               onChange={handlePhotoUpload}
+              onClick={(e) => {
+                console.log('File input clicked');
+                e.stopPropagation();
+              }}
+              onFocus={() => console.log('File input focused')}
+              onBlur={() => console.log('File input blurred')}
               className="hidden"
             />
+            
             <div className="text-xs text-gray-500">
-              Take a clear photo of the ISBN barcode or number
+              Take a clear photo showing the ISBN number clearly
             </div>
           </div>
 
