@@ -138,22 +138,25 @@ export default function MyBooks() {
                 <Button 
                   onClick={() => {
                     // Request return from lender
-                    apiRequest("POST", `/api/rentals/${rental.id}/request-return`)
+                    apiRequest("POST", `/api/rentals/${rental.id}/request-return`, {
+                      notes: `I would like to return "${rental.book.title}". Please coordinate with me for a meeting spot.`
+                    })
                       .then(() => {
                         toast({
                           title: "Return Request Sent",
-                          description: `Return request sent to ${rental.lender.name}. They will be notified to confirm receipt.`,
+                          description: `Return request sent to ${rental.lender.name}. They will be notified with coordination details including phone numbers.`,
                         });
+                        queryClient.invalidateQueries({ queryKey: ["/api/rentals/borrowed"] });
                       })
-                      .catch(() => {
+                      .catch((error) => {
+                        console.error("Return request error:", error);
                         toast({
                           title: "Error", 
-                          description: "Failed to send return request",
+                          description: "Failed to send return request. Please try again.",
                           variant: "destructive",
                         });
                       });
                   }}
-                  disabled={returnBookMutation.isPending}
                   className="flex-1"
                 >
                   Request Return
