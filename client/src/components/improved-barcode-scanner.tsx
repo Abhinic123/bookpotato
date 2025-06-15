@@ -64,14 +64,10 @@ export default function ImprovedBarcodeScanner({ onScan, onClose, isOpen }: Impr
       setError(null);
       setIsInitializing(true);
       
-      // Check if camera permission is already granted
-      const hasPermission = await checkCameraPermission();
-      
+      // Simplified camera constraints for better compatibility
       const constraints = {
         video: { 
-          facingMode: { ideal: "environment" },
-          width: { ideal: 640, min: 320 },
-          height: { ideal: 480, min: 240 }
+          facingMode: "environment"
         }
       };
 
@@ -83,57 +79,31 @@ export default function ImprovedBarcodeScanner({ onScan, onClose, isOpen }: Impr
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
         
-        await new Promise<void>((resolve, reject) => {
-          if (!videoRef.current) return reject(new Error('Video element not found'));
+        // Simplified video loading with proper error handling
+        videoRef.current.onloadedmetadata = () => {
+          setIsInitializing(false);
           
-          videoRef.current.onloadedmetadata = () => {
+          // Give user option to start manual scanning or use camera
+          // Don't auto-start barcode scanner as it can cause endless loading
+          setTimeout(() => {
+            setShowManualInput(true);
+          }, 2000);
+        };
+        
+        videoRef.current.onerror = () => {
+          setError("Video stream error. Please use manual input.");
+          setIsInitializing(false);
+          setShowManualInput(true);
+        };
+        
+        // Timeout for video loading
+        setTimeout(() => {
+          if (isInitializing) {
+            setError("Camera is taking too long to load. Please use manual input.");
             setIsInitializing(false);
-            setIsScanning(true);
-            resolve();
-          };
-          
-          videoRef.current.onerror = () => {
-            reject(new Error('Video load error'));
-          };
-          
-          // Timeout after 10 seconds
-          setTimeout(() => reject(new Error('Video load timeout')), 10000);
-        });
-        
-        // Initialize barcode reader
-        const reader = new BrowserMultiFormatReader();
-        setCodeReader(reader);
-        
-        // Start scanning with timeout handling
-        const scanTimeout = setTimeout(() => {
-          if (isScanning) {
-            setError("Scanner initialization took too long. Please try manual input.");
+            setShowManualInput(true);
           }
-        }, 15000);
-        
-        try {
-          await reader.decodeFromVideoDevice(null, videoRef.current, (result, error) => {
-            clearTimeout(scanTimeout);
-            
-            if (result) {
-              const scannedText = result.getText();
-              if (scannedText && scannedText.trim()) {
-                onScan(scannedText.trim());
-                return;
-              }
-            }
-            
-            // Only log non-standard errors
-            if (error && !(error instanceof NotFoundException)) {
-              console.warn('Scan error:', error.message);
-            }
-          });
-        } catch (scanError) {
-          clearTimeout(scanTimeout);
-          console.error('Scanner initialization error:', scanError);
-          setError("Scanner initialization failed. Please use manual input.");
-          setIsScanning(false);
-        }
+        }, 8000);
       }
     } catch (err: any) {
       setIsInitializing(false);
@@ -141,18 +111,19 @@ export default function ImprovedBarcodeScanner({ onScan, onClose, isOpen }: Impr
       
       if (err.name === 'NotAllowedError') {
         setPermissionState('denied');
-        setError("Camera access denied. Please allow camera permissions in your browser settings and refresh the page.");
+        setError("Camera access denied. Please allow camera permissions and try manual input.");
       } else if (err.name === 'NotFoundError') {
         setError("No camera found on this device. Please use manual input.");
       } else if (err.name === 'NotReadableError') {
-        setError("Camera is being used by another application. Please close other camera apps and try again.");
-      } else if (err.name === 'OverconstrainedError') {
-        setError("Camera constraints not supported. Please use manual input.");
+        setError("Camera is being used by another application. Please use manual input.");
       } else {
-        setError("Camera access failed. Please use manual input or try again.");
+        setError("Camera access failed. Please use manual input.");
       }
+      
+      // Always show manual input as fallback
+      setShowManualInput(true);
     }
-  }, [onScan, checkCameraPermission, isScanning]);
+  }, [onScan, isInitializing]);
 
   const handleManualSubmit = () => {
     if (manualCode.trim()) {
