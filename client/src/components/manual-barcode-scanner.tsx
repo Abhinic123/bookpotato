@@ -238,10 +238,22 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
     setError(null);
     
     try {
-      // Capture current frame with maximum quality
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      // Wait for camera to stabilize and focus
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Capture current frame with maximum quality and sharpness
+      const maxWidth = Math.min(video.videoWidth, 4096);
+      const maxHeight = Math.min(video.videoHeight, 2160);
+      
+      canvas.width = maxWidth;
+      canvas.height = maxHeight;
+      
+      // Configure context for maximum sharpness
+      context.imageSmoothingEnabled = false;
+      context.globalCompositeOperation = 'source-over';
+      
+      // Draw with pixel-perfect accuracy
+      context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, 0, 0, maxWidth, maxHeight);
       
       // Try to detect barcode using ZXing with multiple enhancement techniques
       const codeReader = new BrowserMultiFormatReader();
@@ -556,21 +568,28 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
                   )}
                 </Button>
                 
-                <div className="flex gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <Button 
                     onClick={handleVideoClick as any}
                     variant="outline"
-                    className="flex-1"
                     disabled={isFocusing}
+                    className="text-xs"
                   >
-                    {isFocusing ? "Focusing..." : "Focus Camera"}
+                    {isFocusing ? "Focusing..." : "🎯 Focus"}
+                  </Button>
+                  <Button 
+                    onClick={() => { stopCamera(); setTimeout(startCamera, 100); }}
+                    variant="outline"
+                    className="text-xs"
+                  >
+                    🔄 Restart
                   </Button>
                   <Button 
                     onClick={() => setShowCamera(false)} 
                     variant="outline"
-                    className="flex-1"
+                    className="text-xs"
                   >
-                    Hide Camera
+                    ❌ Hide
                   </Button>
                 </div>
               </div>
@@ -590,8 +609,8 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
           {/* Help Text */}
           <div className="text-xs text-gray-500 text-center space-y-1">
             <p>Manual entry is most reliable - ISBN format: 9780140449136</p>
-            <p>For camera: tap video or use "Focus Camera" if image is blurry</p>
-            <p>Position barcode clearly within the frame for best results</p>
+            <p>Camera tips: Tap video or use Focus button if blurry • Use Restart if camera seems frozen</p>
+            <p>Hold steady and position barcode clearly within the dashed frame</p>
           </div>
         </div>
       </DialogContent>
