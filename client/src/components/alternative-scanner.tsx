@@ -213,6 +213,11 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
     setManualCode("");
     setError(null);
     setIsProcessing(false);
+    setUploadStatus("");
+    // Clear file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
     onClose();
   };
 
@@ -298,6 +303,11 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
               className="hidden"
               style={{ display: 'none' }}
             />
+            {uploadStatus && (
+              <div className="text-xs text-blue-600 text-center bg-blue-50 p-2 rounded">
+                {uploadStatus}
+              </div>
+            )}
             <div className="text-xs text-gray-500 text-center">
               After taking photo, wait for processing to complete
             </div>
