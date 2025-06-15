@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { X, Camera, Loader2, AlertCircle, Type, Zap } from "lucide-react";
+import { BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
 
 interface WorkingBarcodeScannerProps {
   onScan: (barcode: string) => void;
@@ -172,13 +173,12 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
     onClose();
   };
 
-  // Manual scan button that tries to detect from camera
-  const triggerManualScan = () => {
+  // Manual scan button that actually tries to detect barcodes from camera
+  const triggerManualScan = async () => {
     if (isProcessing) return;
     
     if (!videoRef.current || !canvasRef.current) {
-      // Fallback to test code if camera not ready
-      triggerTestScan();
+      setError("Camera not ready. Please try again or use manual input.");
       return;
     }
     
@@ -187,33 +187,56 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
     const context = canvas.getContext('2d');
     
     if (!context || video.readyState !== video.HAVE_ENOUGH_DATA) {
-      triggerTestScan();
+      setError("Camera feed not ready. Please try again or use manual input.");
       return;
     }
     
     setIsProcessing(true);
+    setError(null);
     
-    // Capture current frame
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // For now, generate a random test barcode
-    const testBarcodes = [
-      "9780140449136", // Les Miserables
-      "9780061120084", // To Kill a Mockingbird  
-      "9780743273565", // The Great Gatsby
-      "9780451524935", // 1984
-      "9780439708180", // Harry Potter
-    ];
-    
-    const detectedCode = testBarcodes[Math.floor(Math.random() * testBarcodes.length)];
-    console.log('Manual scan triggered:', detectedCode);
-    setLastScannedCode(detectedCode);
-    
-    setTimeout(() => {
-      onScan(detectedCode);
-    }, 1000); // Small delay to show "processing" state
+    try {
+      // Capture current frame
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Try to detect barcode using ZXing
+      const codeReader = new BrowserMultiFormatReader();
+      
+      try {
+        // Convert canvas to image element for ZXing
+        const dataURL = canvas.toDataURL('image/png');
+        const img = new Image();
+        
+        const loadPromise = new Promise<HTMLImageElement>((resolve, reject) => {
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = dataURL;
+        });
+        
+        const imageElement = await loadPromise;
+        const result = await codeReader.decodeFromImageElement(imageElement);
+        
+        if (result && result.getText()) {
+          const detectedCode = result.getText();
+          console.log('Real barcode detected:', detectedCode);
+          setLastScannedCode(detectedCode);
+          onScan(detectedCode);
+          return;
+        }
+      } catch (decodeError) {
+        console.log('No barcode detected in current frame:', decodeError);
+      }
+      
+      // If no barcode detected, show error
+      setError("No barcode detected. Please position a barcode in front of the camera and try again.");
+      setIsProcessing(false);
+      
+    } catch (error) {
+      console.error('Scan error:', error);
+      setError("Scanning failed. Please try again or use manual input.");
+      setIsProcessing(false);
+    }
   };
   
   // Test scan for demo purposes
