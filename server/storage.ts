@@ -1082,6 +1082,20 @@ export class MemStorage implements IStorage {
     const user: User = {
       ...insertUser,
       id,
+      address: insertUser.address || null,
+      userNumber: null,
+      referredBy: insertUser.referredBy || null,
+      isAdmin: false,
+      referralCode: insertUser.referralCode || null,
+      totalReferrals: 0,
+      referralEarnings: "0",
+      totalEarnings: "0",
+      rank: "Bronze",
+      commissionFreeUntil: null,
+      booksUploaded: 0,
+      profilePicture: null,
+      resetToken: null,
+      resetTokenExpiry: null,
       createdAt: new Date(),
     };
     this.users.set(id, user);
@@ -1126,7 +1140,11 @@ export class MemStorage implements IStorage {
       name: insertSociety.name,
       description: insertSociety.description || null,
       code,
-      createdBy: insertSociety.createdBy,
+      city: insertSociety.city,
+      apartmentCount: insertSociety.apartmentCount,
+      location: insertSociety.location || null,
+      status: "active",
+      createdBy: 1, // Default to first user for MemStorage
       memberCount: 1,
       bookCount: 0,
       createdAt: new Date(),
@@ -1134,7 +1152,7 @@ export class MemStorage implements IStorage {
     this.societies.set(id, society);
 
     // Add creator as member
-    await this.joinSociety(id, insertSociety.createdBy);
+    await this.joinSociety(id, 1); // Default to first user for MemStorage
     
     return society;
   }
