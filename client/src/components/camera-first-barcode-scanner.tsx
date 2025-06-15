@@ -102,18 +102,38 @@ export default function CameraFirstBarcodeScanner({ onScan, onClose, isOpen }: C
         const reader = new BrowserMultiFormatReader();
         readerRef.current = reader;
         
-        // Start continuous scanning
+        // Start continuous scanning with improved barcode detection
         try {
-          await reader.decodeFromVideoDevice(null, videoRef.current, (result, error) => {
+          reader.decodeFromVideoDevice(null, videoRef.current, (result, error) => {
             if (result) {
               const scannedText = result.getText();
+              console.log('Barcode scanned:', scannedText);
+              
               if (scannedText && scannedText.trim()) {
-                onScan(scannedText.trim());
-                return;
+                const cleanCode = scannedText.trim();
+                
+                // Validate barcode format - accept ISBNs, UPCs, and other book barcodes
+                if (cleanCode.length >= 8) {
+                  // Check if it looks like a valid book barcode
+                  const digitCode = cleanCode.replace(/[^0-9]/g, '');
+                  if (digitCode.length >= 8) {
+                    console.log('Valid barcode detected:', cleanCode);
+                    onScan(cleanCode);
+                    return;
+                  }
+                }
+                
+                // For shorter codes, still allow them but with a slight delay
+                if (cleanCode.length >= 3) {
+                  setTimeout(() => {
+                    console.log('Short code detected:', cleanCode);
+                    onScan(cleanCode);
+                  }, 500);
+                }
               }
             }
             
-            // Don't log NotFoundException as it's normal when no barcode is detected
+            // Only log actual errors, not NotFoundException
             if (error && !(error instanceof NotFoundException)) {
               console.warn('Barcode scan error:', error.message);
             }
@@ -210,19 +230,26 @@ export default function CameraFirstBarcodeScanner({ onScan, onClose, isOpen }: C
                 {isScanning && !error && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="relative">
-                      {/* Scanning Frame */}
-                      <div className="border-2 border-green-400 rounded-lg w-64 h-32 opacity-90">
-                        {/* Scanning Line */}
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-0.5 bg-red-500 animate-pulse"></div>
+                      {/* Main Scanning Frame */}
+                      <div className="border-2 border-green-400 rounded-lg w-72 h-36 opacity-90 bg-black bg-opacity-20">
+                        {/* Animated Scanning Line */}
+                        <div className="absolute top-1/2 left-2 right-2 h-0.5 bg-red-500 animate-pulse shadow-lg"></div>
+                        
+                        {/* Inner guidelines */}
+                        <div className="absolute inset-2 border border-green-300 rounded opacity-50"></div>
                       </div>
-                      {/* Corner markers */}
-                      <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-green-400"></div>
-                      <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-green-400"></div>
-                      <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-green-400"></div>
-                      <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-green-400"></div>
+                      
+                      {/* Enhanced Corner markers */}
+                      <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-green-400 rounded-tl"></div>
+                      <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-green-400 rounded-tr"></div>
+                      <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-green-400 rounded-bl"></div>
+                      <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-green-400 rounded-br"></div>
                     </div>
-                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 rounded px-3 py-2">
-                      <p className="text-white text-sm font-medium">Position barcode in frame</p>
+                    
+                    {/* Instructions */}
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-80 rounded-lg px-4 py-2 max-w-xs text-center">
+                      <p className="text-white text-sm font-medium">Hold steady - align barcode in frame</p>
+                      <p className="text-green-300 text-xs mt-1">Scanner is active and detecting...</p>
                     </div>
                   </div>
                 )}
