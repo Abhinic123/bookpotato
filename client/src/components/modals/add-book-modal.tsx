@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Camera, X } from "lucide-react";
-import EnhancedBarcodeScanner from "@/components/enhanced-barcode-scanner";
+import ManualBarcodeScanner from "@/components/manual-barcode-scanner";
 import {
   Dialog,
   DialogContent,

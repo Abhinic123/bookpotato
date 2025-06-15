@@ -5,13 +5,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { X, Camera, Loader2, AlertCircle, Type, BookOpen } from "lucide-react";
 import { BrowserMultiFormatReader } from "@zxing/library";
 
-interface EnhancedBarcodeScannerProps {
+interface ManualBarcodeScannerProps {
   onScan: (barcode: string, bookData?: any) => void;
   onClose: () => void;
   isOpen: boolean;
 }
 
-export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: EnhancedBarcodeScannerProps) {
+export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: ManualBarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -24,7 +24,6 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
   const [bookInfo, setBookInfo] = useState<any>(null);
   const [isLoadingBookInfo, setIsLoadingBookInfo] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
-
 
   // Function to fetch book information from ISBN
   const fetchBookInfo = async (isbn: string) => {
@@ -87,6 +86,7 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
       setError(null);
       setIsInitializing(true);
       
+      // Enhanced camera constraints for better image quality
       const constraints = {
         video: {
           facingMode: "environment",
@@ -166,9 +166,7 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
     onClose();
   };
 
-
-
-  // Manual scan button for camera detection
+  // Manual scan button for camera detection with enhanced image processing
   const triggerCameraScan = async () => {
     if (isProcessing) return;
     
@@ -190,12 +188,12 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
     setError(null);
     
     try {
-      // Capture current frame
+      // Capture current frame with maximum quality
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       
-      // Try to detect barcode using ZXing
+      // Try to detect barcode using ZXing with multiple enhancement techniques
       const codeReader = new BrowserMultiFormatReader();
       
       // Create enhanced image versions for better detection
@@ -237,12 +235,13 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
         return enhanceCanvas.toDataURL('image/png');
       };
       
-      // Try multiple image enhancements
+      // Try multiple image enhancements for better detection
       const attempts = [
         canvas.toDataURL('image/png'), // Original
         createEnhancedImage(canvas, 1.5, 30), // High contrast
         createEnhancedImage(canvas, 1.2, 0, true), // Grayscale
         createEnhancedImage(canvas, 2.0, 50), // Very high contrast
+        createEnhancedImage(canvas, 1.0, -20, true), // Dark grayscale
       ];
       
       for (let i = 0; i < attempts.length; i++) {
@@ -401,7 +400,10 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
                   className="w-full h-full object-cover"
                   style={{ 
                     imageRendering: 'crisp-edges',
-                    filter: 'contrast(1.2) brightness(1.1)'
+                    filter: 'contrast(1.3) brightness(1.1) saturate(1.2)',
+                    transform: 'scale(1.0)',
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden'
                   }}
                 />
                 <canvas ref={canvasRef} className="hidden" />
@@ -425,6 +427,16 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
                     </div>
                   </div>
                 )}
+
+                {/* Scanning overlay for better visibility */}
+                {isScanning && (
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-32 border-2 border-white border-dashed rounded-lg opacity-50"></div>
+                    <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                      Position barcode within frame
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Camera Controls */}
@@ -433,6 +445,7 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
                   onClick={triggerCameraScan} 
                   className="flex-1"
                   disabled={isProcessing || !isScanning}
+                  size="lg"
                 >
                   {isProcessing ? (
                     <>
