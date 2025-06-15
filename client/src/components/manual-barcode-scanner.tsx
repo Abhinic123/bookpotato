@@ -27,6 +27,7 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
   const [showCamera, setShowCamera] = useState(false);
   const [isFocusing, setIsFocusing] = useState(false);
   const [isOcrProcessing, setIsOcrProcessing] = useState(false);
+  const [currentFocusDistance, setCurrentFocusDistance] = useState(0.25);
 
   // Function to fetch book information from ISBN
   const fetchBookInfo = async (isbn: string) => {
@@ -89,17 +90,15 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
       setError(null);
       setIsInitializing(true);
       
-      // Ultra-high resolution camera constraints for maximum sharpness
+      // Lower resolution with manual focus for sharpness
       const constraints = {
         video: {
           facingMode: "environment",
-          width: { ideal: 4096, min: 1920 },
-          height: { ideal: 2160, min: 1080 },
-          frameRate: { ideal: 60, min: 30 },
-          aspectRatio: { ideal: 16/9 },
-          resizeMode: "crop-and-scale"
+          width: 1280,
+          height: 720,
+          frameRate: 15
         }
-      };
+      } as MediaStreamConstraints;
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
@@ -113,28 +112,42 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
           const handleLoadedMetadata = async () => {
             videoRef.current?.removeEventListener('loadedmetadata', handleLoadedMetadata);
             
-            // Configure camera track for optimal image quality
+            // Force camera focus and stability
             const track = stream.getVideoTracks()[0];
             if (track) {
               try {
                 const capabilities = track.getCapabilities();
                 console.log('Camera capabilities:', capabilities);
                 
-                // Log capabilities for debugging
-                console.log('Available camera settings:', Object.keys(capabilities));
-                
-                // Try to apply optimal settings
-                try {
-                  await track.applyConstraints({
-                    width: { ideal: 4096 },
-                    height: { ideal: 2160 },
-                    frameRate: { ideal: 60 }
-                  } as any);
-                } catch (constraintError) {
-                  console.log('Could not apply ideal constraints:', constraintError);
+                // Use detected camera capabilities for optimal focus
+                if (capabilities.focusDistance) {
+                  // Set manual focus to optimal reading distance (about 30cm)
+                  const optimalFocus = 0.25; // Based on capabilities range 0-0.785
+                  try {
+                    await track.applyConstraints({
+                      focusDistance: { exact: optimalFocus }
+                    } as any);
+                    console.log(`Set manual focus to optimal distance: ${optimalFocus}`);
+                  } catch (focusError) {
+                    console.log('Manual focus setting failed:', focusError);
+                  }
                 }
+                
+                // Configure exposure for barcode reading
+                if (capabilities.exposureMode && capabilities.exposureMode.includes('manual')) {
+                  try {
+                    await track.applyConstraints({
+                      exposureMode: { exact: "manual" },
+                      exposureTime: { exact: 50 }
+                    } as any);
+                    console.log('Set manual exposure for barcode reading');
+                  } catch (exposureError) {
+                    console.log('Manual exposure setting failed:', exposureError);
+                  }
+                }
+                
               } catch (error) {
-                console.log('Camera optimization failed:', error);
+                console.log('Camera focus optimization failed:', error);
               }
             }
             
@@ -195,7 +208,30 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
     setShowCamera(false);
     setIsFocusing(false);
     setIsOcrProcessing(false);
+    setCurrentFocusDistance(0.25);
     onClose();
+  };
+
+  // Manual focus distance adjustment
+  const adjustFocus = async (distance: number) => {
+    if (!streamRef.current || isFocusing) return;
+    
+    setIsFocusing(true);
+    
+    try {
+      const track = streamRef.current.getVideoTracks()[0];
+      if (track) {
+        await track.applyConstraints({
+          focusDistance: { exact: distance }
+        } as any);
+        setCurrentFocusDistance(distance);
+        console.log(`Manual focus adjusted to: ${distance}`);
+      }
+    } catch (error) {
+      console.log('Focus adjustment failed:', error);
+    } finally {
+      setTimeout(() => setIsFocusing(false), 500);
+    }
   };
 
   // Force camera restart to reset focus
@@ -685,29 +721,62 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
                   </Button>
                 </div>
                 
-                <div className="grid grid-cols-3 gap-2">
-                  <Button 
-                    onClick={handleVideoClick as any}
-                    variant="outline"
-                    disabled={isFocusing}
-                    className="text-xs"
-                  >
-                    {isFocusing ? "Focusing..." : "🎯 Focus"}
-                  </Button>
-                  <Button 
-                    onClick={() => { stopCamera(); setTimeout(startCamera, 100); }}
-                    variant="outline"
-                    className="text-xs"
-                  >
-                    🔄 Restart
-                  </Button>
-                  <Button 
-                    onClick={() => setShowCamera(false)} 
-                    variant="outline"
-                    className="text-xs"
-                  >
-                    ❌ Hide
-                  </Button>
+                {/* Manual Focus Controls */}
+                <div className="space-y-2">
+                  <div className="text-xs text-center text-gray-600">
+                    Manual Focus Distance: {currentFocusDistance.toFixed(2)}
+                  </div>
+                  <div className="grid grid-cols-4 gap-1">
+                    <Button 
+                      onClick={() => adjustFocus(0.1)}
+                      variant="outline"
+                      disabled={isFocusing}
+                      className="text-xs px-2"
+                    >
+                      Near
+                    </Button>
+                    <Button 
+                      onClick={() => adjustFocus(0.25)}
+                      variant="outline"
+                      disabled={isFocusing}
+                      className="text-xs px-2"
+                    >
+                      Close
+                    </Button>
+                    <Button 
+                      onClick={() => adjustFocus(0.4)}
+                      variant="outline"
+                      disabled={isFocusing}
+                      className="text-xs px-2"
+                    >
+                      Mid
+                    </Button>
+                    <Button 
+                      onClick={() => adjustFocus(0.7)}
+                      variant="outline"
+                      disabled={isFocusing}
+                      className="text-xs px-2"
+                    >
+                      Far
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      onClick={() => { stopCamera(); setTimeout(startCamera, 100); }}
+                      variant="outline"
+                      className="text-xs"
+                    >
+                      Restart Camera
+                    </Button>
+                    <Button 
+                      onClick={() => setShowCamera(false)} 
+                      variant="outline"
+                      className="text-xs"
+                    >
+                      Hide Camera
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -726,8 +795,8 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
           {/* Help Text */}
           <div className="text-xs text-gray-500 text-center space-y-1">
             <p>Manual entry is most reliable - ISBN format: 9780140449136</p>
-            <p>Camera: "Scan Barcode" reads barcode patterns • "Read ISBN Text" reads printed ISBN numbers</p>
-            <p>Position ISBN clearly in view and hold steady for best results</p>
+            <p>Camera: Use manual focus buttons (Near/Close/Mid/Far) to get sharp image</p>
+            <p>"Scan Barcode" reads barcode patterns • "Read ISBN Text" reads printed numbers</p>
           </div>
         </div>
       </DialogContent>
