@@ -25,12 +25,12 @@ export default function LateFeeModal({ isOpen, onClose, rental }: LateFeeModalPr
   const [isProcessing, setIsProcessing] = useState(false);
 
   const calculateLateFee = () => {
-    if (!rental) return { daysLate: 0, dailyLateFee: 0, totalLateFee: 0 };
+    if (!rental || !rental.book) return { daysLate: 0, dailyLateFee: 0, totalLateFee: 0 };
     
     const endDate = new Date(rental.endDate);
     const currentDate = new Date();
     const daysLate = Math.max(0, Math.ceil((currentDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24)));
-    const dailyLateFee = rental.book?.dailyFee * 0.5 || 5; // 50% of daily fee or ₹5 minimum
+    const dailyLateFee = (parseFloat(rental.book.dailyFee) || 0) * 0.5 || 5; // 50% of daily fee or ₹5 minimum
     return {
       daysLate,
       dailyLateFee,
@@ -39,6 +39,11 @@ export default function LateFeeModal({ isOpen, onClose, rental }: LateFeeModalPr
   };
 
   const { daysLate, dailyLateFee, totalLateFee } = calculateLateFee();
+
+  // Don't render if rental or book data is missing
+  if (!rental || !rental.book) {
+    return null;
+  }
 
   const payLateFeesMutation = useMutation({
     mutationFn: async () => {

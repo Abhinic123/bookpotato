@@ -435,35 +435,41 @@ export default function MyBooks() {
       />
 
       {/* Extension Request Modal */}
-      <ExtensionRequestModal
-        isOpen={showExtendModal}
-        onClose={() => {
-          setShowExtendModal(false);
-          setSelectedRental(null);
-        }}
-        rental={selectedRental}
-      />
+      {selectedRental && (
+        <ExtensionRequestModal
+          isOpen={showExtendModal}
+          onClose={() => {
+            setShowExtendModal(false);
+            setSelectedRental(null);
+          }}
+          rental={selectedRental}
+        />
+      )}
 
       {/* Late Fee Modal */}
-      <LateFeeModal
-        isOpen={showLateFeeModal}
-        onClose={() => {
-          setShowLateFeeModal(false);
-          setSelectedRental(null);
-        }}
-        rental={selectedRental}
-      />
+      {selectedRental && (
+        <LateFeeModal
+          isOpen={showLateFeeModal}
+          onClose={() => {
+            setShowLateFeeModal(false);
+            setSelectedRental(null);
+          }}
+          rental={selectedRental}
+        />
+      )}
 
       {/* Return Confirmation Modal */}
-      <ReturnConfirmationModal
-        isOpen={showReturnModal}
-        onClose={() => {
-          setShowReturnModal(false);
-          setSelectedRental(null);
-        }}
-        rental={selectedRental}
-        type={returnModalType}
-      />
+      {selectedRental && (
+        <ReturnConfirmationModal
+          isOpen={showReturnModal}
+          onClose={() => {
+            setShowReturnModal(false);
+            setSelectedRental(null);
+          }}
+          rental={selectedRental}
+          type={returnModalType}
+        />
+      )}
     </div>
   );
 }
