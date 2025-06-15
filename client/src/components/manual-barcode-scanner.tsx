@@ -87,16 +87,15 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
       setError(null);
       setIsInitializing(true);
       
-      // Camera constraints optimized for focus and clarity
+      // Ultra-high resolution camera constraints for maximum sharpness
       const constraints = {
         video: {
           facingMode: "environment",
-          width: { ideal: 1920, min: 1280 },
-          height: { ideal: 1080, min: 720 },
-          frameRate: { ideal: 30 },
+          width: { ideal: 4096, min: 1920 },
+          height: { ideal: 2160, min: 1080 },
+          frameRate: { ideal: 60, min: 30 },
           aspectRatio: { ideal: 16/9 },
-          focusMode: "continuous",
-          focusDistance: { min: 0.1, ideal: 0.3, max: 1.0 }
+          resizeMode: "crop-and-scale"
         }
       };
 
@@ -112,17 +111,28 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
           const handleLoadedMetadata = async () => {
             videoRef.current?.removeEventListener('loadedmetadata', handleLoadedMetadata);
             
-            // Set up camera focus settings for better clarity
+            // Configure camera track for optimal image quality
             const track = stream.getVideoTracks()[0];
             if (track) {
               try {
-                // Try to enable continuous autofocus
-                await track.applyConstraints({
-                  focusMode: 'continuous',
-                  focusDistance: 0.3
-                } as any);
+                const capabilities = track.getCapabilities();
+                console.log('Camera capabilities:', capabilities);
+                
+                // Log capabilities for debugging
+                console.log('Available camera settings:', Object.keys(capabilities));
+                
+                // Try to apply optimal settings
+                try {
+                  await track.applyConstraints({
+                    width: { ideal: 4096 },
+                    height: { ideal: 2160 },
+                    frameRate: { ideal: 60 }
+                  } as any);
+                } catch (constraintError) {
+                  console.log('Could not apply ideal constraints:', constraintError);
+                }
               } catch (error) {
-                console.log('Advanced focus settings not supported');
+                console.log('Camera optimization failed:', error);
               }
             }
             
@@ -185,22 +195,24 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
     onClose();
   };
 
-  // Tap to focus functionality - simplified approach
+  // Force camera restart to reset focus
   const handleVideoClick = async (event: React.MouseEvent<HTMLVideoElement>) => {
     if (!streamRef.current || isFocusing) return;
     
     setIsFocusing(true);
     
     try {
-      const track = streamRef.current.getVideoTracks()[0];
-      if (track) {
-        // Try to trigger autofocus by restarting the camera constraints
-        await track.applyConstraints({} as any);
-      }
+      // Stop current stream
+      stopCamera();
+      
+      // Wait a moment then restart with fresh settings
+      setTimeout(async () => {
+        await startCamera();
+        setIsFocusing(false);
+      }, 500);
     } catch (error) {
-      console.log('Focus adjustment failed:', error);
-    } finally {
-      setTimeout(() => setIsFocusing(false), 1000);
+      console.log('Camera restart failed:', error);
+      setIsFocusing(false);
     }
   };
 
@@ -234,8 +246,8 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
       // Try to detect barcode using ZXing with multiple enhancement techniques
       const codeReader = new BrowserMultiFormatReader();
       
-      // Create enhanced image versions for better detection
-      const createEnhancedImage = (sourceCanvas: HTMLCanvasElement, contrast: number, brightness: number, grayscale: boolean = false): string => {
+      // Advanced image enhancement with sharpening for better barcode detection
+      const createEnhancedImage = (sourceCanvas: HTMLCanvasElement, contrast: number, brightness: number, grayscale: boolean = false, sharpen: boolean = false): string => {
         const enhanceCanvas = document.createElement('canvas');
         const enhanceCtx = enhanceCanvas.getContext('2d');
         
@@ -244,11 +256,51 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
         enhanceCanvas.width = sourceCanvas.width;
         enhanceCanvas.height = sourceCanvas.height;
         
+        // Enable high-quality image rendering
+        enhanceCtx.imageSmoothingEnabled = false; // Disable smoothing for sharper edges
         enhanceCtx.drawImage(sourceCanvas, 0, 0);
         
-        const imageData = enhanceCtx.getImageData(0, 0, enhanceCanvas.width, enhanceCanvas.height);
-        const data = imageData.data;
+        let imageData = enhanceCtx.getImageData(0, 0, enhanceCanvas.width, enhanceCanvas.height);
+        let data = imageData.data;
         
+        // Apply sharpening filter if requested
+        if (sharpen) {
+          const width = enhanceCanvas.width;
+          const height = enhanceCanvas.height;
+          const sharpened = new Uint8ClampedArray(data.length);
+          
+          // Unsharp mask filter for sharpening
+          const kernel = [
+            0, -1, 0,
+            -1, 5, -1,
+            0, -1, 0
+          ];
+          
+          for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+              for (let c = 0; c < 3; c++) { // RGB channels
+                let sum = 0;
+                for (let ky = -1; ky <= 1; ky++) {
+                  for (let kx = -1; kx <= 1; kx++) {
+                    const pixelIndex = ((y + ky) * width + (x + kx)) * 4 + c;
+                    const kernelIndex = (ky + 1) * 3 + (kx + 1);
+                    sum += data[pixelIndex] * kernel[kernelIndex];
+                  }
+                }
+                const currentIndex = (y * width + x) * 4 + c;
+                sharpened[currentIndex] = Math.min(255, Math.max(0, sum));
+              }
+              // Copy alpha channel
+              const alphaIndex = (y * width + x) * 4 + 3;
+              sharpened[alphaIndex] = data[alphaIndex];
+            }
+          }
+          
+          data = sharpened;
+          imageData = new ImageData(data, width, height);
+        }
+        
+        // Apply contrast and brightness adjustments
         for (let i = 0; i < data.length; i += 4) {
           let r = data[i];
           let g = data[i + 1];
@@ -260,7 +312,7 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
           b = Math.min(255, Math.max(0, (b - 128) * contrast + 128 + brightness));
           
           if (grayscale) {
-            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+            const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
             r = g = b = gray;
           }
           
@@ -273,13 +325,14 @@ export default function ManualBarcodeScanner({ onScan, onClose, isOpen }: Manual
         return enhanceCanvas.toDataURL('image/png');
       };
       
-      // Try multiple image enhancements for better detection
+      // Try multiple image enhancements with sharpening for better detection
       const attempts = [
-        canvas.toDataURL('image/png'), // Original
-        createEnhancedImage(canvas, 1.5, 30), // High contrast
-        createEnhancedImage(canvas, 1.2, 0, true), // Grayscale
-        createEnhancedImage(canvas, 2.0, 50), // Very high contrast
-        createEnhancedImage(canvas, 1.0, -20, true), // Dark grayscale
+        createEnhancedImage(canvas, 1.0, 0, false, true), // Sharpened original
+        createEnhancedImage(canvas, 1.5, 30, false, true), // Sharpened high contrast
+        createEnhancedImage(canvas, 2.0, 0, true, true), // Sharpened high contrast grayscale
+        createEnhancedImage(canvas, 1.8, 40, false, true), // Sharpened very high contrast
+        createEnhancedImage(canvas, 1.3, -10, true, true), // Sharpened dark grayscale
+        createEnhancedImage(canvas, 2.5, 60, true, true), // Extreme sharpened contrast
       ];
       
       for (let i = 0; i < attempts.length; i++) {
