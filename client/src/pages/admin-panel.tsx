@@ -55,8 +55,8 @@ export default function AdminPanel() {
 
   // Update platform settings when data is fetched
   React.useEffect(() => {
-    if (currentSettings) {
-      setPlatformSettings(currentSettings);
+    if (currentSettings && typeof currentSettings === 'object') {
+      setPlatformSettings(currentSettings as typeof platformSettings);
     }
   }, [currentSettings]);
 
