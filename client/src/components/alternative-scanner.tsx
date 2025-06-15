@@ -131,34 +131,61 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
           
           console.log('OCR detected text from upload:', text);
           
-          // Extract ISBN patterns with improved regex
+          // Extract ISBN patterns - handle OCR misreads like "9lI" instead of "978"
+          const potentialIsbns = [];
+          
+          // Look for various ISBN patterns including OCR errors
           const isbnPatterns = [
-            /ISBN[-:\s]*(\d{3}[-\s]?\d{1}[-\s]?\d{3}[-\s]?\d{5}[-\s]?\d{1})/gi, // ISBN-13 with formatting
-            /ISBN[-:\s]*(\d{1}[-\s]?\d{3}[-\s]?\d{5}[-\s]?\d{1})/gi, // ISBN-10 with formatting
-            /ISBN[-:\s]*(\d{13})/gi, // ISBN-13 without formatting
-            /ISBN[-:\s]*(\d{10})/gi, // ISBN-10 without formatting
-            /(\d{13})/g, // Any 13-digit number
-            /(\d{10})/g, // Any 10-digit number
+            /ISBN[-:\s]*(\d{3}[-\s]?\d{1}[-\s]?\d{3}[-\s]?\d{5}[-\s]?\d{1})/gi,
+            /ISBN[-:\s]*(\d{13})/gi,
+            /ISBN[-:\s]*(\d{10})/gi,
+            // Handle OCR errors: 9lI, 9l, 9I at start
+            /9[lI]{1,2}\d{11,}/g,
+            /9[lI]\d{12,}/g,
+            // Standard 978/979 patterns  
+            /978\d{10}/g,
+            /979\d{10}/g,
+            // Any sequence of 10-13 digits
+            /\d{10,13}/g
           ];
-          
-          let detectedIsbn = null;
-          
+
           for (const pattern of isbnPatterns) {
             const matches = text.match(pattern);
             if (matches) {
               for (const match of matches) {
-                // Clean the match (remove non-digits)
-                const cleanIsbn = match.replace(/[^\d]/g, '');
+                let processedMatch = match;
                 
-                // Validate ISBN length
+                // Fix common OCR errors at the beginning
+                if (match.match(/^9[lI]{1,2}/)) {
+                  // Replace 9lI or 9ll or 9II with 978
+                  processedMatch = '978' + match.substring(3);
+                } else if (match.match(/^9[lI]/)) {
+                  // Replace 9l or 9I with 97
+                  processedMatch = '97' + match.substring(2);
+                }
+                
+                const cleanIsbn = processedMatch.replace(/[^\d]/g, '');
+                
                 if (cleanIsbn.length === 10 || cleanIsbn.length === 13) {
-                  console.log('Found potential ISBN:', cleanIsbn);
-                  detectedIsbn = cleanIsbn;
-                  break;
+                  potentialIsbns.push(cleanIsbn);
+                  console.log('Found potential ISBN:', cleanIsbn, 'from OCR text:', match);
                 }
               }
-              if (detectedIsbn) break;
             }
+          }
+
+          // Prioritize 13-digit ISBNs starting with 978/979
+          let detectedIsbn = null;
+          for (const isbn of potentialIsbns) {
+            if (isbn.length === 13 && (isbn.startsWith('978') || isbn.startsWith('979'))) {
+              detectedIsbn = isbn;
+              break;
+            }
+          }
+          
+          // Fall back to any valid ISBN
+          if (!detectedIsbn && potentialIsbns.length > 0) {
+            detectedIsbn = potentialIsbns[0];
           }
           
           if (detectedIsbn) {
@@ -236,7 +263,8 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
       }
     } catch (error) {
       console.error('Camera access failed:', error);
-      setError("Camera access denied. Please allow camera permissions or try manual entry.");
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setError(`Camera access failed: ${errorMessage}. Please allow camera permissions or try manual entry.`);
       setIsCameraInitializing(false);
     }
   }, []);
