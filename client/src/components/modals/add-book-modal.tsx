@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Camera, X } from "lucide-react";
+import BarcodeScanner from "@/components/barcode-scanner";
 import {
   Dialog,
   DialogContent,
@@ -133,10 +134,16 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
   };
 
   const handleBarcodeScanned = async (barcode: string) => {
-    setScanMode(false);
+    console.log("Barcode scanned:", barcode);
     
     try {
-      // Try to fetch book details from Open Library API using ISBN
+      // Show loading toast
+      toast({
+        title: "Fetching book details...",
+        description: "Please wait while we find information about this book.",
+      });
+
+      // Fetch book details from Open Library
       const response = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${barcode}&format=json&jscmd=data`);
       const data = await response.json();
       
@@ -145,32 +152,40 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
         form.setValue("isbn", barcode);
         form.setValue("title", bookData.title || "");
         form.setValue("author", bookData.authors?.[0]?.name || "");
-        form.setValue("genre", bookData.subjects?.[0]?.name || "");
+        
+        // Map to our available genres
+        let genre = "Fiction";
+        if (bookData.subjects && bookData.subjects.length > 0) {
+          const subject = bookData.subjects[0].name || bookData.subjects[0];
+          if (genres.includes(subject)) {
+            genre = subject;
+          }
+        }
+        form.setValue("genre", genre);
         
         toast({
           title: "Book Details Found!",
-          description: "Book information has been automatically filled",
+          description: `Auto-filled details for "${bookData.title}"`,
         });
       } else {
         // Just set the ISBN if no data found
         form.setValue("isbn", barcode);
         toast({
           title: "Barcode Scanned",
-          description: "Please fill in the book details manually",
+          description: "ISBN filled. Please enter book details manually.",
         });
       }
     } catch (error) {
+      console.error("Error fetching book data:", error);
       form.setValue("isbn", barcode);
       toast({
         title: "Barcode Scanned",
-        description: "Please fill in the book details manually",
+        description: "ISBN filled. Please enter book details manually.",
       });
     }
   };
 
-  const handleBarcodeScan = () => {
-    setScanMode(true);
-  };
+
 
   if (!(societies as any[])?.length) {
     return (
@@ -219,7 +234,7 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
                 Position the barcode within the frame
               </p>
               <div className="space-y-2">
-                <Button onClick={handleBarcodeScan} className="w-full">
+                <Button onClick={() => setScanMode(true)} className="w-full">
                   <Camera className="h-4 w-4 mr-2" />
                   Start Camera Scan
                 </Button>
@@ -419,6 +434,12 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
             </Form>
           </div>
         )}
+        
+        <BarcodeScanner
+          isOpen={scanMode}
+          onScan={handleBarcodeScanned}
+          onClose={() => setScanMode(false)}
+        />
       </DialogContent>
     </Dialog>
   );
