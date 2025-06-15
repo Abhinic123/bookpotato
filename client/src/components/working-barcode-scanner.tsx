@@ -5,6 +5,51 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { X, Camera, Loader2, AlertCircle, Type, Zap } from "lucide-react";
 import { BrowserMultiFormatReader, NotFoundException } from "@zxing/library";
 
+// Image enhancement function to improve barcode detection
+function enhanceImage(canvas: HTMLCanvasElement, contrast: number = 1.2, brightness: number = 10, grayscale: boolean = false): string {
+  const enhanceCanvas = document.createElement('canvas');
+  const enhanceCtx = enhanceCanvas.getContext('2d');
+  
+  if (!enhanceCtx) return canvas.toDataURL('image/png');
+  
+  enhanceCanvas.width = canvas.width;
+  enhanceCanvas.height = canvas.height;
+  
+  // Draw original image
+  enhanceCtx.drawImage(canvas, 0, 0);
+  
+  // Get image data
+  const imageData = enhanceCtx.getImageData(0, 0, enhanceCanvas.width, enhanceCanvas.height);
+  const data = imageData.data;
+  
+  // Apply enhancements
+  for (let i = 0; i < data.length; i += 4) {
+    let r = data[i];
+    let g = data[i + 1];
+    let b = data[i + 2];
+    
+    // Apply contrast and brightness
+    r = Math.min(255, Math.max(0, (r - 128) * contrast + 128 + brightness));
+    g = Math.min(255, Math.max(0, (g - 128) * contrast + 128 + brightness));
+    b = Math.min(255, Math.max(0, (b - 128) * contrast + 128 + brightness));
+    
+    // Apply grayscale if requested
+    if (grayscale) {
+      const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+      r = g = b = gray;
+    }
+    
+    data[i] = r;
+    data[i + 1] = g;
+    data[i + 2] = b;
+  }
+  
+  // Put enhanced image data back
+  enhanceCtx.putImageData(imageData, 0, 0);
+  
+  return enhanceCanvas.toDataURL('image/png');
+}
+
 interface WorkingBarcodeScannerProps {
   onScan: (barcode: string) => void;
   onClose: () => void;
@@ -200,32 +245,86 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
       canvas.height = video.videoHeight;
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       
-      // Try to detect barcode using ZXing
+      // Try to detect barcode using ZXing with multiple enhancements
       const codeReader = new BrowserMultiFormatReader();
       
-      try {
-        // Convert canvas to image element for ZXing
-        const dataURL = canvas.toDataURL('image/png');
-        const img = new Image();
+      // Helper function to enhance image for better barcode detection
+      const createEnhancedImage = (sourceCanvas: HTMLCanvasElement, contrast: number, brightness: number, grayscale: boolean = false): string => {
+        const enhanceCanvas = document.createElement('canvas');
+        const enhanceCtx = enhanceCanvas.getContext('2d');
         
-        const loadPromise = new Promise<HTMLImageElement>((resolve, reject) => {
-          img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = dataURL;
-        });
+        if (!enhanceCtx) return sourceCanvas.toDataURL('image/png');
         
-        const imageElement = await loadPromise;
-        const result = await codeReader.decodeFromImageElement(imageElement);
+        enhanceCanvas.width = sourceCanvas.width;
+        enhanceCanvas.height = sourceCanvas.height;
         
-        if (result && result.getText()) {
-          const detectedCode = result.getText();
-          console.log('Real barcode detected:', detectedCode);
-          setLastScannedCode(detectedCode);
-          onScan(detectedCode);
-          return;
+        enhanceCtx.drawImage(sourceCanvas, 0, 0);
+        
+        const imageData = enhanceCtx.getImageData(0, 0, enhanceCanvas.width, enhanceCanvas.height);
+        const data = imageData.data;
+        
+        for (let i = 0; i < data.length; i += 4) {
+          let r = data[i];
+          let g = data[i + 1];
+          let b = data[i + 2];
+          
+          // Apply contrast and brightness
+          r = Math.min(255, Math.max(0, (r - 128) * contrast + 128 + brightness));
+          g = Math.min(255, Math.max(0, (g - 128) * contrast + 128 + brightness));
+          b = Math.min(255, Math.max(0, (b - 128) * contrast + 128 + brightness));
+          
+          if (grayscale) {
+            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+            r = g = b = gray;
+          }
+          
+          data[i] = r;
+          data[i + 1] = g;
+          data[i + 2] = b;
         }
+        
+        enhanceCtx.putImageData(imageData, 0, 0);
+        return enhanceCanvas.toDataURL('image/png');
+      };
+      
+      try {
+        // Try multiple image enhancements to improve detection
+        const attempts = [
+          canvas.toDataURL('image/png'), // Original
+          createEnhancedImage(canvas, 1.5, 30), // High contrast
+          createEnhancedImage(canvas, 1.2, 0, true), // Grayscale
+          createEnhancedImage(canvas, 2.0, 50), // Very high contrast
+        ];
+        
+        for (let i = 0; i < attempts.length; i++) {
+          try {
+            const img = new Image();
+            
+            const loadPromise = new Promise<HTMLImageElement>((resolve, reject) => {
+              img.onload = () => resolve(img);
+              img.onerror = reject;
+              img.src = attempts[i];
+            });
+            
+            const imageElement = await loadPromise;
+            const result = await codeReader.decodeFromImageElement(imageElement);
+            
+            if (result && result.getText()) {
+              const detectedCode = result.getText();
+              console.log(`Barcode detected on attempt ${i + 1}:`, detectedCode);
+              setLastScannedCode(detectedCode);
+              onScan(detectedCode);
+              return;
+            }
+          } catch (attemptError) {
+            console.log(`Detection attempt ${i + 1} failed, trying next enhancement`);
+          }
+        }
+        
+        throw new Error('No barcode detected in any enhanced image');
+        
       } catch (decodeError) {
-        console.log('No barcode detected in current frame:', decodeError);
+        console.log('No barcode detected after all enhancement attempts:', decodeError.message || decodeError);
       }
       
       // If no barcode detected, show error
