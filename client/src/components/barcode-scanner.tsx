@@ -19,13 +19,31 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
   const [isInitializing, setIsInitializing] = useState(false);
 
   const stopCamera = useCallback(() => {
+    console.log("Stopping camera...");
+    
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.srcObject = null;
+    }
+    
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach(track => {
+        track.stop();
+        console.log("Camera track stopped");
+      });
       setStream(null);
     }
+    
     if (codeReader) {
-      codeReader.reset();
+      try {
+        codeReader.reset();
+        console.log("Scanner reset");
+      } catch (e) {
+        console.log("Scanner reset error:", e);
+      }
+      setCodeReader(null);
     }
+    
     setIsScanning(false);
     setIsInitializing(false);
   }, [stream, codeReader]);
@@ -40,37 +58,53 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 640 },
+          height: { ideal: 480 }
         }
       });
       
       console.log("Camera access granted");
       setStream(mediaStream);
-      setIsInitializing(false);
-      setIsScanning(true);
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
         
-        const reader = new BrowserMultiFormatReader();
-        setCodeReader(reader);
-        
-        console.log("Starting barcode scanning...");
-        
-        // Start continuous scanning
-        reader.decodeFromVideoDevice(null, videoRef.current, (result, error) => {
-          if (result) {
-            const scannedText = result.getText();
-            console.log('Barcode scanned:', scannedText);
-            onScan(scannedText);
-            stopCamera();
-            onClose();
+        // Wait for video to load before starting scanner
+        videoRef.current.onloadedmetadata = () => {
+          setIsInitializing(false);
+          setIsScanning(true);
+          
+          const reader = new BrowserMultiFormatReader();
+          setCodeReader(reader);
+          
+          console.log("Starting barcode scanning...");
+          
+          // Start continuous scanning with proper error handling
+          try {
+            reader.decodeFromVideoDevice(null, videoRef.current!, (result, error) => {
+              if (result) {
+                const scannedText = result.getText();
+                console.log('Barcode scanned:', scannedText);
+                onScan(scannedText);
+                return;
+              }
+              // Don't log NotFoundException as it's normal when no barcode is detected
+              if (error && !(error instanceof NotFoundException)) {
+                console.error('Scan error:', error);
+              }
+            });
+          } catch (scanError) {
+            console.error('Scanner initialization error:', scanError);
+            setError("Failed to initialize barcode scanner. Please try again.");
+            setIsScanning(false);
           }
-          if (error && !(error instanceof NotFoundException)) {
-            console.error('Scan error:', error);
-          }
-        });
+        };
+        
+        videoRef.current.onerror = () => {
+          setError("Video stream error. Please try again.");
+          setIsInitializing(false);
+          setIsScanning(false);
+        };
       }
     } catch (err: any) {
       console.error("Error accessing camera:", err);
@@ -81,11 +115,13 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
         setError("Camera access denied. Please allow camera permissions and try again.");
       } else if (err.name === 'NotFoundError') {
         setError("No camera found. Please ensure your device has a camera.");
+      } else if (err.name === 'NotReadableError') {
+        setError("Camera is being used by another application. Please close other camera apps and try again.");
       } else {
         setError("Could not access camera. Please check permissions and try again.");
       }
     }
-  }, [onScan, onClose, stopCamera]);
+  }, [onScan, onClose]);
 
   useEffect(() => {
     if (isOpen) {
@@ -147,17 +183,16 @@ export default function BarcodeScanner({ onScan, onClose, isOpen }: BarcodeScann
               playsInline
               muted
               className="w-full h-full object-cover"
+              style={{ transform: 'scaleX(-1)' }}
             />
             
             {isScanning && !error && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="border-2 border-green-400 border-dashed rounded-lg w-64 h-32 opacity-75 animate-pulse">
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                    <div className="w-full h-0.5 bg-red-500 animate-pulse"></div>
-                  </div>
+                <div className="border-2 border-green-400 rounded-lg w-48 h-24 opacity-90">
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-44 h-0.5 bg-red-500 animate-pulse"></div>
                 </div>
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 rounded px-2 py-1">
-                  <p className="text-white text-xs">Scanning...</p>
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 rounded px-3 py-2">
+                  <p className="text-white text-sm font-medium">Position barcode in frame</p>
                 </div>
               </div>
             )}
