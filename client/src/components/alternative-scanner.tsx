@@ -14,6 +14,7 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
   const [manualCode, setManualCode] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Function to fetch book information from ISBN
@@ -79,11 +80,21 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
 
   // Handle photo upload from device camera or gallery
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    // Prevent default behavior to avoid navigation
+    event.preventDefault();
+    event.stopPropagation();
+    
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log('No file selected');
+      setIsProcessing(false);
+      return;
+    }
 
+    console.log('File selected:', file.name, file.type, file.size);
     setIsProcessing(true);
     setError(null);
+    setUploadStatus("Loading image...");
 
     try {
       // Convert file to base64 for processing
@@ -92,28 +103,37 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
         try {
           const imageDataUrl = e.target?.result as string;
           
+          if (!imageDataUrl) {
+            throw new Error('Failed to read image file');
+          }
+          
+          console.log('Image loaded, starting OCR...');
+          setUploadStatus("Starting text recognition...");
+          
           // Import Tesseract dynamically to avoid build issues
           const Tesseract = await import('tesseract.js');
-          
-          console.log('Starting OCR on uploaded image...');
           
           // Use OCR to extract text from uploaded image
           const { data: { text } } = await Tesseract.recognize(imageDataUrl, 'eng', {
             logger: m => {
               if (m.status === 'recognizing text') {
-                console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+                const progress = Math.round(m.progress * 100);
+                setUploadStatus(`Reading text: ${progress}%`);
+                console.log(`OCR Progress: ${progress}%`);
               }
             }
           });
           
           console.log('OCR detected text from upload:', text);
           
-          // Extract ISBN patterns
+          // Extract ISBN patterns with improved regex
           const isbnPatterns = [
-            /ISBN[-\s]*:?\s*(\d{13})/gi,
-            /ISBN[-\s]*:?\s*(\d{10})/gi,
-            /(\d{13})/g,
-            /(\d{10})/g
+            /ISBN[-:\s]*(\d{3}[-\s]?\d{1}[-\s]?\d{3}[-\s]?\d{5}[-\s]?\d{1})/gi, // ISBN-13 with formatting
+            /ISBN[-:\s]*(\d{1}[-\s]?\d{3}[-\s]?\d{5}[-\s]?\d{1})/gi, // ISBN-10 with formatting
+            /ISBN[-:\s]*(\d{13})/gi, // ISBN-13 without formatting
+            /ISBN[-:\s]*(\d{10})/gi, // ISBN-10 without formatting
+            /(\d{13})/g, // Any 13-digit number
+            /(\d{10})/g, // Any 10-digit number
           ];
           
           let detectedIsbn = null;
@@ -122,8 +142,12 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
             const matches = text.match(pattern);
             if (matches) {
               for (const match of matches) {
+                // Clean the match (remove non-digits)
                 const cleanIsbn = match.replace(/[^\d]/g, '');
+                
+                // Validate ISBN length
                 if (cleanIsbn.length === 10 || cleanIsbn.length === 13) {
+                  console.log('Found potential ISBN:', cleanIsbn);
                   detectedIsbn = cleanIsbn;
                   break;
                 }
@@ -134,12 +158,16 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
           
           if (detectedIsbn) {
             console.log('Found ISBN in uploaded image:', detectedIsbn);
+            setUploadStatus("Fetching book information...");
             const bookData = await fetchBookInfo(detectedIsbn);
+            console.log('Book data fetched:', bookData);
+            setUploadStatus("Book found! Adding to library...");
             onScan(detectedIsbn, bookData);
             handleClose();
           } else {
-            setError("No ISBN found in the uploaded image. Please try a clearer photo or enter manually.");
+            setError("No ISBN found in the uploaded image. Please try a clearer photo showing the ISBN number or barcode.");
             setIsProcessing(false);
+            setUploadStatus("");
           }
           
         } catch (ocrError) {
@@ -149,6 +177,12 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
         }
       };
       
+      reader.onerror = (error) => {
+        console.error('FileReader error:', error);
+        setError("Failed to read image file. Please try again.");
+        setIsProcessing(false);
+      };
+      
       reader.readAsDataURL(file);
       
     } catch (error) {
@@ -156,10 +190,23 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
       setError("Failed to process photo. Please try again.");
       setIsProcessing(false);
     }
+
+    // Clear the file input to allow the same file to be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const triggerPhotoUpload = () => {
-    fileInputRef.current?.click();
+    if (fileInputRef.current) {
+      console.log('Triggering file input click');
+      try {
+        fileInputRef.current.click();
+      } catch (error) {
+        console.error('File input click failed:', error);
+        setError("Failed to open camera. Please try manual entry.");
+      }
+    }
   };
 
   const handleClose = () => {
@@ -228,7 +275,7 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
               {isProcessing ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
+                  Processing Image...
                 </>
               ) : (
                 <>
@@ -241,10 +288,19 @@ export default function AlternativeScanner({ onScan, onClose, isOpen }: Alternat
               ref={fileInputRef}
               type="file"
               accept="image/*"
-              capture="environment"
               onChange={handlePhotoUpload}
+              onClick={(e) => {
+                console.log('File input clicked');
+                e.stopPropagation();
+              }}
+              onFocus={() => console.log('File input focused')}
+              onBlur={() => console.log('File input blurred')}
               className="hidden"
+              style={{ display: 'none' }}
             />
+            <div className="text-xs text-gray-500 text-center">
+              After taking photo, wait for processing to complete
+            </div>
           </div>
 
           {/* Error Message */}
