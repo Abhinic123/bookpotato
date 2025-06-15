@@ -70,6 +70,64 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
   const [scanAttempts, setScanAttempts] = useState(0);
   const [lastScannedCode, setLastScannedCode] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [bookInfo, setBookInfo] = useState<any>(null);
+  const [isLoadingBookInfo, setIsLoadingBookInfo] = useState(false);
+
+  // Function to fetch book information from ISBN
+  const fetchBookInfo = async (isbn: string) => {
+    if (!isbn || isbn.length < 10) return null;
+    
+    setIsLoadingBookInfo(true);
+    try {
+      // Try Google Books API first
+      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+      const data = await response.json();
+      
+      if (data.items && data.items.length > 0) {
+        const book = data.items[0].volumeInfo;
+        const bookData = {
+          title: book.title || '',
+          author: book.authors ? book.authors.join(', ') : '',
+          isbn: isbn,
+          description: book.description || '',
+          imageUrl: book.imageLinks?.thumbnail || book.imageLinks?.smallThumbnail || null,
+          pageCount: book.pageCount || null,
+          publishedDate: book.publishedDate || '',
+          categories: book.categories || []
+        };
+        setBookInfo(bookData);
+        return bookData;
+      }
+      
+      // Fallback to Open Library API
+      const openLibResponse = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+      const openLibData = await openLibResponse.json();
+      
+      const bookKey = `ISBN:${isbn}`;
+      if (openLibData[bookKey]) {
+        const book = openLibData[bookKey];
+        const bookData = {
+          title: book.title || '',
+          author: book.authors ? book.authors.map((a: any) => a.name).join(', ') : '',
+          isbn: isbn,
+          description: book.notes || '',
+          imageUrl: book.cover?.medium || book.cover?.small || null,
+          pageCount: book.number_of_pages || null,
+          publishedDate: book.publish_date || '',
+          categories: book.subjects ? book.subjects.map((s: any) => s.name) : []
+        };
+        setBookInfo(bookData);
+        return bookData;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error fetching book info:', error);
+      return null;
+    } finally {
+      setIsLoadingBookInfo(false);
+    }
+  };
 
   const stopCamera = useCallback(() => {
     if (intervalRef.current) {
@@ -149,8 +207,12 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
       const constraints = {
         video: {
           facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          frameRate: { ideal: 30 },
+          focusMode: 'continuous',
+          exposureMode: 'continuous',
+          whiteBalanceMode: 'continuous'
         }
       };
 
@@ -378,7 +440,7 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
             </Button>
           </DialogTitle>
           <DialogDescription>
-            Point camera at barcode or use quick scan for testing
+            Enter ISBN manually for best results, or try camera scanning
           </DialogDescription>
         </DialogHeader>
 
