@@ -264,18 +264,31 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
     }
   }, [captureAndAnalyze]);
 
-  const handleManualSubmit = () => {
-    if (manualCode.trim()) {
-      onScan(manualCode.trim());
-      setManualCode("");
-      onClose();
+  const handleManualSubmit = async () => {
+    const isbn = manualCode.trim();
+    if (!isbn) return;
+    
+    setIsProcessing(true);
+    
+    // Fetch book information for auto-fill
+    const bookData = await fetchBookInfo(isbn);
+    
+    if (bookData) {
+      console.log('Book information found:', bookData);
+    } else {
+      console.log('No book information found, proceeding with ISBN only');
     }
+    
+    onScan(isbn);
+    setManualCode("");
+    onClose();
   };
 
   const handleClose = () => {
     stopCamera();
     setShowManualInput(false);
     setManualCode("");
+    setBookInfo(null);
     setError(null);
     onClose();
   };
@@ -386,7 +399,8 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
         throw new Error('No barcode detected in any enhanced image');
         
       } catch (decodeError) {
-        console.log('No barcode detected after all enhancement attempts:', decodeError.message || decodeError);
+        const errorMessage = decodeError instanceof Error ? decodeError.message : 'Unknown error';
+        console.log('No barcode detected after all enhancement attempts:', errorMessage);
       }
       
       // If no barcode detected, show error
@@ -445,6 +459,69 @@ export default function WorkingBarcodeScanner({ onScan, onClose, isOpen }: Worki
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Manual ISBN Entry - Primary Method */}
+          <div className="space-y-3">
+            <div className="text-sm font-medium text-gray-700">Enter ISBN Number</div>
+            <div className="space-y-2">
+              <Input
+                type="text"
+                placeholder="978-0-123456-78-9 or 9780123456789"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleManualSubmit()}
+                className="text-lg"
+                disabled={isLoadingBookInfo}
+              />
+              <Button 
+                onClick={handleManualSubmit} 
+                className="w-full"
+                disabled={!manualCode.trim() || isLoadingBookInfo}
+                size="lg"
+              >
+                {isLoadingBookInfo ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Looking up book info...
+                  </>
+                ) : (
+                  <>
+                    <Type className="w-4 h-4 mr-2" />
+                    Add Book with ISBN
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Book Preview */}
+          {bookInfo && (
+            <div className="border rounded-lg p-3 bg-gray-50">
+              <div className="text-sm font-medium text-gray-700 mb-2">Book Preview</div>
+              <div className="flex space-x-3">
+                {bookInfo.imageUrl && (
+                  <img 
+                    src={bookInfo.imageUrl} 
+                    alt={bookInfo.title}
+                    className="w-16 h-20 object-cover rounded"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">{bookInfo.title}</div>
+                  <div className="text-sm text-gray-600 truncate">{bookInfo.author}</div>
+                  <div className="text-xs text-gray-500">ISBN: {bookInfo.isbn}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Divider */}
+          <div className="flex items-center space-x-2">
+            <div className="flex-1 border-t border-gray-200"></div>
+            <span className="text-xs text-gray-500 px-2">OR</span>
+            <div className="flex-1 border-t border-gray-200"></div>
+          </div>
+
+          {/* Camera Scanning - Secondary Method */}
           {!showManualInput ? (
             <>
               {/* Camera View */}
