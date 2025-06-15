@@ -776,8 +776,8 @@ export class DatabaseStorage implements IStorage {
         .update(societyRequests)
         .set({ 
           status: approved ? 'approved' : 'rejected',
-          reviewReason: reason,
-          reviewedAt: new Date()
+          rejection_reason: reason,
+          reviewed_at: new Date()
         })
         .where(eq(societyRequests.id, requestId));
 
