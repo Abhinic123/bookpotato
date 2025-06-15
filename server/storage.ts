@@ -307,6 +307,7 @@ export class DatabaseStorage implements IStorage {
         isbn: books.isbn,
         genre: books.genre,
         imageUrl: books.imageUrl,
+        coverImageUrl: books.coverImageUrl,
         condition: books.condition,
         dailyFee: books.dailyFee,
         description: books.description,
@@ -898,6 +899,7 @@ export class DatabaseStorage implements IStorage {
           genre: books.genre,
           isbn: books.isbn,
           description: books.description,
+          imageUrl: books.imageUrl,
           coverImageUrl: books.coverImageUrl,
           dailyFee: books.dailyFee,
           isAvailable: books.isAvailable,
@@ -916,7 +918,7 @@ export class DatabaseStorage implements IStorage {
       // Apply society filter
       if (filters.societyIds?.length > 0) {
         query = query.where(
-          sql`${books.societyId} IN (${sql.join(filters.societyIds.map((id: number) => sql`${id}`), sql`, `)})`
+          inArray(books.societyId, filters.societyIds)
         );
       }
 
@@ -1017,6 +1019,20 @@ export class MemStorage implements IStorage {
       email: "john@example.com",
       phone: "+1234567890",
       password: "password123",
+      address: null,
+      userNumber: null,
+      referredBy: null,
+      isAdmin: false,
+      referralCode: "REF1",
+      totalReferrals: 0,
+      referralEarnings: "0",
+      totalEarnings: "0",
+      rank: "Bronze",
+      commissionFreeUntil: null,
+      booksUploaded: 0,
+      profilePicture: null,
+      resetToken: null,
+      resetTokenExpiry: null,
       createdAt: new Date(),
     };
     this.users.set(1, testUser);
@@ -1028,6 +1044,10 @@ export class MemStorage implements IStorage {
       name: "Greenwood Apartments",
       description: "A community of book lovers",
       code: "GWA2024",
+      city: "Mumbai",
+      apartmentCount: 120,
+      location: "Bandra West",
+      status: "active",
       createdBy: 1,
       memberCount: 1,
       bookCount: 0,
@@ -1222,6 +1242,7 @@ export class MemStorage implements IStorage {
       genre: insertBook.genre,
       description: insertBook.description || null,
       imageUrl: insertBook.imageUrl || null,
+      coverImageUrl: insertBook.coverImageUrl || null,
       condition: insertBook.condition,
       dailyFee: insertBook.dailyFee,
       ownerId: insertBook.ownerId,
