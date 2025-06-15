@@ -24,9 +24,9 @@ export default function LateFeeModal({ isOpen, onClose, rental }: LateFeeModalPr
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  if (!rental) return null;
-
   const calculateLateFee = () => {
+    if (!rental) return { daysLate: 0, dailyLateFee: 0, totalLateFee: 0 };
+    
     const endDate = new Date(rental.endDate);
     const currentDate = new Date();
     const daysLate = Math.max(0, Math.ceil((currentDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24)));

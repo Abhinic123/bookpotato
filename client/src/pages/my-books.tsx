@@ -11,7 +11,7 @@ import type { RentalWithDetails, Book } from "@shared/schema";
 import { BookOpen, Plus, Edit } from "lucide-react";
 import AddBookModal from "@/components/modals/add-book-modal";
 import BookDetailsModal from "@/components/modals/book-details-modal";
-import ExtendRequestModal from "@/components/modals/extend-request-modal";
+import ExtensionRequestModal from "@/components/modals/extension-request-modal";
 import LateFeeModal from "@/components/modals/late-fee-modal";
 import ReturnConfirmationModal from "@/components/modals/return-confirmation-modal";
 
@@ -434,15 +434,14 @@ export default function MyBooks() {
         editBook={editingBook}
       />
 
-      {/* Extend Request Modal */}
-      <ExtendRequestModal
+      {/* Extension Request Modal */}
+      <ExtensionRequestModal
         isOpen={showExtendModal}
         onClose={() => {
           setShowExtendModal(false);
           setSelectedRental(null);
         }}
         rental={selectedRental}
-        borrowerName={user?.name || "You"}
       />
 
       {/* Late Fee Modal */}

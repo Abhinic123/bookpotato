@@ -502,6 +502,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Extension request
+  app.post("/api/rentals/:id/request-extension", requireAuth, async (req, res) => {
+    try {
+      const rentalId = parseInt(req.params.id);
+      const { extensionDays, reason } = req.body;
+      
+      const rental = await storage.getRental(rentalId);
+      
+      if (!rental || rental.borrowerId !== req.session.userId!) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      if (!extensionDays || extensionDays < 1 || extensionDays > 30) {
+        return res.status(400).json({ message: "Extension days must be between 1 and 30" });
+      }
+
+      if (!reason || reason.length < 10) {
+        return res.status(400).json({ message: "Reason must be at least 10 characters" });
+      }
+
+      const currentEndDate = new Date(rental.endDate);
+      const proposedEndDate = new Date(currentEndDate);
+      proposedEndDate.setDate(currentEndDate.getDate() + extensionDays);
+
+      // Create notification for book owner
+      await storage.createNotification({
+        userId: rental.lenderId,
+        title: "Extension Request",
+        message: `${rental.borrower.name} requests to extend "${rental.book.title}" for ${extensionDays} day(s). Current return date: ${currentEndDate.toLocaleDateString()}, Proposed: ${proposedEndDate.toLocaleDateString()}. Reason: ${reason}`,
+        type: "extension_request",
+        data: { 
+          rentalId: rentalId,
+          extensionDays: extensionDays,
+          reason: reason,
+          proposedEndDate: proposedEndDate.toISOString()
+        }
+      });
+
+      res.json({ message: "Extension request sent to book owner" });
+    } catch (error) {
+      console.error("Request extension error:", error);
+      res.status(500).json({ message: "Failed to request extension" });
+    }
+  });
+
   // Book return request
   app.post("/api/rentals/:id/request-return", requireAuth, async (req, res) => {
     try {
