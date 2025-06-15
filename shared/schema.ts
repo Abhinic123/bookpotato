@@ -87,6 +87,7 @@ export const notifications = pgTable("notifications", {
   title: text("title").notNull(),
   message: text("message").notNull(),
   type: text("type").notNull(),
+  data: text("data"), // JSON string for additional data like extension requests
   isRead: boolean("is_read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -170,6 +171,8 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
   isRead: true,
   createdAt: true,
+}).extend({
+  data: z.string().optional().nullable(),
 });
 
 // Types

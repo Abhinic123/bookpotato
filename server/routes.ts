@@ -532,12 +532,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: "Extension Request",
         message: `${rental.borrower.name} requests to extend "${rental.book.title}" for ${extensionDays} day(s). Current return date: ${currentEndDate.toLocaleDateString()}, Proposed: ${proposedEndDate.toLocaleDateString()}. Reason: ${reason}`,
         type: "extension_request",
-        data: { 
+        data: JSON.stringify({ 
           rentalId: rentalId,
           extensionDays: extensionDays,
           reason: reason,
           proposedEndDate: proposedEndDate.toISOString()
-        }
+        })
       });
 
       res.json({ message: "Extension request sent to book owner" });

@@ -342,9 +342,91 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRental(id: number): Promise<RentalWithDetails | undefined> {
-    // For now, return undefined as rental queries need complex joins
-    // This will be implemented when rental functionality is fully needed
-    return undefined;
+    try {
+      const result = await db
+        .select({
+          rentalId: bookRentals.id,
+          bookId: bookRentals.bookId,
+          borrowerId: bookRentals.borrowerId,
+          lenderId: bookRentals.lenderId,
+          societyId: bookRentals.societyId,
+          startDate: bookRentals.startDate,
+          endDate: bookRentals.endDate,
+          actualReturnDate: bookRentals.actualReturnDate,
+          status: bookRentals.status,
+          paymentStatus: bookRentals.paymentStatus,
+          totalAmount: bookRentals.totalAmount,
+          lenderAmount: bookRentals.lenderAmount,
+          platformFee: bookRentals.platformFee,
+          securityDeposit: bookRentals.securityDeposit,
+          rentalCreatedAt: bookRentals.createdAt,
+          // Book info
+          bookTitle: books.title,
+          bookAuthor: books.author,
+          bookIsbn: books.isbn,
+          bookGenre: books.genre,
+          bookImageUrl: books.imageUrl,
+          bookCondition: books.condition,
+          bookDailyFee: books.dailyFee,
+          bookDescription: books.description,
+          bookIsAvailable: books.isAvailable,
+          bookOwnerId: books.ownerId,
+          bookSocietyId: books.societyId,
+          bookCreatedAt: books.createdAt,
+          // Borrower info
+          borrowerName: sql<string>`borrower.name`.as('borrowerName'),
+          // Lender info
+          lenderName: sql<string>`lender.name`.as('lenderName')
+        })
+        .from(bookRentals)
+        .innerJoin(books, eq(bookRentals.bookId, books.id))
+        .innerJoin(sql`${users} as borrower`, sql`${bookRentals.borrowerId} = borrower.id`)
+        .innerJoin(sql`${users} as lender`, sql`${bookRentals.lenderId} = lender.id`)
+        .where(eq(bookRentals.id, id))
+        .limit(1);
+
+      if (result.length === 0) return undefined;
+
+      const row = result[0];
+      return {
+        id: row.rentalId,
+        bookId: row.bookId,
+        borrowerId: row.borrowerId,
+        lenderId: row.lenderId,
+        societyId: row.societyId,
+        startDate: row.startDate,
+        endDate: row.endDate,
+        actualReturnDate: row.actualReturnDate,
+        status: row.status,
+        paymentStatus: row.paymentStatus,
+        totalAmount: row.totalAmount,
+        lenderAmount: row.lenderAmount,
+        platformFee: row.platformFee,
+        securityDeposit: row.securityDeposit,
+        paymentId: null,
+        createdAt: row.rentalCreatedAt,
+        book: {
+          id: row.bookId,
+          title: row.bookTitle,
+          author: row.bookAuthor,
+          isbn: row.bookIsbn,
+          genre: row.bookGenre,
+          imageUrl: row.bookImageUrl,
+          condition: row.bookCondition,
+          dailyFee: row.bookDailyFee,
+          description: row.bookDescription,
+          isAvailable: row.bookIsAvailable,
+          ownerId: row.bookOwnerId,
+          societyId: row.bookSocietyId,
+          createdAt: row.bookCreatedAt
+        },
+        borrower: { id: row.borrowerId, name: row.borrowerName },
+        lender: { id: row.lenderId, name: row.lenderName }
+      } as RentalWithDetails;
+    } catch (error) {
+      console.error('Error fetching rental:', error);
+      return undefined;
+    }
   }
 
   async getRentalsByBorrower(borrowerId: number): Promise<RentalWithDetails[]> {
