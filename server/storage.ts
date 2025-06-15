@@ -65,6 +65,9 @@ export interface IStorage {
   getMessages(userId1: number, userId2: number): Promise<any[]>;
   createMessage(message: any): Promise<any>;
   markMessagesAsRead(userId: number, otherUserId: number): Promise<void>;
+  
+  // Advanced search
+  searchBooksAdvanced(filters: any): Promise<BookWithOwner[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -798,6 +801,107 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error marking messages as read:', error);
       throw error;
+    }
+  }
+
+  async searchBooksAdvanced(filters: any): Promise<BookWithOwner[]> {
+    try {
+      let query = db
+        .select({
+          id: books.id,
+          title: books.title,
+          author: books.author,
+          genre: books.genre,
+          isbn: books.isbn,
+          description: books.description,
+          coverImageUrl: books.coverImageUrl,
+          dailyFee: books.dailyFee,
+          isAvailable: books.isAvailable,
+          condition: books.condition,
+          ownerId: books.ownerId,
+          societyId: books.societyId,
+          createdAt: books.createdAt,
+          owner: {
+            id: users.id,
+            name: users.name,
+          },
+        })
+        .from(books)
+        .innerJoin(users, eq(books.ownerId, users.id));
+
+      // Apply society filter
+      if (filters.societyIds?.length > 0) {
+        query = query.where(
+          sql`${books.societyId} IN (${sql.join(filters.societyIds.map((id: number) => sql`${id}`), sql`, `)})`
+        );
+      }
+
+      const results = await query;
+
+      // Apply additional filters in memory (for complex filtering)
+      let filteredBooks = results;
+
+      // Search filter
+      if (filters.search) {
+        const searchTerm = filters.search.toLowerCase();
+        filteredBooks = filteredBooks.filter(book =>
+          book.title.toLowerCase().includes(searchTerm) ||
+          book.author.toLowerCase().includes(searchTerm) ||
+          book.genre?.toLowerCase().includes(searchTerm) ||
+          book.description?.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      // Genre filter
+      if (filters.genres?.length > 0) {
+        filteredBooks = filteredBooks.filter(book =>
+          book.genre && filters.genres.includes(book.genre)
+        );
+      }
+
+      // Price filter
+      if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+        filteredBooks = filteredBooks.filter(book => {
+          const price = parseFloat(book.dailyFee);
+          return price >= (filters.minPrice || 0) && price <= (filters.maxPrice || 1000);
+        });
+      }
+
+      // Condition filter
+      if (filters.conditions?.length > 0) {
+        filteredBooks = filteredBooks.filter(book =>
+          book.condition && filters.conditions.includes(book.condition)
+        );
+      }
+
+      // Availability filter
+      if (filters.availability === 'available') {
+        filteredBooks = filteredBooks.filter(book => book.isAvailable);
+      } else if (filters.availability === 'rented') {
+        filteredBooks = filteredBooks.filter(book => !book.isAvailable);
+      }
+
+      // Sort results
+      switch (filters.sortBy) {
+        case 'oldest':
+          filteredBooks.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          break;
+        case 'price_low':
+          filteredBooks.sort((a, b) => parseFloat(a.dailyFee) - parseFloat(b.dailyFee));
+          break;
+        case 'price_high':
+          filteredBooks.sort((a, b) => parseFloat(b.dailyFee) - parseFloat(a.dailyFee));
+          break;
+        case 'newest':
+        default:
+          filteredBooks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          break;
+      }
+
+      return filteredBooks as BookWithOwner[];
+    } catch (error) {
+      console.error('Error in advanced search:', error);
+      return [];
     }
   }
 }

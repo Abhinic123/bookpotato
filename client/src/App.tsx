@@ -8,6 +8,8 @@ import NotFound from "@/pages/not-found";
 import Auth from "@/pages/auth";
 import Welcome from "@/pages/welcome";
 import AutofillSuggestions from "@/pages/autofill-suggestions";
+import EnhancedBrowse from "@/pages/enhanced-browse";
+import Settings from "@/pages/settings";
 import EnhancedAuth from "@/pages/enhanced-auth";
 import Home from "@/pages/home";
 import BrowseWorking from "@/pages/browse-working";

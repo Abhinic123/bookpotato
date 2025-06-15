@@ -11,6 +11,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
+import SocietyApprovalWorkflow from "@/components/ui/society-approval-workflow";
 import { 
   Settings, 
   Users, 
@@ -130,81 +131,7 @@ export default function AdminPanel() {
         </TabsList>
 
         <TabsContent value="society-requests" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Society Creation Requests</CardTitle>
-              <CardDescription>
-                Review and approve society creation requests. Societies must have 90+ apartments.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {societyRequests.map((request: any) => (
-                  <Card key={request.id} className="border-l-4 border-l-blue-500">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <h3 className="font-semibold">{request.name}</h3>
-                            <Badge variant={
-                              request.status === "pending" ? "default" :
-                              request.status === "approved" ? "success" : "destructive"
-                            }>
-                              {request.status}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-gray-600">{request.description}</p>
-                          <div className="text-xs text-gray-500 space-y-1">
-                            <p>📍 {request.city} • {request.apartmentCount} apartments</p>
-                            <p>🏠 {request.location}</p>
-                            <p>👤 Requested by: User #{request.requestedBy}</p>
-                            <p>📅 {formatDate(request.createdAt)}</p>
-                          </div>
-                          {request.apartmentCount < 90 && (
-                            <Badge variant="destructive" className="text-xs">
-                              ⚠️ Below 90 apartment requirement
-                            </Badge>
-                          )}
-                        </div>
-
-                        {request.status === "pending" && (
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-green-600 border-green-600 hover:bg-green-50"
-                              onClick={() => handleSocietyReview(request.id, true)}
-                              disabled={approveSocietyMutation.isPending}
-                            >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 border-red-600 hover:bg-red-50"
-                              onClick={() => handleSocietyReview(request.id, false, "Requirements not met")}
-                              disabled={approveSocietyMutation.isPending}
-                            >
-                              <XCircle className="w-4 h-4 mr-1" />
-                              Reject
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-
-                {societyRequests.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <Building className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No pending society requests</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <SocietyApprovalWorkflow isAdmin={true} />
         </TabsContent>
 
         <TabsContent value="referral-rewards" className="space-y-4">

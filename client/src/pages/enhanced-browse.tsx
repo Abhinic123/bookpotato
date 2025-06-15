@@ -1,248 +1,410 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Filter, BookOpen, User, Calendar, DollarSign } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  Search, 
+  Filter, 
+  MapPin, 
+  Star, 
+  Book,
+  Users,
+  SlidersHorizontal,
+  X
+} from "lucide-react";
 import BookCard from "@/components/book-card";
-import { formatCurrency } from "@/lib/utils";
+import type { BookWithOwner } from "@shared/schema";
+
+const genres = [
+  "Fiction", "Non-Fiction", "Mystery", "Romance", "Science Fiction", 
+  "Fantasy", "Biography", "History", "Self-Help", "Business",
+  "Technology", "Health", "Travel", "Cooking", "Art"
+];
+
+const conditions = ["New", "Like New", "Good", "Fair"];
+const sortOptions = [
+  { value: "newest", label: "Newest First" },
+  { value: "oldest", label: "Oldest First" },
+  { value: "price_low", label: "Price: Low to High" },
+  { value: "price_high", label: "Price: High to Low" },
+  { value: "rating", label: "Highest Rated" },
+  { value: "distance", label: "Nearest to Me" }
+];
+
+interface Filters {
+  search: string;
+  genres: string[];
+  priceRange: [number, number];
+  conditions: string[];
+  societies: string[];
+  availability: "all" | "available" | "rented";
+  sortBy: string;
+  location: string;
+}
 
 export default function EnhancedBrowse() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [authorSearch, setAuthorSearch] = useState("");
-  const [selectedGenre, setSelectedGenre] = useState<string>("");
-  const [selectedSociety, setSelectedSociety] = useState<string>("0");
-  const [sortBy, setSortBy] = useState<string>("newest");
-
-  // Get user's societies
-  const { data: userSocieties = [] } = useQuery({
-    queryKey: ["/api/societies/my"],
+  const [filters, setFilters] = useState<Filters>({
+    search: "",
+    genres: [],
+    priceRange: [0, 100],
+    conditions: [],
+    societies: [],
+    availability: "all",
+    sortBy: "newest",
+    location: ""
   });
 
-  // Get all available books
-  const { data: allBooks = [], isLoading } = useQuery({
-    queryKey: ["/api/books/all"],
-  });
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
 
-  // Filter and sort books
-  const filteredBooks = allBooks.filter((book: any) => {
-    const matchesTitle = book.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesAuthor = book.author.toLowerCase().includes(authorSearch.toLowerCase());
-    const matchesGenre = !selectedGenre || selectedGenre === "all" || book.genre === selectedGenre;
-    const matchesSociety = selectedSociety === "0" || book.societyId.toString() === selectedSociety;
+  // Fetch books with advanced filtering
+  const { data: books = [], isLoading } = useQuery({
+    queryKey: ["/api/books/browse", filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.search) params.append("search", filters.search);
+      if (filters.genres.length) params.append("genres", filters.genres.join(","));
+      params.append("minPrice", filters.priceRange[0].toString());
+      params.append("maxPrice", filters.priceRange[1].toString());
+      if (filters.conditions.length) params.append("conditions", filters.conditions.join(","));
+      if (filters.societies.length) params.append("societies", filters.societies.join(","));
+      params.append("availability", filters.availability);
+      params.append("sortBy", filters.sortBy);
+      if (filters.location) params.append("location", filters.location);
 
-    return matchesTitle && matchesAuthor && matchesGenre && matchesSociety;
-  }).sort((a: any, b: any) => {
-    switch (sortBy) {
-      case "newest":
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      case "oldest":
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      case "price-low":
-        return parseFloat(a.dailyFee) - parseFloat(b.dailyFee);
-      case "price-high":
-        return parseFloat(b.dailyFee) - parseFloat(a.dailyFee);
-      case "title":
-        return a.title.localeCompare(b.title);
-      case "author":
-        return a.author.localeCompare(b.author);
-      default:
-        return 0;
+      const response = await fetch(`/api/books/browse?${params.toString()}`);
+      return response.json();
     }
   });
 
-  // Get unique genres for filter
-  const genres = [...new Set(allBooks.map((book: any) => book.genre))];
+  // Fetch available societies for filtering
+  const { data: societies = [] } = useQuery({
+    queryKey: ["/api/societies/available"],
+  });
+
+  const updateFilter = (key: keyof Filters, value: any) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const toggleGenre = (genre: string) => {
+    setFilters(prev => ({
+      ...prev,
+      genres: prev.genres.includes(genre) 
+        ? prev.genres.filter(g => g !== genre)
+        : [...prev.genres, genre]
+    }));
+  };
+
+  const toggleCondition = (condition: string) => {
+    setFilters(prev => ({
+      ...prev,
+      conditions: prev.conditions.includes(condition)
+        ? prev.conditions.filter(c => c !== condition)
+        : [...prev.conditions, condition]
+    }));
+  };
+
+  const toggleSociety = (societyId: string) => {
+    setFilters(prev => ({
+      ...prev,
+      societies: prev.societies.includes(societyId)
+        ? prev.societies.filter(s => s !== societyId)
+        : [...prev.societies, societyId]
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      search: "",
+      genres: [],
+      priceRange: [0, 100],
+      conditions: [],
+      societies: [],
+      availability: "all",
+      sortBy: "newest",
+      location: ""
+    });
+  };
+
+  const activeFilterCount = 
+    filters.genres.length + 
+    filters.conditions.length + 
+    filters.societies.length + 
+    (filters.availability !== "all" ? 1 : 0) +
+    (filters.location ? 1 : 0);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center space-x-3 mb-6">
-        <BookOpen className="w-8 h-8 text-blue-600" />
+    <div className="container mx-auto p-6">
+      <div className="space-y-6">
+        {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Browse Books</h1>
           <p className="text-gray-600">Discover amazing books in your community</p>
         </div>
-      </div>
 
-      {/* Advanced Search and Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Filter className="w-5 h-5" />
-            <span>Search & Filters</span>
-          </CardTitle>
-          <CardDescription>
-            Find books by title, author, genre, or society
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Title Search */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Search by Title</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+        {/* Search and Quick Filters */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Search */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
-                  placeholder="Enter book title..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search books, authors, or keywords..."
+                  value={filters.search}
+                  onChange={(e) => updateFilter("search", e.target.value)}
                   className="pl-10"
                 />
               </div>
-            </div>
 
-            {/* Author Search */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Search by Author</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Enter author name..."
-                  value={authorSearch}
-                  onChange={(e) => setAuthorSearch(e.target.value)}
-                  className="pl-10"
-                />
+              {/* Location Filter */}
+              <div className="sm:w-48">
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Location..."
+                    value={filters.location}
+                    onChange={(e) => updateFilter("location", e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Genre Filter */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Genre</label>
-              <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All genres" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Genres</SelectItem>
-                  {genres.map((genre: string) => (
-                    <SelectItem key={genre} value={genre}>
-                      {genre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              {/* Sort */}
+              <div className="sm:w-48">
+                <Select value={filters.sortBy} onValueChange={(value) => updateFilter("sortBy", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sort by..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {/* Society Filter */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Society</label>
-              <Select value={selectedSociety} onValueChange={setSelectedSociety}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All societies" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">All Societies</SelectItem>
-                  {userSocieties.map((society: any) => (
-                    <SelectItem key={society.id} value={society.id.toString()}>
-                      {society.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Sort Options */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Sort By</label>
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sort by..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
-                  <SelectItem value="title">Title A-Z</SelectItem>
-                  <SelectItem value="author">Author A-Z</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Clear Filters */}
-            <div className="flex items-end">
+              {/* Advanced Filters Toggle */}
               <Button
                 variant="outline"
-                onClick={() => {
-                  setSearchTerm("");
-                  setAuthorSearch("");
-                  setSelectedGenre("all");
-                  setSelectedSociety("0");
-                  setSortBy("newest");
-                }}
-                className="w-full"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center space-x-2"
               >
-                Clear All Filters
+                <SlidersHorizontal className="w-4 h-4" />
+                <span>Filters</span>
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-1">
+                    {activeFilterCount}
+                  </Badge>
+                )}
               </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Results Summary */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-xl font-semibold">
-            {filteredBooks.length} books found
-          </h2>
-          {(searchTerm || authorSearch || selectedGenre || selectedSociety !== "0") && (
-            <Badge variant="secondary">
-              Filtered
-            </Badge>
-          )}
-        </div>
-      </div>
-
-      {/* Books Grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="bg-gray-200 h-64 rounded-lg"></div>
-              <div className="mt-4 space-y-2">
-                <div className="bg-gray-200 h-4 rounded"></div>
-                <div className="bg-gray-200 h-4 rounded w-3/4"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : filteredBooks.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredBooks.map((book: any) => (
-            <BookCard
-              key={book.id}
-              book={book}
-              showOwner={true}
-              variant="grid"
-            />
-          ))}
-        </div>
-      ) : (
-        <Card className="text-center py-16">
-          <CardContent>
-            <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">
-              No books found
-            </h3>
-            <p className="text-gray-500 mb-6">
-              Try adjusting your search criteria or clear all filters
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSearchTerm("");
-                setAuthorSearch("");
-                setSelectedGenre("all");
-                setSelectedSociety("0");
-              }}
-            >
-              Clear Filters
-            </Button>
           </CardContent>
         </Card>
-      )}
+
+        {/* Advanced Filters Panel */}
+        {showFilters && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  <Filter className="w-5 h-5" />
+                  <span>Advanced Filters</span>
+                </CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Button variant="ghost" size="sm" onClick={clearFilters}>
+                    Clear All
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setShowFilters(false)}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Price Range */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Price Range (₹/day)</Label>
+                <div className="px-3">
+                  <Slider
+                    value={filters.priceRange}
+                    onValueChange={(value) => updateFilter("priceRange", value)}
+                    max={100}
+                    min={0}
+                    step={5}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>₹{filters.priceRange[0]}</span>
+                    <span>₹{filters.priceRange[1]}</span>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Genres */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Genres</Label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                  {genres.map(genre => (
+                    <div key={genre} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`genre-${genre}`}
+                        checked={filters.genres.includes(genre)}
+                        onCheckedChange={() => toggleGenre(genre)}
+                      />
+                      <Label htmlFor={`genre-${genre}`} className="text-sm">
+                        {genre}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Book Condition */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Book Condition</Label>
+                <div className="flex flex-wrap gap-2">
+                  {conditions.map(condition => (
+                    <div key={condition} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`condition-${condition}`}
+                        checked={filters.conditions.includes(condition)}
+                        onCheckedChange={() => toggleCondition(condition)}
+                      />
+                      <Label htmlFor={`condition-${condition}`} className="text-sm">
+                        {condition}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Societies */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Societies</Label>
+                <div className="grid gap-2 max-h-40 overflow-y-auto">
+                  {societies.map((society: any) => (
+                    <div key={society.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`society-${society.id}`}
+                        checked={filters.societies.includes(society.id.toString())}
+                        onCheckedChange={() => toggleSociety(society.id.toString())}
+                      />
+                      <Label htmlFor={`society-${society.id}`} className="text-sm">
+                        {society.name}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Availability */}
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Availability</Label>
+                <div className="flex space-x-4">
+                  {[
+                    { value: "all", label: "All Books" },
+                    { value: "available", label: "Available Now" },
+                    { value: "rented", label: "Currently Rented" }
+                  ].map(option => (
+                    <div key={option.value} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`availability-${option.value}`}
+                        checked={filters.availability === option.value}
+                        onCheckedChange={() => updateFilter("availability", option.value)}
+                      />
+                      <Label htmlFor={`availability-${option.value}`} className="text-sm">
+                        {option.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Results */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <h2 className="text-xl font-semibold">
+              {isLoading ? "Loading..." : `${books.length} books found`}
+            </h2>
+            {activeFilterCount > 0 && (
+              <Badge variant="outline" className="flex items-center space-x-1">
+                <Filter className="w-3 h-3" />
+                <span>{activeFilterCount} filters active</span>
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Books Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-4">
+                  <div className="aspect-[3/4] bg-gray-200 rounded mb-4"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : books.length === 0 ? (
+          <Card>
+            <CardContent className="p-12 text-center">
+              <Book className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No books found</h3>
+              <p className="text-gray-600 mb-4">
+                Try adjusting your filters or search terms to find more books.
+              </p>
+              <Button onClick={clearFilters} variant="outline">
+                Clear All Filters
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {books.map((book: BookWithOwner) => (
+              <BookCard
+                key={book.id}
+                book={book}
+                onBorrow={() => setSelectedBook(book)}
+                showOwner={true}
+                variant="grid"
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

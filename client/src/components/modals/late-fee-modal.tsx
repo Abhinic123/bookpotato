@@ -72,7 +72,7 @@ export default function LateFeeModal({ isOpen, onClose, rental }: LateFeeModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" aria-describedby="late-fee-description">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <AlertTriangle className="w-5 h-5 text-red-500" />
