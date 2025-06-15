@@ -189,41 +189,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('Raw request body:', req.body);
       
-      // Auto-generate a simple code from the society name
-      const generateCode = (name: string) => {
-        return name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8).toUpperCase() + Math.floor(Math.random() * 1000);
-      };
-
       // First validate the basic data
       const validatedData = insertSocietySchema.parse(req.body);
       console.log('Validated data:', validatedData);
+
+      // Get minimum apartment requirement from admin settings
+      const minApartments = 90; // This could be fetched from settings in the future
       
-      // Generate the code
-      const generatedCode = generateCode(req.body.name || 'SOC');
-      console.log('Generated code:', generatedCode, 'from name:', req.body.name);
-      
-      // Then add the auto-generated fields
-      const societyData = {
+      // Check if apartment count meets minimum requirement
+      if (validatedData.apartmentCount < minApartments) {
+        // Find existing societies in the same city for potential merging
+        const existingSocieties = await storage.getSocietiesByLocation(validatedData.city);
+        
+        return res.status(400).json({
+          message: `Minimum ${minApartments} apartments required. Consider merging with existing societies in your area.`,
+          minApartments,
+          suggestedSocieties: existingSocieties.map(s => ({
+            id: s.id,
+            name: s.name,
+            location: s.location,
+            apartmentCount: s.apartmentCount,
+            memberCount: s.memberCount
+          })),
+          requiresMerge: true
+        });
+      }
+
+      // Create society request for admin approval
+      const requestData = {
         ...validatedData,
-        code: generatedCode,
-        status: 'active',
-        createdBy: req.session.userId!
+        requestedBy: req.session.userId!,
+        status: 'pending'
       };
       
-      console.log('Final society data:', societyData);
+      const request = await storage.createSocietyRequest(requestData);
       
-      const society = await storage.createSociety(societyData);
-      
-      // Auto-join the creator to the society
-      await storage.joinSociety(society.id, req.session.userId!);
-      
-      res.json(society);
+      res.json({
+        message: "Society creation request submitted for admin approval",
+        requestId: request.id,
+        status: "pending"
+      });
     } catch (error) {
       console.error("Create society error:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Please fill all required fields", errors: error.errors });
       }
-      res.status(400).json({ message: "Failed to create society" });
+      res.status(400).json({ message: "Failed to create society request" });
+    }
+  });
+
+  // Merge with existing society endpoint
+  app.post("/api/societies/merge", requireAuth, async (req, res) => {
+    try {
+      const { targetSocietyId, newSocietyName, newSocietyDescription } = req.body;
+      
+      if (!targetSocietyId || !newSocietyName) {
+        return res.status(400).json({ message: "Target society ID and new society name are required" });
+      }
+
+      // Check if target society exists
+      const targetSociety = await storage.getSociety(targetSocietyId);
+      if (!targetSociety) {
+        return res.status(404).json({ message: "Target society not found" });
+      }
+
+      // Create merge request
+      const mergeRequestData = {
+        name: `${newSocietyName} (merge with ${targetSociety.name})`,
+        description: newSocietyDescription || `Merge request to join ${targetSociety.name}`,
+        city: targetSociety.city,
+        apartmentCount: 1, // Placeholder, will be handled during admin review
+        location: targetSociety.location,
+        requestedBy: req.session.userId!,
+        status: 'pending_merge',
+        targetSocietyId: targetSocietyId
+      };
+      
+      const request = await storage.createSocietyRequest(mergeRequestData);
+      
+      res.json({
+        message: "Merge request submitted for admin approval",
+        requestId: request.id,
+        status: "pending_merge",
+        targetSociety: {
+          name: targetSociety.name,
+          location: targetSociety.location
+        }
+      });
+    } catch (error) {
+      console.error("Merge society request error:", error);
+      res.status(400).json({ message: "Failed to create merge request" });
     }
   });
 
@@ -943,7 +998,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { requestId, approved, reason } = req.body;
-      await storage.reviewSocietyRequest(requestId, approved, reason);
+      
+      if (approved) {
+        // Get the request details to create the society
+        const requests = await storage.getSocietyRequests();
+        const request = requests.find(r => r.id === requestId);
+        
+        if (request && request.status === 'pending') {
+          // Auto-generate a simple code from the society name
+          const generateCode = (name: string) => {
+            return name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 8).toUpperCase() + Math.floor(Math.random() * 1000);
+          };
+
+          // Create the approved society
+          const societyData = {
+            name: request.name,
+            description: request.description,
+            city: request.city,
+            apartmentCount: request.apartmentCount,
+            location: request.location,
+            code: generateCode(request.name),
+            status: 'active',
+            createdBy: request.requestedBy
+          };
+          
+          const society = await storage.createSociety(societyData);
+          
+          // Auto-join the creator to the society
+          await storage.joinSociety(society.id, request.requestedBy);
+          
+          // Update request status
+          await storage.reviewSocietyRequest(requestId, true, reason);
+          
+          // Notify the requester about approval
+          await storage.createNotification({
+            userId: request.requestedBy,
+            title: "Society Request Approved",
+            message: `Your society "${request.name}" has been approved and created successfully!`,
+            type: "society_approved",
+            data: JSON.stringify({
+              societyId: society.id,
+              societyName: society.name,
+              societyCode: society.code
+            })
+          });
+        }
+      } else {
+        // Just update request status for rejection
+        await storage.reviewSocietyRequest(requestId, false, reason);
+        
+        // Notify the requester about rejection
+        const requests = await storage.getSocietyRequests();
+        const request = requests.find(r => r.id === requestId);
+        
+        if (request) {
+          await storage.createNotification({
+            userId: request.requestedBy,
+            title: "Society Request Declined",
+            message: `Your society request for "${request.name}" has been declined. ${reason ? `Reason: ${reason}` : ''}`,
+            type: "society_declined",
+            data: JSON.stringify({
+              requestId: requestId,
+              reason: reason || null
+            })
+          });
+        }
+      }
       
       res.json({ message: "Society request reviewed successfully" });
     } catch (error) {

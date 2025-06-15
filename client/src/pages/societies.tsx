@@ -3,12 +3,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Users, Building2, Hash, Check } from "lucide-react";
+import { Plus, Users, Building2, Hash, Check, AlertTriangle, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,8 @@ type CreateSocietyFormData = z.infer<typeof createSocietySchema>;
 
 export default function Societies() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showMergeOptions, setShowMergeOptions] = useState(false);
+  const [mergeData, setMergeData] = useState<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
