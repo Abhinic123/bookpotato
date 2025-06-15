@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Users, Building2, Hash, Check, AlertTriangle, ExternalLink } from "lucide-react";
+import { Plus, Users, Building2, Hash, Check, AlertTriangle, ExternalLink, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -226,10 +226,28 @@ export default function Societies() {
             <p className="text-sm text-text-secondary mb-4">
               You haven't joined any societies yet. Create your own or join an existing one!
             </p>
-            <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Society
-            </Button>
+            <div className="space-y-3">
+              <Button onClick={() => setShowCreateModal(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Society
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setMergeData({
+                    formData: { name: "", description: "", city: "", apartmentCount: 0, location: "" },
+                    minApartments: 90,
+                    suggestedSocieties: [],
+                    message: "Choose an existing society to merge with. Location and name are required."
+                  });
+                  setShowMergeOptions(true);
+                }}
+                className="w-full"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Merge with Existing Society
+              </Button>
+            </div>
           </CardContent>
         </Card>
       );
@@ -515,47 +533,17 @@ export default function Societies() {
                   </AlertDescription>
                 </Alert>
 
-                <div>
-                  <h3 className="font-semibold mb-3">Suggested Societies to Merge With:</h3>
-                  {mergeData.suggestedSocieties.length > 0 ? (
-                    <div className="space-y-3">
-                      {mergeData.suggestedSocieties.map((society: any) => (
-                        <Card key={society.id} className="p-4">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h4 className="font-medium">{society.name}</h4>
-                              <p className="text-sm text-gray-600 mt-1">
-                                {society.location} • {society.apartmentCount} apartments • {society.memberCount} members
-                              </p>
-                            </div>
-                            <Button
-                              onClick={() => {
-                                mergeMutation.mutate({
-                                  targetSocietyId: society.id,
-                                  newSocietyName: mergeData.formData.name,
-                                  newSocietyDescription: mergeData.formData.description
-                                });
-                              }}
-                              disabled={mergeMutation.isPending}
-                              size="sm"
-                            >
-                              {mergeMutation.isPending ? "Requesting..." : "Request Merge"}
-                            </Button>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <Card className="p-6 text-center">
-                      <p className="text-gray-600">
-                        No societies found in your city ({mergeData.formData.city}) to merge with.
-                      </p>
-                      <p className="text-sm text-gray-500 mt-2">
-                        You can try creating a society in a different city or wait for more societies to be created in your area.
-                      </p>
-                    </Card>
-                  )}
-                </div>
+                <MergeInterface 
+                  availableSocieties={availableSocieties as SocietyWithStats[] || []}
+                  onMergeRequest={(targetSocietyId: number, newSocietyName: string, newSocietyDescription?: string) => {
+                    mergeMutation.mutate({
+                      targetSocietyId,
+                      newSocietyName,
+                      newSocietyDescription
+                    });
+                  }}
+                  isLoading={mergeMutation.isPending}
+                />
 
                 <div className="flex gap-3 pt-4 border-t">
                   <Button

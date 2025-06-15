@@ -121,9 +121,11 @@ export const societyRequests = pgTable("society_requests", {
   apartmentCount: integer("apartment_count").notNull(),
   location: text("location"),
   status: text("status").default("pending").notNull(),
+  reviewReason: text("review_reason"),
   rejectionReason: text("rejection_reason"),
   reviewedBy: integer("reviewed_by"),
   reviewedAt: timestamp("reviewed_at"),
+  targetSocietyId: integer("target_society_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
