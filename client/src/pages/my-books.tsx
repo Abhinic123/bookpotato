@@ -248,25 +248,23 @@ export default function MyBooks() {
                   variant="outline" 
                   className="flex-1"
                   onClick={() => {
-                    // Send reminder to borrower
-                    const daysUntilDue = Math.ceil((new Date(rental.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                    apiRequest("POST", "/api/notifications", {
-                      userId: rental.borrowerId,
-                      title: "Return Reminder",
-                      message: `Reminder: "${rental.book.title}" is due in ${daysUntilDue} days. Please coordinate return with lender.`,
-                      type: "reminder"
-                    }).then(() => {
-                      toast({
-                        title: "Reminder Sent",
-                        description: `Reminder sent to ${rental.borrower.name}`,
+                    // Send reminder to borrower using the proper endpoint
+                    apiRequest("POST", `/api/rentals/${rental.id}/send-reminder`, {})
+                      .then(() => {
+                        const daysUntilDue = Math.ceil((new Date(rental.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                        toast({
+                          title: "Reminder Sent",
+                          description: `Return reminder sent to ${rental.borrower.name} for "${rental.book.title}" (due in ${daysUntilDue} days)`,
+                        });
+                      })
+                      .catch((error) => {
+                        console.error("Send reminder error:", error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to send reminder. Please try again.",
+                          variant: "destructive",
+                        });
                       });
-                    }).catch(() => {
-                      toast({
-                        title: "Error",
-                        description: "Failed to send reminder",
-                        variant: "destructive",
-                      });
-                    });
                   }}
                 >
                   Send Reminder

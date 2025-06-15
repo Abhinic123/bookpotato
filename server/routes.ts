@@ -786,6 +786,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send reminder to borrower
+  app.post("/api/rentals/:id/send-reminder", requireAuth, async (req, res) => {
+    try {
+      const rentalId = parseInt(req.params.id);
+      const rental = await storage.getRental(rentalId);
+      
+      if (!rental || rental.lenderId !== req.session.userId!) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // Calculate days until due
+      const daysUntilDue = Math.ceil((new Date(rental.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+      
+      let reminderMessage;
+      if (daysUntilDue > 0) {
+        reminderMessage = `Reminder: "${rental.book.title}" is due in ${daysUntilDue} day${daysUntilDue > 1 ? 's' : ''}. Please prepare to return it soon.`;
+      } else if (daysUntilDue === 0) {
+        reminderMessage = `Reminder: "${rental.book.title}" is due today. Please return it as soon as possible.`;
+      } else {
+        reminderMessage = `Urgent: "${rental.book.title}" was due ${Math.abs(daysUntilDue)} day${Math.abs(daysUntilDue) > 1 ? 's' : ''} ago. Please return it immediately.`;
+      }
+
+      // Create notification for borrower
+      await storage.createNotification({
+        userId: rental.borrowerId,
+        title: "Return Reminder",
+        message: reminderMessage,
+        type: "reminder",
+        data: JSON.stringify({
+          rentalId: rentalId,
+          bookTitle: rental.book.title,
+          dueDate: rental.endDate,
+          daysUntilDue: daysUntilDue
+        })
+      });
+
+      res.json({ message: "Reminder sent successfully" });
+    } catch (error) {
+      console.error("Send reminder error:", error);
+      res.status(500).json({ message: "Failed to send reminder" });
+    }
+  });
+
   // Admin routes
   app.get("/api/admin/stats", requireAuth, async (req, res) => {
     try {
