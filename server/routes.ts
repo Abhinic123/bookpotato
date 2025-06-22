@@ -422,6 +422,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/books/browse", requireAuth, async (req, res) => {
+    try {
+      const { 
+        search, 
+        genres, 
+        minPrice, 
+        maxPrice, 
+        conditions, 
+        societies, 
+        availability, 
+        sortBy, 
+        location 
+      } = req.query;
+
+      // Get all books from user's societies
+      const userSocieties = await storage.getSocietiesByUser(req.session.userId!);
+      let allBooks: any[] = [];
+      
+      for (const society of userSocieties) {
+        const societyBooks = await storage.getBooksBySociety(society.id);
+        allBooks.push(...societyBooks);
+      }
+
+      // Apply search filter
+      if (search && typeof search === 'string') {
+        const searchTerm = search.toLowerCase();
+        allBooks = allBooks.filter(book => 
+          book.title.toLowerCase().includes(searchTerm) ||
+          book.author.toLowerCase().includes(searchTerm) ||
+          book.genre.toLowerCase().includes(searchTerm) ||
+          (book.description && book.description.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      // Apply genre filter
+      if (genres && typeof genres === 'string') {
+        const genreList = genres.split(',');
+        allBooks = allBooks.filter(book => genreList.includes(book.genre));
+      }
+
+      // Apply price range filter
+      if (minPrice && maxPrice) {
+        const min = parseFloat(minPrice as string);
+        const max = parseFloat(maxPrice as string);
+        allBooks = allBooks.filter(book => {
+          const price = parseFloat(book.dailyFee);
+          return price >= min && price <= max;
+        });
+      }
+
+      // Apply condition filter
+      if (conditions && typeof conditions === 'string') {
+        const conditionList = conditions.split(',');
+        allBooks = allBooks.filter(book => conditionList.includes(book.condition));
+      }
+
+      // Apply availability filter
+      if (availability && availability !== 'all') {
+        if (availability === 'available') {
+          allBooks = allBooks.filter(book => book.isAvailable);
+        } else if (availability === 'rented') {
+          allBooks = allBooks.filter(book => !book.isAvailable);
+        }
+      }
+
+      // Apply sorting
+      if (sortBy) {
+        switch (sortBy) {
+          case 'newest':
+            allBooks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            break;
+          case 'oldest':
+            allBooks.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            break;
+          case 'price_low':
+            allBooks.sort((a, b) => parseFloat(a.dailyFee) - parseFloat(b.dailyFee));
+            break;
+          case 'price_high':
+            allBooks.sort((a, b) => parseFloat(b.dailyFee) - parseFloat(a.dailyFee));
+            break;
+          default:
+            allBooks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        }
+      }
+
+      res.json(allBooks);
+    } catch (error) {
+      console.error("Browse books error:", error);
+      res.status(500).json({ message: "Failed to browse books" });
+    }
+  });
+
   app.get("/api/books/society/:societyId", requireAuth, async (req, res) => {
     try {
       const societyId = parseInt(req.params.societyId);
