@@ -306,7 +306,7 @@ export default function EnhancedBrowse() {
               <div className="space-y-3">
                 <Label className="text-sm font-medium">Societies</Label>
                 <div className="grid gap-2 max-h-40 overflow-y-auto">
-                  {societies.map((society: any) => (
+                  {((societies as any[]) || []).map((society: any) => (
                     <div key={society.id} className="flex items-center space-x-2">
                       <Checkbox
                         id={`society-${society.id}`}

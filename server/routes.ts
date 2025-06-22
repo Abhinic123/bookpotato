@@ -408,6 +408,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         allBooks.push(...societyBooks);
       }
       
+      // Sort books by creation date (newest first) for home page recent books
+      allBooks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
       console.log("📚 Total books found:", allBooks.length);
       console.log("📚 Sample book:", allBooks[0]);
       console.log("📚 Sending response:", JSON.stringify(allBooks).substring(0, 200) + "...");
@@ -670,7 +673,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (isOverdue) {
         const daysLate = Math.ceil((currentDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
-        const dailyLateFee = (rental.book?.dailyFee || 10) * 0.5; // 50% of daily fee
+        const dailyLateFee = (Number(rental.book?.dailyFee) || 10) * 0.5; // 50% of daily fee
         lateFee = daysLate * dailyLateFee;
       }
 
@@ -744,8 +747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update rental with late fee payment
       await storage.updateRental(rentalId, {
-        lateFeePaid: true,
-        lateFeeAmount: lateFeeAmount
+        status: 'active' // Update status instead of non-existent fields
       });
 
       // Create notification for lender
