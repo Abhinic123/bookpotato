@@ -19,6 +19,7 @@ import Referrals from "@/pages/referrals";
 import EnhancedProfile from "@/pages/enhanced-profile";
 import AdminPanel from "@/pages/admin-panel";
 import NotificationsPage from "@/pages/notifications";
+import EarningsPage from "@/pages/earnings";
 import AppLayout from "@/components/layout/app-layout";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -29,6 +30,7 @@ function AuthenticatedApp() {
         <Route path="/" component={Home} />
         <Route path="/browse" component={EnhancedBrowse} />
         <Route path="/my-books" component={MyBooks} />
+        <Route path="/earnings" component={EarningsPage} />
         <Route path="/societies" component={Societies} />
         <Route path="/referrals" component={Referrals} />
         <Route path="/notifications" component={NotificationsPage} />
