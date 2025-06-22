@@ -26,6 +26,7 @@ import {
   X
 } from "lucide-react";
 import BookCard from "@/components/book-card";
+import BorrowBookModal from "@/components/modals/borrow-book-modal";
 import type { BookWithOwner } from "@shared/schema";
 
 const genres = [
@@ -69,6 +70,7 @@ export default function EnhancedBrowse() {
 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
+  const [showBorrowModal, setShowBorrowModal] = useState(false);
 
   // Fetch books with advanced filtering
   const { data: books = [], isLoading } = useQuery({
@@ -399,7 +401,10 @@ export default function EnhancedBrowse() {
               <BookCard
                 key={book.id}
                 book={book}
-                onBorrow={() => setSelectedBook(book)}
+                onBorrow={(book) => {
+                  setSelectedBook(book);
+                  setShowBorrowModal(true);
+                }}
                 showOwner={true}
                 variant="grid"
               />
@@ -407,6 +412,16 @@ export default function EnhancedBrowse() {
           </div>
         )}
       </div>
+
+      {/* Borrow Book Modal */}
+      <BorrowBookModal
+        book={selectedBook}
+        isOpen={showBorrowModal}
+        onClose={() => {
+          setShowBorrowModal(false);
+          setSelectedBook(null);
+        }}
+      />
     </div>
   );
 }
