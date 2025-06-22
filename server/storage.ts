@@ -484,7 +484,14 @@ export class DatabaseStorage implements IStorage {
         .from(bookRentals)
         .innerJoin(books, eq(bookRentals.bookId, books.id))
         .innerJoin(users, eq(bookRentals.lenderId, users.id))
-        .where(eq(bookRentals.borrowerId, borrowerId))
+        .where(and(
+          eq(bookRentals.borrowerId, borrowerId),
+          or(
+            eq(bookRentals.status, 'active'),
+            eq(bookRentals.status, 'pending'),
+            eq(bookRentals.status, 'overdue')
+          )
+        ))
         .orderBy(desc(bookRentals.createdAt));
       
       console.log('📚 DatabaseStorage: Found borrowed books after join:', results.length);
