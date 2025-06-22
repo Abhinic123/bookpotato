@@ -158,45 +158,47 @@ export default function EnhancedBrowse() {
         {/* Search and Quick Filters */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col gap-4">
               {/* Search */}
-              <div className="flex-1 relative">
+              <div className="w-full relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <Input
                   placeholder="Search books, authors, or keywords..."
                   value={filters.search}
                   onChange={(e) => updateFilter("search", e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-12 text-base"
                 />
               </div>
 
-              {/* Location Filter */}
-              <div className="sm:w-48">
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Location..."
-                    value={filters.location}
-                    onChange={(e) => updateFilter("location", e.target.value)}
-                    className="pl-10"
-                  />
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* Location Filter */}
+                <div className="flex-1 sm:min-w-0">
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      placeholder="Location..."
+                      value={filters.location}
+                      onChange={(e) => updateFilter("location", e.target.value)}
+                      className="pl-10 h-10"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Sort */}
-              <div className="sm:w-48">
-                <Select value={filters.sortBy} onValueChange={(value) => updateFilter("sortBy", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sort by..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sortOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {/* Sort */}
+                <div className="flex-1 sm:min-w-0">
+                  <Select value={filters.sortBy} onValueChange={(value) => updateFilter("sortBy", value)}>
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Sort by..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sortOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Advanced Filters Toggle */}

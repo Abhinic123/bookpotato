@@ -115,8 +115,12 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
         title: "Success",
         description: "Book added to your library successfully!",
       });
+      // Invalidate all book-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/my"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/all"] });
       queryClient.invalidateQueries({ queryKey: ["/api/societies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/societies/my"] });
       form.reset();
       onOpenChange(false);
     },
