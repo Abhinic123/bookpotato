@@ -263,16 +263,16 @@ export default function EnhancedProfile() {
             </div>
             
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold">{user?.name}</h2>
+              <h2 className="text-2xl font-bold">{(user as any)?.name}</h2>
               <p className="text-gray-600 flex items-center">
                 <Mail className="w-4 h-4 mr-2" />
-                {user?.email}
+                {(user as any)?.email}
               </p>
               <p className="text-gray-600 flex items-center">
                 <Phone className="w-4 h-4 mr-2" />
-                {user?.phone}
+                {(user as any)?.phone}
               </p>
-              {user?.isAdmin && (
+              {(user as any)?.isAdmin && (
                 <div className="flex items-center space-x-2">
                   <Crown className="w-4 h-4 text-yellow-600" />
                   <span className="text-sm font-medium text-yellow-600">Administrator</span>
@@ -282,7 +282,7 @@ export default function EnhancedProfile() {
 
             <div className="ml-auto">
               <UserBadge 
-                referralCount={user?.totalReferrals || 0} 
+                referralCount={(user as any)?.totalReferrals || 0} 
                 className="text-center"
               />
             </div>
@@ -294,28 +294,28 @@ export default function EnhancedProfile() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/earnings'}>
           <CardContent className="p-4 text-center">
-            <h3 className="text-2xl font-bold text-blue-600">{borrowedRentals?.length || 0}</h3>
+            <h3 className="text-2xl font-bold text-blue-600">{(borrowedRentals as any)?.length || 0}</h3>
             <p className="text-sm text-gray-600">Books Borrowed</p>
           </CardContent>
         </Card>
         
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/earnings'}>
           <CardContent className="p-4 text-center">
-            <h3 className="text-2xl font-bold text-green-600">{lentRentals?.length || 0}</h3>
+            <h3 className="text-2xl font-bold text-green-600">{(lentRentals as any)?.length || 0}</h3>
             <p className="text-sm text-gray-600">Books Lent</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardContent className="p-4 text-center">
-            <h3 className="text-2xl font-bold text-purple-600">{user?.totalReferrals || 0}</h3>
+            <h3 className="text-2xl font-bold text-purple-600">{(user as any)?.totalReferrals || 0}</h3>
             <p className="text-sm text-gray-600">People Helped</p>
           </CardContent>
         </Card>
         
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/societies'}>
           <CardContent className="p-4 text-center">
-            <h3 className="text-2xl font-bold text-indigo-600">{mySocieties?.length || 0}</h3>
+            <h3 className="text-2xl font-bold text-indigo-600">{(mySocieties as any)?.length || 0}</h3>
             <p className="text-sm text-gray-600">Societies Joined</p>
           </CardContent>
         </Card>
@@ -326,7 +326,7 @@ export default function EnhancedProfile() {
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile">Profile Information</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="admin" disabled={!user?.isAdmin}>Admin Controls</TabsTrigger>
+          <TabsTrigger value="admin" disabled={!(user as any)?.isAdmin}>Admin Controls</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-4">
@@ -387,7 +387,7 @@ export default function EnhancedProfile() {
                     <Label htmlFor="userNumber">User Number</Label>
                     <Input
                       id="userNumber"
-                      value={user?.userNumber || "Not assigned"}
+                      value={(user as any)?.userNumber || "Not assigned"}
                       disabled
                       className="mt-1 bg-gray-50"
                     />
