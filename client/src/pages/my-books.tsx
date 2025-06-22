@@ -125,7 +125,7 @@ export default function MyBooks() {
                   
                   <div className="flex items-center justify-between mb-3">
                     <Badge className={getBookStatusColor(false, rental.endDate)}>
-                      {formatDateRelative(rental.endDate)}
+                      {rental.status === 'return_requested' ? 'Pending Owner Confirmation' : formatDateRelative(rental.endDate)}
                     </Badge>
                     <span className="text-sm text-text-secondary">
                       {formatCurrency(rental.book.dailyFee)}/day
@@ -134,44 +134,52 @@ export default function MyBooks() {
                 </div>
               </div>
               
-              <div className="flex space-x-2 mt-3">
-                <Button 
-                  onClick={() => {
-                    // Request return from lender
-                    apiRequest("POST", `/api/rentals/${rental.id}/request-return`, {
-                      notes: `I would like to return "${rental.book.title}". Please coordinate with me for a meeting spot.`
-                    })
-                      .then(() => {
-                        toast({
-                          title: "Return Request Sent",
-                          description: `Return request sent to ${rental.lender.name}. They will be notified with coordination details including phone numbers.`,
-                        });
-                        queryClient.invalidateQueries({ queryKey: ["/api/rentals/borrowed"] });
+              {rental.status === 'return_requested' ? (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800">
+                    Return request sent to {rental.lender.name}. Waiting for owner confirmation.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex space-x-2 mt-3">
+                  <Button 
+                    onClick={() => {
+                      // Request return from lender
+                      apiRequest("POST", `/api/rentals/${rental.id}/request-return`, {
+                        notes: `I would like to return "${rental.book.title}". Please coordinate with me for a meeting spot.`
                       })
-                      .catch((error) => {
-                        console.error("Return request error:", error);
-                        toast({
-                          title: "Error", 
-                          description: "Failed to send return request. Please try again.",
-                          variant: "destructive",
+                        .then(() => {
+                          toast({
+                            title: "Return Request Sent",
+                            description: `Return request sent to ${rental.lender.name}. They will be notified with coordination details including phone numbers.`,
+                          });
+                          queryClient.invalidateQueries({ queryKey: ["/api/rentals/borrowed"] });
+                        })
+                        .catch((error) => {
+                          console.error("Return request error:", error);
+                          toast({
+                            title: "Error", 
+                            description: "Failed to send return request. Please try again.",
+                            variant: "destructive",
+                          });
                         });
-                      });
-                  }}
-                  className="flex-1"
-                >
-                  Request Return
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => {
-                    setSelectedRental(rental);
-                    setShowExtendModal(true);
-                  }}
-                >
-                  Extend
-                </Button>
-              </div>
+                    }}
+                    className="flex-1"
+                  >
+                    Request Return
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="flex-1"
+                    onClick={() => {
+                      setSelectedRental(rental);
+                      setShowExtendModal(true);
+                    }}
+                  >
+                    Extend
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))

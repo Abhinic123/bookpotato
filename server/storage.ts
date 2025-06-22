@@ -489,7 +489,8 @@ export class DatabaseStorage implements IStorage {
           or(
             eq(bookRentals.status, 'active'),
             eq(bookRentals.status, 'pending'),
-            eq(bookRentals.status, 'overdue')
+            eq(bookRentals.status, 'overdue'),
+            eq(bookRentals.status, 'return_requested')
           )
         ))
         .orderBy(desc(bookRentals.createdAt));
@@ -586,7 +587,8 @@ export class DatabaseStorage implements IStorage {
           or(
             eq(bookRentals.status, 'active'),
             eq(bookRentals.status, 'pending'),
-            eq(bookRentals.status, 'overdue')
+            eq(bookRentals.status, 'overdue'),
+            eq(bookRentals.status, 'return_requested')
           )
         ))
         .orderBy(desc(bookRentals.createdAt));

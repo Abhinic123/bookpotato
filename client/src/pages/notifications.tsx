@@ -30,8 +30,16 @@ export default function NotificationsPage() {
   const queryClient = useQueryClient();
   const [processingId, setProcessingId] = useState<number | null>(null);
 
-  const { data: notifications = [], isLoading } = useQuery({
+  const { data: rawNotifications = [], isLoading } = useQuery({
     queryKey: ["/api/notifications"],
+  });
+
+  // Sort notifications: unread first, then by creation date (newest first)
+  const notifications = (rawNotifications as Notification[]).sort((a, b) => {
+    if (a.isRead !== b.isRead) {
+      return a.isRead ? 1 : -1; // Unread (false) comes first
+    }
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   const respondToExtensionMutation = useMutation({
