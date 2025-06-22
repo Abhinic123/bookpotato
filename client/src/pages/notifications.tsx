@@ -89,8 +89,12 @@ export default function NotificationsPage() {
         description: "Book return has been confirmed and payments have been processed.",
       });
       
+      // Invalidate all relevant cache entries to ensure book availability updates
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/rentals/lent"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/browse"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/my"] });
       setProcessingId(null);
     },
     onError: (error: any) => {

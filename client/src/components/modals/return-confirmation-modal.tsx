@@ -56,6 +56,9 @@ export default function ReturnConfirmationModal({
       queryClient.invalidateQueries({ queryKey: ["/api/rentals/borrowed"] });
       queryClient.invalidateQueries({ queryKey: ["/api/rentals/lent"] });
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/browse"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/my"] });
       onClose();
       setNotes("");
     },
