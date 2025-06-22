@@ -53,6 +53,18 @@ export default function EnhancedProfile() {
     queryKey: ["/api/user/stats"],
   });
 
+  const { data: mySocieties } = useQuery({
+    queryKey: ["/api/societies/my"],
+  });
+
+  const { data: lentRentals } = useQuery({
+    queryKey: ["/api/rentals/lent"],
+  });
+
+  const { data: borrowedRentals } = useQuery({
+    queryKey: ["/api/rentals/borrowed"],
+  });
+
   const profileForm = useForm<ProfileData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -68,8 +80,22 @@ export default function EnhancedProfile() {
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: (data: ProfileData) => 
-      apiRequest("/api/user/profile", { method: "PUT", body: data }),
+    mutationFn: async (data: ProfileData) => {
+      const response = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update profile");
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Success", description: "Profile updated successfully!" });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
@@ -240,16 +266,16 @@ export default function EnhancedProfile() {
 
       {/* Profile Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/earnings'}>
           <CardContent className="p-4 text-center">
-            <h3 className="text-2xl font-bold text-blue-600">{userStats?.borrowedBooks || 0}</h3>
+            <h3 className="text-2xl font-bold text-blue-600">{borrowedRentals?.length || 0}</h3>
             <p className="text-sm text-gray-600">Books Borrowed</p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/earnings'}>
           <CardContent className="p-4 text-center">
-            <h3 className="text-2xl font-bold text-green-600">{userStats?.lentBooks || 0}</h3>
+            <h3 className="text-2xl font-bold text-green-600">{lentRentals?.length || 0}</h3>
             <p className="text-sm text-gray-600">Books Lent</p>
           </CardContent>
         </Card>
@@ -261,9 +287,9 @@ export default function EnhancedProfile() {
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => window.location.href = '/societies'}>
           <CardContent className="p-4 text-center">
-            <h3 className="text-2xl font-bold text-indigo-600">{user?.societies?.length || 0}</h3>
+            <h3 className="text-2xl font-bold text-indigo-600">{mySocieties?.length || 0}</h3>
             <p className="text-sm text-gray-600">Societies Joined</p>
           </CardContent>
         </Card>

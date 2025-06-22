@@ -128,6 +128,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: user.name, 
         email: user.email, 
         phone: user.phone, 
+        address: user.address,
+        profilePicture: user.profilePicture,
+        userNumber: user.userNumber,
+        totalReferrals: user.totalReferrals,
         isAdmin: user.isAdmin || false
       }
     });
@@ -161,18 +165,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { currentPassword, newPassword } = req.body;
       const userId = req.session.userId!;
       
+      console.log('Password change request:', { userId, currentPassword, newPassword });
+      
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
+      console.log('Current user password:', user.password);
+
       // Verify current password
       if (user.password !== currentPassword) {
+        console.log('Password mismatch');
         return res.status(400).json({ message: "Current password is incorrect" });
       }
 
-      // In a real app, you'd hash the password and update in database
-      // For now, we'll just return success
+      // Update password in database using SQL
+      await db.execute(sql`
+        UPDATE users 
+        SET password = ${newPassword}
+        WHERE id = ${userId}
+      `);
+
+      console.log('Password updated successfully');
       res.json({ message: "Password updated successfully" });
     } catch (error) {
       console.error("Update password error:", error);
@@ -182,9 +197,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/user/profile-picture", requireAuth, async (req, res) => {
     try {
-      // In a real app, you'd handle file upload with multer or similar
-      // For now, we'll just return success
-      res.json({ message: "Profile picture updated successfully" });
+      const userId = req.session.userId!;
+      
+      // For demo purposes, we'll generate a placeholder avatar URL
+      // In production, you'd use multer to handle file uploads and store to cloud storage
+      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent('User')}&size=200&background=random`;
+      
+      // Update user's profile picture in database
+      await db.execute(sql`
+        UPDATE users 
+        SET profile_picture = ${avatarUrl}
+        WHERE id = ${userId}
+      `);
+
+      console.log('Profile picture updated for user:', userId);
+      res.json({ 
+        message: "Profile picture updated successfully",
+        profilePicture: avatarUrl
+      });
     } catch (error) {
       console.error("Upload profile picture error:", error);
       res.status(500).json({ message: "Failed to upload profile picture" });
