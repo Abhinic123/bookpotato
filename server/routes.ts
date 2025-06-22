@@ -935,6 +935,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user earnings details
+  app.get("/api/user/earnings", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      // Get all rentals where user was lender (earnings)
+      const lentRentals = await storage.getRentalsByLender(userId);
+      
+      // Get all rentals where user was borrower (spendings)
+      const borrowedRentals = await storage.getRentalsByBorrower(userId);
+      
+      // Calculate totals
+      const totalEarned = lentRentals
+        .filter(rental => rental.status === 'returned')
+        .reduce((sum, rental) => sum + parseFloat(rental.lenderAmount || '0'), 0);
+      
+      const totalSpent = borrowedRentals
+        .reduce((sum, rental) => sum + parseFloat(rental.totalAmount || '0'), 0);
+      
+      res.json({
+        totalEarned,
+        totalSpent,
+        lentRentals: lentRentals.map(rental => ({
+          id: rental.id,
+          bookTitle: rental.book.title,
+          borrowerName: rental.borrower.name,
+          amount: parseFloat(rental.lenderAmount || '0'),
+          status: rental.status,
+          startDate: rental.startDate,
+          endDate: rental.endDate,
+          actualReturnDate: rental.actualReturnDate
+        })),
+        borrowedRentals: borrowedRentals.map(rental => ({
+          id: rental.id,
+          bookTitle: rental.book.title,
+          lenderName: rental.lender.name,
+          amount: parseFloat(rental.totalAmount || '0'),
+          status: rental.status,
+          startDate: rental.startDate,
+          endDate: rental.endDate,
+          actualReturnDate: rental.actualReturnDate
+        }))
+      });
+    } catch (error) {
+      console.error("Get earnings error:", error);
+      res.status(500).json({ message: "Failed to fetch earnings data" });
+    }
+  });
+
   // Send reminder to borrower
   app.post("/api/rentals/:id/send-reminder", requireAuth, async (req, res) => {
     try {

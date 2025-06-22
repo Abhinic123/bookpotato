@@ -718,21 +718,49 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserStats(userId: number): Promise<{ borrowedBooks: number; lentBooks: number; totalEarnings: number }> {
+    // Count only active borrowed books
     const [borrowedBooks] = await db
       .select({ count: count() })
       .from(bookRentals)
-      .where(eq(bookRentals.borrowerId, userId));
+      .where(and(
+        eq(bookRentals.borrowerId, userId),
+        or(
+          eq(bookRentals.status, 'active'),
+          eq(bookRentals.status, 'pending'),
+          eq(bookRentals.status, 'overdue'),
+          eq(bookRentals.status, 'return_requested')
+        )
+      ));
     
+    // Count only active lent books
     const [lentBooks] = await db
       .select({ count: count() })
       .from(bookRentals)
-      .where(eq(bookRentals.lenderId, userId));
+      .where(and(
+        eq(bookRentals.lenderId, userId),
+        or(
+          eq(bookRentals.status, 'active'),
+          eq(bookRentals.status, 'pending'),
+          eq(bookRentals.status, 'overdue'),
+          eq(bookRentals.status, 'return_requested')
+        )
+      ));
     
-    // For now, return 0 for earnings as rental fee field needs to be added to schema
+    // Calculate total earnings from completed rentals
+    const earningsResult = await db
+      .select({ 
+        totalEarnings: sql<string>`COALESCE(SUM(CAST(${bookRentals.lenderAmount} AS DECIMAL)), 0)` 
+      })
+      .from(bookRentals)
+      .where(and(
+        eq(bookRentals.lenderId, userId),
+        eq(bookRentals.status, 'returned')
+      ));
+    
     return {
       borrowedBooks: borrowedBooks.count,
       lentBooks: lentBooks.count,
-      totalEarnings: 0
+      totalEarnings: parseFloat(earningsResult[0]?.totalEarnings || '0')
     };
   }
 
