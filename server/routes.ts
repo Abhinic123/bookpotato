@@ -951,17 +951,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get all rentals where user was lender (earnings)
       const lentRentals = await storage.getRentalsByLender(userId);
+      console.log(`💰 Earnings API - User ${userId} - Lent rentals:`, lentRentals.length);
       
       // Get all rentals where user was borrower (spendings)
       const borrowedRentals = await storage.getRentalsByBorrower(userId);
+      console.log(`💰 Earnings API - User ${userId} - Borrowed rentals:`, borrowedRentals.length);
       
-      // Calculate totals
+      // Calculate totals - include active rentals in earnings calculation
       const totalEarned = lentRentals
-        .filter(rental => rental.status === 'returned')
         .reduce((sum, rental) => sum + parseFloat(rental.lenderAmount || '0'), 0);
       
       const totalSpent = borrowedRentals
         .reduce((sum, rental) => sum + parseFloat(rental.totalAmount || '0'), 0);
+      
+      console.log(`💰 Earnings API - Total earned: ${totalEarned}, Total spent: ${totalSpent}`);
       
       res.json({
         totalEarned,
