@@ -190,9 +190,12 @@ export default function MyBooks() {
             <h3 className="text-lg font-semibold text-text-primary mb-2">
               No Borrowed Books
             </h3>
-            <p className="text-text-secondary">
+            <p className="text-text-secondary mb-4">
               You haven't borrowed any books yet. Browse available books to get started!
             </p>
+            <Button onClick={() => window.location.href = '/browse'}>
+              Browse Books
+            </Button>
           </CardContent>
         </Card>
       )}

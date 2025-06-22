@@ -405,7 +405,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const society of userSocieties) {
         const societyBooks = await storage.getBooksBySociety(society.id);
         console.log(`📚 Society ${society.name} has ${societyBooks.length} books`);
-        allBooks.push(...societyBooks);
+        // Filter out user's own books
+        const otherBooks = societyBooks.filter(book => book.ownerId !== req.session.userId!);
+        allBooks.push(...otherBooks);
       }
       
       // Sort books by creation date (newest first) for home page recent books
@@ -436,13 +438,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         location 
       } = req.query;
 
-      // Get all books from user's societies
+      // Get all books from user's societies, excluding user's own books
       const userSocieties = await storage.getSocietiesByUser(req.session.userId!);
       let allBooks: any[] = [];
       
       for (const society of userSocieties) {
         const societyBooks = await storage.getBooksBySociety(society.id);
-        allBooks.push(...societyBooks);
+        // Filter out user's own books
+        const otherBooks = societyBooks.filter(book => book.ownerId !== req.session.userId!);
+        allBooks.push(...otherBooks);
       }
 
       // Apply search filter
@@ -705,6 +709,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!rental || rental.borrowerId !== req.session.userId!) {
         return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      // Check if return request already sent
+      if (rental.status === 'return_requested') {
+        return res.status(400).json({ message: "Return request already sent" });
       }
 
       const { notes } = req.body;
