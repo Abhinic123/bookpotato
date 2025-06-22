@@ -1040,13 +1040,13 @@ export class MemStorage implements IStorage {
   }
 
   private seedData() {
-    // Seed a test user
+    // Seed your user
     const testUser: User = {
       id: 1,
-      name: "John Doe",
-      email: "john@example.com",
+      name: "Jia Maheshwari",
+      email: "jia.a.maheshwari@gmail.com",
       phone: "+1234567890",
-      password: "password123",
+      password: "bossbaby@12",
       address: null,
       userNumber: null,
       referredBy: null,
@@ -1515,7 +1515,7 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
-console.log('🗄️ Using DatabaseStorage for data operations');
+export const storage = new MemStorage();
+console.log('🗄️ Using MemStorage for data operations');
 // Expose db for direct queries when needed
 (storage as any).db = db;
