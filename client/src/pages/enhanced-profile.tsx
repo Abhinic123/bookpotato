@@ -494,7 +494,7 @@ export default function EnhancedProfile() {
         </TabsContent>
 
         <TabsContent value="admin" className="space-y-4">
-          {user?.isAdmin && (
+          {(user as any)?.isAdmin && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
