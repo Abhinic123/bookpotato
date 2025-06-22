@@ -46,7 +46,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
     try {
       await logout();
       queryClient.clear();
-      setLocation("/auth");
+      // Use window.location to force a full page reload and clear all state
+      window.location.href = "/";
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",

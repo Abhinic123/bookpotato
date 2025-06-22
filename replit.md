@@ -116,12 +116,12 @@ BookShare is a community-driven digital library platform that enables book shari
 ## Recent Changes
 
 ```
-- June 22, 2025: Fixed earnings calculation to include completed rentals
-- June 22, 2025: Added profile picture upload functionality
-- June 22, 2025: Added password change endpoints
-- June 22, 2025: Removed earnings display from profile page
-- June 22, 2025: Fixed logout redirect to prevent 404 errors
-- June 22, 2025: Fixed enhanced-browse error handling
+- June 22, 2025: Fixed app startup errors and database connection issues
+- June 22, 2025: Switched to memory storage to resolve Neon database endpoint issues
+- June 22, 2025: Fixed logout redirect to properly clear session and return to welcome page
+- June 22, 2025: Fixed profile picture upload to work with memory storage
+- June 22, 2025: Added user account with email "jia.a.maheshwari@gmail.com" and password "bossbaby@12"
+- June 22, 2025: Fixed books data handling in enhanced-browse page to prevent array errors
 ```
 
 ## Changelog

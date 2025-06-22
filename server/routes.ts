@@ -199,16 +199,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.session.userId!;
       
-      // For demo purposes, we'll generate a placeholder avatar URL
-      // In production, you'd use multer to handle file uploads and store to cloud storage
-      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent('User')}&size=200&background=random`;
+      // Get current user
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
       
-      // Update user's profile picture in database
-      await db.execute(sql`
-        UPDATE users 
-        SET profile_picture = ${avatarUrl}
-        WHERE id = ${userId}
-      `);
+      // Generate a placeholder avatar URL
+      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&size=200&background=random`;
+      
+      // Update user in memory storage (add profilePicture field)
+      (user as any).profilePicture = avatarUrl;
 
       console.log('Profile picture updated for user:', userId);
       res.json({ 
@@ -234,29 +235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/societies/available", requireAuth, async (req, res) => {
     try {
-      const result = await db.execute(sql`
-        SELECT s.id, s.name, s.description, s.code, s.city, s.apartment_count, 
-               s.location, s.created_by, s.status, s.created_at, s.member_count, s.book_count
-        FROM societies s
-        LEFT JOIN society_members sm ON s.id = sm.society_id AND sm.user_id = ${req.session.userId!} AND sm.is_active = true
-        WHERE sm.society_id IS NULL
-      `);
-      
-      const societies = result.rows.map((row: any) => ({
-        id: row.id,
-        name: row.name,
-        description: row.description,
-        code: row.code,
-        city: row.city,
-        apartmentCount: row.apartment_count,
-        location: row.location,
-        createdBy: row.created_by,
-        status: row.status,
-        createdAt: row.created_at,
-        memberCount: row.member_count,
-        bookCount: row.book_count,
-        isJoined: false
-      }));
+      const societies = await storage.getAvailableSocieties(req.session.userId!);
       
       res.json(societies);
     } catch (error) {
