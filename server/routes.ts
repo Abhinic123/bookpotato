@@ -208,8 +208,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate a placeholder avatar URL
       const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&size=200&background=random`;
       
-      // Update user in memory storage (add profilePicture field)
-      (user as any).profilePicture = avatarUrl;
+      // Update user in memory storage using proper method
+      const updatedUser = await (storage as any).updateUser(userId, { profilePicture: avatarUrl });
+      
+      if (!updatedUser) {
+        return res.status(500).json({ message: "Failed to update profile picture" });
+      }
 
       console.log('Profile picture updated for user:', userId);
       res.json({ 
