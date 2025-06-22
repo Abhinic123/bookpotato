@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -68,12 +68,24 @@ export default function EnhancedProfile() {
   const profileForm = useForm<ProfileData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: user?.name || "",
-      email: user?.email || "",
-      phone: user?.phone || "",
-      address: user?.address || "",
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
     },
   });
+
+  // Update form values when user data loads
+  useEffect(() => {
+    if (user) {
+      profileForm.reset({
+        name: (user as any)?.name || "",
+        email: (user as any)?.email || "",
+        phone: (user as any)?.phone || "",
+        address: (user as any)?.address || "",
+      });
+    }
+  }, [user, profileForm]);
 
   const passwordForm = useForm<PasswordData>({
     resolver: zodResolver(passwordSchema),
@@ -110,8 +122,22 @@ export default function EnhancedProfile() {
   });
 
   const updatePasswordMutation = useMutation({
-    mutationFn: (data: PasswordData) => 
-      apiRequest("/api/user/password", { method: "PUT", body: data }),
+    mutationFn: async (data: PasswordData) => {
+      const response = await fetch("/api/user/password", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to update password");
+      }
+      
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Success", description: "Password updated successfully!" });
       passwordForm.reset();
@@ -164,7 +190,7 @@ export default function EnhancedProfile() {
     updatePasswordMutation.mutate(data);
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (event: any) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
@@ -210,9 +236,9 @@ export default function EnhancedProfile() {
           <div className="flex items-center space-x-6">
             <div className="relative group">
               <Avatar className="w-24 h-24">
-                <AvatarImage src={user?.profilePicture} />
+                <AvatarImage src={(user as any)?.profilePicture} />
                 <AvatarFallback className="text-2xl">
-                  {user?.name?.split(' ').map((n: string) => n[0]).join('')}
+                  {(user as any)?.name?.split(' ').map((n: string) => n[0]).join('')}
                 </AvatarFallback>
               </Avatar>
               <Button
