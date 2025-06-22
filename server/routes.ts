@@ -564,7 +564,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(allBooks);
     } catch (error) {
       console.error("Browse books error:", error);
-      res.status(500).json({ message: "Failed to browse books" });
+      res.status(500).json([]);
     }
   });
 

@@ -113,6 +113,17 @@ BookShare is a community-driven digital library platform that enables book shari
 - **Migrations**: Automated via `npm run db:push` command
 - **Connection Pooling**: Neon serverless connection pooling
 
+## Recent Changes
+
+```
+- June 22, 2025: Fixed earnings calculation to include completed rentals
+- June 22, 2025: Added profile picture upload functionality
+- June 22, 2025: Added password change endpoints
+- June 22, 2025: Removed earnings display from profile page
+- June 22, 2025: Fixed logout redirect to prevent 404 errors
+- June 22, 2025: Fixed enhanced-browse error handling
+```
+
 ## Changelog
 
 ```

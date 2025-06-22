@@ -46,7 +46,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     try {
       await logout();
       queryClient.clear();
-      setLocation("/auth");
+      setLocation("/");
       toast({
         title: "Logged out",
         description: "You have been successfully logged out.",
