@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,7 @@ import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { User, Shield, Key, MapPin, Phone, Mail, Crown } from "lucide-react";
+import { User, Shield, Key, MapPin, Phone, Mail, Crown, Camera, Upload } from "lucide-react";
 import UserBadge from "@/components/profile/user-badge";
 
 const INDIAN_CITIES = [
@@ -42,6 +42,8 @@ type PasswordData = z.infer<typeof passwordSchema>;
 export default function EnhancedProfile() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ["/api/auth/me"],
@@ -97,12 +99,73 @@ export default function EnhancedProfile() {
     },
   });
 
+  const uploadProfilePictureMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('profilePicture', file);
+      
+      const response = await fetch('/api/user/profile-picture', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to upload profile picture');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Success", description: "Profile picture updated successfully!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      setUploadingImage(false);
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to upload profile picture",
+        variant: "destructive" 
+      });
+      setUploadingImage(false);
+    },
+  });
+
   const handleProfileSubmit = (data: ProfileData) => {
     updateProfileMutation.mutate(data);
   };
 
   const handlePasswordSubmit = (data: PasswordData) => {
     updatePasswordMutation.mutate(data);
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast({
+          title: "Error",
+          description: "Image size must be less than 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Please select a valid image file",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      setUploadingImage(true);
+      uploadProfilePictureMutation.mutate(file);
+    }
+  };
+
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -119,12 +182,33 @@ export default function EnhancedProfile() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center space-x-6">
-            <Avatar className="w-24 h-24">
-              <AvatarImage src={user?.profilePicture} />
-              <AvatarFallback className="text-2xl">
-                {user?.name?.split(' ').map((n: string) => n[0]).join('')}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative group">
+              <Avatar className="w-24 h-24">
+                <AvatarImage src={user?.profilePicture} />
+                <AvatarFallback className="text-2xl">
+                  {user?.name?.split(' ').map((n: string) => n[0]).join('')}
+                </AvatarFallback>
+              </Avatar>
+              <Button
+                onClick={triggerImageUpload}
+                disabled={uploadingImage}
+                className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                variant="ghost"
+              >
+                {uploadingImage ? (
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                ) : (
+                  <Camera className="h-6 w-6" />
+                )}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
             
             <div className="space-y-2">
               <h2 className="text-2xl font-bold">{user?.name}</h2>
@@ -179,8 +263,8 @@ export default function EnhancedProfile() {
         
         <Card>
           <CardContent className="p-4 text-center">
-            <h3 className="text-2xl font-bold text-orange-600">₹{userStats?.totalEarnings || 0}</h3>
-            <p className="text-sm text-gray-600">Total Earnings</p>
+            <h3 className="text-2xl font-bold text-indigo-600">{user?.societies?.length || 0}</h3>
+            <p className="text-sm text-gray-600">Societies Joined</p>
           </CardContent>
         </Card>
       </div>

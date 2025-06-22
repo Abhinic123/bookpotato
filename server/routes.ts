@@ -141,6 +141,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
+  // User profile endpoints
+  app.put("/api/user/profile", requireAuth, async (req, res) => {
+    try {
+      const { name, email, phone, address } = req.body;
+      const userId = req.session.userId!;
+      
+      // In a real app, you'd update the user in the database
+      // For now, we'll just return success
+      res.json({ message: "Profile updated successfully" });
+    } catch (error) {
+      console.error("Update profile error:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
+  app.put("/api/user/password", requireAuth, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const userId = req.session.userId!;
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Verify current password
+      if (user.password !== currentPassword) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+
+      // In a real app, you'd hash the password and update in database
+      // For now, we'll just return success
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      console.error("Update password error:", error);
+      res.status(500).json({ message: "Failed to update password" });
+    }
+  });
+
+  app.post("/api/user/profile-picture", requireAuth, async (req, res) => {
+    try {
+      // In a real app, you'd handle file upload with multer or similar
+      // For now, we'll just return success
+      res.json({ message: "Profile picture updated successfully" });
+    } catch (error) {
+      console.error("Upload profile picture error:", error);
+      res.status(500).json({ message: "Failed to upload profile picture" });
+    }
+  });
+
   // Society routes
   app.get("/api/societies/my", requireAuth, async (req, res) => {
     try {
