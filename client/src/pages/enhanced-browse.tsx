@@ -402,8 +402,10 @@ export default function EnhancedBrowse() {
                 key={book.id}
                 book={book}
                 onBorrow={(book) => {
+                  console.log("Borrow button clicked for book:", book);
                   setSelectedBook(book);
                   setShowBorrowModal(true);
+                  console.log("Modal state set to true");
                 }}
                 showOwner={true}
                 variant="grid"
@@ -416,10 +418,12 @@ export default function EnhancedBrowse() {
       {/* Borrow Book Modal */}
       <BorrowBookModal
         book={selectedBook}
-        isOpen={showBorrowModal}
-        onClose={() => {
-          setShowBorrowModal(false);
-          setSelectedBook(null);
+        open={showBorrowModal}
+        onOpenChange={(open) => {
+          setShowBorrowModal(open);
+          if (!open) {
+            setSelectedBook(null);
+          }
         }}
       />
     </div>
