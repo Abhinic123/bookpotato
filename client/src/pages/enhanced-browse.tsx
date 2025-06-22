@@ -73,7 +73,7 @@ export default function EnhancedBrowse() {
   const [showBorrowModal, setShowBorrowModal] = useState(false);
 
   // Fetch books with advanced filtering
-  const { data: books = [], isLoading } = useQuery({
+  const { data: booksResponse, isLoading } = useQuery({
     queryKey: ["/api/books/browse", filters],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -88,9 +88,13 @@ export default function EnhancedBrowse() {
       if (filters.location) params.append("location", filters.location);
 
       const response = await fetch(`/api/books/browse?${params.toString()}`);
-      return response.json();
+      const data = await response.json();
+      return data;
     }
   });
+
+  // Ensure books is always an array
+  const books = Array.isArray(booksResponse) ? booksResponse : [];
 
   // Fetch available societies for filtering
   const { data: societies = [] } = useQuery({
