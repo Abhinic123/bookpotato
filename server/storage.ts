@@ -1713,6 +1713,6 @@ export class MemStorage implements IStorage {
 }
 
 export const storage = new MemStorage();
-console.log('🗄️ Using MemStorage for data operations (database endpoint disabled)');
+console.log('🗄️ Using MemStorage - original database endpoint disabled');
 // Expose db for direct queries when needed
 (storage as any).db = db;
