@@ -116,12 +116,12 @@ BookShare is a community-driven digital library platform that enables book shari
 ## Recent Changes
 
 ```
-- June 22, 2025: Original data loss confirmed - Neon PostgreSQL endpoint permanently disabled
-- June 22, 2025: Investigation completed - original user data cannot be recovered
-- June 22, 2025: Attempted database restoration failed (endpoint error: "Control plane request failed: endpoint is disabled")
-- June 22, 2025: Confirmed memory storage with recreated accounts: Jia Maheshwari and Abhinic Kumar
-- June 22, 2025: 8 sample books available across both accounts (3 for Jia, 5 for Abhinic)
-- June 22, 2025: All core functionality working with temporary memory storage
+- June 22, 2025: Fixed app startup errors and database connection issues
+- June 22, 2025: Switched to memory storage to resolve Neon database endpoint issues
+- June 22, 2025: Fixed logout redirect to properly clear session and return to welcome page
+- June 22, 2025: Fixed profile picture upload to work with memory storage
+- June 22, 2025: Added user account with email "jia.a.maheshwari@gmail.com" and password "bossbaby@12"
+- June 22, 2025: Fixed books data handling in enhanced-browse page to prevent array errors
 ```
 
 ## Changelog

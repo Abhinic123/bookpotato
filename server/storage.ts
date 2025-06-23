@@ -1040,56 +1040,31 @@ export class MemStorage implements IStorage {
   }
 
   private seedData() {
-    // Seed Jia's user account
-    const jiaUser: User = {
+    // Seed your user
+    const testUser: User = {
       id: 1,
       name: "Jia Maheshwari",
       email: "jia.a.maheshwari@gmail.com",
       phone: "+1234567890",
       password: "bossbaby@12",
-      address: "Mumbai, India",
+      address: null,
       userNumber: null,
       referredBy: null,
       isAdmin: false,
-      referralCode: "JIA001",
+      referralCode: "REF1",
       totalReferrals: 0,
       referralEarnings: "0",
-      totalEarnings: "150",
-      rank: "Silver",
+      totalEarnings: "0",
+      rank: "Bronze",
       commissionFreeUntil: null,
-      booksUploaded: 3,
+      booksUploaded: 0,
       profilePicture: null,
       resetToken: null,
       resetTokenExpiry: null,
-      createdAt: new Date('2024-01-15'),
+      createdAt: new Date(),
     };
-    this.users.set(1, jiaUser);
-
-    // Seed Abhinic's user account
-    const abhinicUser: User = {
-      id: 2,
-      name: "Abhinic Kumar",
-      email: "abhinic@gmail.com",
-      phone: "+9876543210",
-      password: "password123",
-      address: "Delhi, India",
-      userNumber: null,
-      referredBy: null,
-      isAdmin: false,
-      referralCode: "ABH002",
-      totalReferrals: 1,
-      referralEarnings: "50",
-      totalEarnings: "200",
-      rank: "Gold",
-      commissionFreeUntil: null,
-      booksUploaded: 5,
-      profilePicture: null,
-      resetToken: null,
-      resetTokenExpiry: null,
-      createdAt: new Date('2024-01-10'),
-    };
-    this.users.set(2, abhinicUser);
-    this.currentUserId = 3;
+    this.users.set(1, testUser);
+    this.currentUserId = 2;
 
     // Seed a test society
     const testSociety: Society = {
@@ -1109,177 +1084,16 @@ export class MemStorage implements IStorage {
     this.societies.set(1, testSociety);
     this.currentSocietyId = 2;
 
-    // Add both users as members of the society
-    const jiaMember: SocietyMember = {
+    // Add test user as member of test society
+    const testMember: SocietyMember = {
       id: 1,
       societyId: 1,
       userId: 1,
       isActive: true,
-      joinedAt: new Date('2024-01-15'),
+      joinedAt: new Date(),
     };
-    this.societyMembers.set(1, jiaMember);
-
-    const abhinicMember: SocietyMember = {
-      id: 2,
-      societyId: 1,
-      userId: 2,
-      isActive: true,
-      joinedAt: new Date('2024-01-20'),
-    };
-    this.societyMembers.set(2, abhinicMember);
-    this.currentMemberId = 3;
-
-    // Add sample books for Jia
-    const book1: Book = {
-      id: 1,
-      title: "The Alchemist",
-      author: "Paulo Coelho",
-      isbn: "9780061315089",
-      genre: "Fiction",
-      description: "A magical story about following your dreams",
-      condition: "Very Good",
-      dailyFee: "15",
-      isAvailable: true,
-      ownerId: 1,
-      societyId: 1,
-      imageUrl: null,
-      coverImageUrl: null,
-      createdAt: new Date('2024-01-16'),
-    };
-    this.books.set(1, book1);
-
-    const book2: Book = {
-      id: 2,
-      title: "Rich Dad Poor Dad",
-      author: "Robert Kiyosaki",
-      isbn: "9780446677462",
-      genre: "Business",
-      description: "Personal finance and investing guide",
-      condition: "Good",
-      dailyFee: "20",
-      isAvailable: true,
-      ownerId: 1,
-      societyId: 1,
-      imageUrl: null,
-      coverImageUrl: null,
-      createdAt: new Date('2024-01-17'),
-    };
-    this.books.set(2, book2);
-
-    const book3: Book = {
-      id: 3,
-      title: "Atomic Habits",
-      author: "James Clear",
-      isbn: "9780735211292",
-      genre: "Self-Help",
-      description: "Build good habits and break bad ones",
-      condition: "Very Good",
-      dailyFee: "25",
-      isAvailable: false,
-      ownerId: 1,
-      societyId: 1,
-      imageUrl: null,
-      coverImageUrl: null,
-      createdAt: new Date('2024-01-18'),
-    };
-    this.books.set(3, book3);
-
-    // Add sample books for Abhinic
-    const book4: Book = {
-      id: 4,
-      title: "The Monk Who Sold His Ferrari",
-      author: "Robin Sharma",
-      isbn: "9780062515674",
-      genre: "Self-Help",
-      description: "A spiritual journey to find purpose",
-      condition: "Very Good",
-      dailyFee: "18",
-      isAvailable: true,
-      ownerId: 2,
-      societyId: 1,
-      imageUrl: null,
-      coverImageUrl: null,
-      createdAt: new Date('2024-01-21'),
-    };
-    this.books.set(4, book4);
-
-    const book5: Book = {
-      id: 5,
-      title: "Think and Grow Rich",
-      author: "Napoleon Hill",
-      isbn: "9781585424337",
-      genre: "Business",
-      description: "Classic guide to success and wealth",
-      condition: "Good",
-      dailyFee: "22",
-      isAvailable: true,
-      ownerId: 2,
-      societyId: 1,
-      imageUrl: null,
-      coverImageUrl: null,
-      createdAt: new Date('2024-01-22'),
-    };
-    this.books.set(5, book5);
-
-    const book6: Book = {
-      id: 6,
-      title: "The 7 Habits of Highly Effective People",
-      author: "Stephen Covey",
-      isbn: "9780743269513",
-      genre: "Self-Help",
-      description: "Timeless principles for personal effectiveness",
-      condition: "Very Good",
-      dailyFee: "20",
-      isAvailable: true,
-      ownerId: 2,
-      societyId: 1,
-      imageUrl: null,
-      coverImageUrl: null,
-      createdAt: new Date('2024-01-23'),
-    };
-    this.books.set(6, book6);
-
-    const book7: Book = {
-      id: 7,
-      title: "Sapiens",
-      author: "Yuval Noah Harari",
-      isbn: "9780062316097",
-      genre: "History",
-      description: "A brief history of humankind",
-      condition: "Very Good",
-      dailyFee: "30",
-      isAvailable: true,
-      ownerId: 2,
-      societyId: 1,
-      imageUrl: null,
-      coverImageUrl: null,
-      createdAt: new Date('2024-01-24'),
-    };
-    this.books.set(7, book7);
-
-    const book8: Book = {
-      id: 8,
-      title: "The Power of Now",
-      author: "Eckhart Tolle",
-      isbn: "9781577314806",
-      genre: "Spirituality",
-      description: "A guide to spiritual enlightenment",
-      condition: "Good",
-      dailyFee: "16",
-      isAvailable: false,
-      ownerId: 2,
-      societyId: 1,
-      imageUrl: null,
-      coverImageUrl: null,
-      createdAt: new Date('2024-01-25'),
-    };
-    this.books.set(8, book8);
-
-    this.currentBookId = 9;
-
-    // Update society book count
-    testSociety.bookCount = 8;
-    testSociety.memberCount = 2;
+    this.societyMembers.set(1, testMember);
+    this.currentMemberId = 2;
   }
 
   // Users
@@ -1713,6 +1527,6 @@ export class MemStorage implements IStorage {
 }
 
 export const storage = new MemStorage();
-console.log('🗄️ Using MemStorage - original database endpoint disabled');
+console.log('🗄️ Using MemStorage for data operations');
 // Expose db for direct queries when needed
 (storage as any).db = db;
