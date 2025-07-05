@@ -1064,7 +1064,32 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
     };
     this.users.set(1, testUser);
-    this.currentUserId = 2;
+
+    // Add your admin account
+    const adminUser: User = {
+      id: 2,
+      name: "Abhinic",
+      email: "abhinic@gmail.com",
+      phone: "+1234567891",
+      password: "admin123",
+      address: null,
+      userNumber: null,
+      referredBy: null,
+      isAdmin: true,
+      referralCode: "ADMIN1",
+      totalReferrals: 0,
+      referralEarnings: "0",
+      totalEarnings: "0",
+      rank: "Bronze",
+      commissionFreeUntil: null,
+      booksUploaded: 0,
+      profilePicture: null,
+      resetToken: null,
+      resetTokenExpiry: null,
+      createdAt: new Date(),
+    };
+    this.users.set(2, adminUser);
+    this.currentUserId = 3;
 
     // Seed a test society
     const testSociety: Society = {
@@ -1093,7 +1118,17 @@ export class MemStorage implements IStorage {
       joinedAt: new Date(),
     };
     this.societyMembers.set(1, testMember);
-    this.currentMemberId = 2;
+
+    // Add admin user as member of test society
+    const adminMember: SocietyMember = {
+      id: 2,
+      societyId: 1,
+      userId: 2,
+      isActive: true,
+      joinedAt: new Date(),
+    };
+    this.societyMembers.set(2, adminMember);
+    this.currentMemberId = 3;
   }
 
   // Users
