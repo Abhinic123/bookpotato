@@ -27,7 +27,8 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
   // Fetch platform settings
   const { data: platformSettings } = useQuery({
     queryKey: ["/api/platform/settings"],
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    staleTime: 30 * 1000, // Cache for 30 seconds only
+    refetchOnWindowFocus: true,
   });
 
   const dailyFee = parseFloat(book?.dailyFee || "0");

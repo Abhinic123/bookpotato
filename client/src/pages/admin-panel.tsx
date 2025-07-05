@@ -111,6 +111,10 @@ export default function AdminPanel() {
         title: "Settings Updated",
         description: "Platform settings have been successfully updated.",
       });
+      // Force clear all cached settings
+      queryClient.removeQueries({ queryKey: ["/api/admin/settings"] });
+      queryClient.removeQueries({ queryKey: ["/api/platform/settings"] });
+      // Immediately refetch the updated settings
       queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
       queryClient.invalidateQueries({ queryKey: ["/api/platform/settings"] });
     },
