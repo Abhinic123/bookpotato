@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,22 +39,24 @@ export default function AdminPanel() {
   const form = useForm<SettingsForm>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      commissionRate: settings?.commissionRate || 5,
-      securityDeposit: settings?.securityDeposit || 100,
-      minApartments: settings?.minApartments || 90,
-      maxRentalDays: settings?.maxRentalDays || 30,
+      commissionRate: 5,
+      securityDeposit: 100,
+      minApartments: 90,
+      maxRentalDays: 30,
     },
   });
 
-  // Update form defaults when settings load
-  if (settings && !form.formState.isDirty) {
-    form.reset({
-      commissionRate: settings.commissionRate,
-      securityDeposit: settings.securityDeposit,
-      minApartments: settings.minApartments,
-      maxRentalDays: settings.maxRentalDays,
-    });
-  }
+  // Update form when settings load - use useEffect to prevent infinite re-renders
+  useEffect(() => {
+    if (settings) {
+      form.reset({
+        commissionRate: settings.commissionRate,
+        securityDeposit: settings.securityDeposit,
+        minApartments: settings.minApartments,
+        maxRentalDays: settings.maxRentalDays,
+      });
+    }
+  }, [settings]);
 
   // Mutation to update settings
   const updateSettingsMutation = useMutation({
