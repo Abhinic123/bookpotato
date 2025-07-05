@@ -33,8 +33,10 @@ const loginSchema = z.object({
 
 // Google OAuth configuration
 const getCallbackURL = () => {
-  const domain = process.env.REPLIT_DEV_DOMAIN || 'https://59203db4-a967-4b1c-b1d8-9d66f27d10d9-00-3bzw6spzdofx2.picard.replit.dev';
-  return `${domain}/api/auth/google/callback`;
+  const domain = process.env.REPLIT_DEV_DOMAIN || '59203db4-a967-4b1c-b1d8-9d66f27d10d9-00-3bzw6spzdofx2.picard.replit.dev';
+  // Ensure HTTPS protocol
+  const baseUrl = domain.startsWith('http') ? domain : `https://${domain}`;
+  return `${baseUrl}/api/auth/google/callback`;
 };
 
 passport.use(new GoogleStrategy({
@@ -129,7 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Google OAuth routes
   app.get("/api/auth/google", (req, res, next) => {
     console.log("Initiating Google OAuth with Client ID:", process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + "...");
-    console.log("Callback URL:", `${req.protocol}://${req.get('host')}/api/auth/google/callback`);
+    console.log("Callback URL should be:", getCallbackURL());
     passport.authenticate("google", {
       scope: ["profile", "email"]
     })(req, res, next);
