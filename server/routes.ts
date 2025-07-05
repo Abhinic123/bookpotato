@@ -32,10 +32,15 @@ const loginSchema = z.object({
 });
 
 // Google OAuth configuration
+const getCallbackURL = () => {
+  const domain = process.env.REPLIT_DEV_DOMAIN || 'https://59203db4-a967-4b1c-b1d8-9d66f27d10d9-00-3bzw6spzdofx2.picard.replit.dev';
+  return `${domain}/api/auth/google/callback`;
+};
+
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID || "87181857437-6dvvqvt19cd6796pq633h4eh540h480t.apps.googleusercontent.com",
   clientSecret: process.env.GOOGLE_CLIENT_SECRET || "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",
-  callbackURL: `${process.env.REPLIT_DEV_DOMAIN || 'https://59203db4-a967-4b1c-b1d8-9d66f27d10d9-00-3bzw6spzdofx2.picard.replit.dev'}/api/auth/google/callback`
+  callbackURL: getCallbackURL()
 }, async (accessToken, refreshToken, profile, done) => {
   try {
     // Check if user exists
@@ -122,9 +127,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(passport.session());
 
   // Google OAuth routes
-  app.get("/api/auth/google", passport.authenticate("google", {
-    scope: ["profile", "email"]
-  }));
+  app.get("/api/auth/google", (req, res, next) => {
+    console.log("Initiating Google OAuth with Client ID:", process.env.GOOGLE_CLIENT_ID?.substring(0, 20) + "...");
+    console.log("Callback URL:", `${req.protocol}://${req.get('host')}/api/auth/google/callback`);
+    passport.authenticate("google", {
+      scope: ["profile", "email"]
+    })(req, res, next);
+  });
 
   app.get("/api/auth/google/callback", 
     passport.authenticate("google", { failureRedirect: "/auth?error=oauth_failed" }),
