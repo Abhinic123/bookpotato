@@ -1,10 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema } from "@shared/schema";
+import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema, users } from "@shared/schema";
 import { z } from "zod";
 import { db, pool } from "./db";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 
@@ -397,6 +397,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const request = await storage.createSocietyRequest(requestData);
+      
+      // Create notification for all admin users
+      try {
+        const user = await storage.getUser(req.session.userId!);
+        
+        // Get all admin users
+        const adminUsers = await db.select({ id: users.id })
+          .from(users)
+          .where(eq(users.isAdmin, true));
+        
+        // Create notification for each admin
+        for (const admin of adminUsers) {
+          await storage.createNotification({
+            userId: admin.id,
+            title: "New Society Request",
+            message: `${user?.name || 'User'} has requested to create "${validatedData.name}" society with ${validatedData.apartmentCount} apartments in ${validatedData.city}. Please review and approve.`,
+            type: "society_request",
+            data: JSON.stringify({
+              requestId: request.id,
+              societyName: validatedData.name,
+              requestedBy: req.session.userId!,
+              apartmentCount: validatedData.apartmentCount,
+              city: validatedData.city
+            })
+          });
+        }
+      } catch (notificationError) {
+        console.error("Failed to create admin notifications:", notificationError);
+        // Don't fail the request if notification creation fails
+      }
       
       res.json({
         message: "Society creation request submitted for admin approval",
@@ -1115,6 +1145,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Mark notification read error:", error);
       res.status(500).json({ message: "Failed to mark notification as read" });
+    }
+  });
+
+  // Society request approval via notifications
+  app.post("/api/notifications/:id/respond-society", requireAuth, async (req, res) => {
+    try {
+      const notificationId = parseInt(req.params.id);
+      const { approved, reason } = req.body;
+      
+      // Check if user is admin
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const notifications = await storage.getNotificationsByUser(req.session.userId!);
+      const notification = notifications.find(n => n.id === notificationId);
+      
+      if (!notification || notification.type !== "society_request") {
+        return res.status(404).json({ message: "Society request not found" });
+      }
+      
+      const requestData = JSON.parse(notification.data || "{}");
+      const requestId = requestData.requestId;
+      
+      // Update the society request status using the existing admin endpoint logic
+      await storage.reviewSocietyRequest(requestId, approved, reason);
+      
+      // Mark the notification as read
+      await storage.markNotificationAsRead(notificationId);
+      
+      // Create notification for the requester
+      const requesterUserId = requestData.requestedBy;
+      await storage.createNotification({
+        userId: requesterUserId,
+        title: approved ? "Society Request Approved" : "Society Request Rejected",
+        message: approved 
+          ? `Your request to create "${requestData.societyName}" society has been approved!`
+          : `Your request to create "${requestData.societyName}" society has been rejected. ${reason ? `Reason: ${reason}` : ''}`,
+        type: approved ? "society_approved" : "society_rejected",
+        data: JSON.stringify({
+          requestId,
+          societyName: requestData.societyName,
+          reason: reason || null
+        })
+      });
+      
+      res.json({ message: approved ? "Society request approved" : "Society request rejected" });
+    } catch (error) {
+      console.error("Respond to society request error:", error);
+      res.status(500).json({ message: "Failed to respond to society request" });
     }
   });
 

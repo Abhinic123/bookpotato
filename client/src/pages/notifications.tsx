@@ -25,6 +25,14 @@ interface ReturnRequestData {
   notes?: string;
 }
 
+interface SocietyRequestData {
+  requestId: number;
+  societyName: string;
+  requestedBy: number;
+  apartmentCount: number;
+  city: string;
+}
+
 export default function NotificationsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -70,6 +78,40 @@ export default function NotificationsPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to respond to extension request",
+        variant: "destructive",
+      });
+      setProcessingId(null);
+    },
+  });
+
+  const respondToSocietyMutation = useMutation({
+    mutationFn: async ({ notificationId, approved, reason }: { 
+      notificationId: number; 
+      approved: boolean; 
+      reason?: string 
+    }) => {
+      const response = await apiRequest("POST", `/api/notifications/${notificationId}/respond-society`, {
+        approved,
+        reason
+      });
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: variables.approved ? "Society Request Approved" : "Society Request Rejected",
+        description: variables.approved 
+          ? "The society request has been approved and the requester has been notified."
+          : "The society request has been rejected and the requester has been notified.",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/society-requests"] });
+      setProcessingId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to respond to society request",
         variant: "destructive",
       });
       setProcessingId(null);
@@ -147,6 +189,27 @@ export default function NotificationsPage() {
     }
   };
 
+  const parseSocietyRequestData = (dataString: string | null): SocietyRequestData | null => {
+    if (!dataString) return null;
+    try {
+      return JSON.parse(dataString);
+    } catch {
+      return null;
+    }
+  };
+
+  const handleSocietyResponse = (notification: Notification, approved: boolean) => {
+    const reason = approved ? undefined : prompt("Please provide a reason for rejection (optional):");
+    if (!approved && reason === null) return; // User cancelled
+    
+    setProcessingId(notification.id);
+    respondToSocietyMutation.mutate({
+      notificationId: notification.id,
+      approved,
+      reason: reason || undefined
+    });
+  };
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case "extension_request":
@@ -163,6 +226,12 @@ export default function NotificationsPage() {
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case "book_returned":
         return <BookOpen className="w-5 h-5 text-gray-500" />;
+      case "society_request":
+        return <Bell className="w-5 h-5 text-purple-500" />;
+      case "society_approved":
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case "society_rejected":
+        return <XCircle className="w-5 h-5 text-red-500" />;
       default:
         return <Bell className="w-5 h-5 text-gray-500" />;
     }
@@ -207,8 +276,10 @@ export default function NotificationsPage() {
             notifications.map((notification: Notification) => {
               const extensionData = parseExtensionData(notification.data);
               const returnRequestData = parseReturnRequestData(notification.data);
+              const societyRequestData = parseSocietyRequestData(notification.data);
               const isExtensionRequest = notification.type === "extension_request";
               const isReturnRequest = notification.type === "return_request";
+              const isSocietyRequest = notification.type === "society_request";
               const isProcessing = processingId === notification.id;
 
               return (
@@ -310,6 +381,30 @@ export default function NotificationsPage() {
                         </div>
                       </div>
                     )}
+
+                    {isSocietyRequest && societyRequestData && (
+                      <div className="bg-purple-50 rounded-lg p-4 mb-4">
+                        <h4 className="font-medium text-gray-900 mb-3">Society Request Details</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-gray-600">Society Name:</span>
+                            <span className="font-medium">{societyRequestData.societyName}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-gray-600">Apartment Count:</span>
+                            <span className="font-medium">{societyRequestData.apartmentCount}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-gray-600">City:</span>
+                            <span className="font-medium">{societyRequestData.city}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-gray-600">Request ID:</span>
+                            <span className="font-medium">#{societyRequestData.requestId}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     
                     {isReturnRequest && !notification.isRead && returnRequestData && (
                       <div className="flex justify-center">
@@ -324,6 +419,36 @@ export default function NotificationsPage() {
                             <CheckCircle className="w-4 h-4 mr-2" />
                           )}
                           Confirm Book Received & Complete Return
+                        </Button>
+                      </div>
+                    )}
+
+                    {isSocietyRequest && !notification.isRead && (
+                      <div className="flex space-x-3">
+                        <Button
+                          onClick={() => handleSocietyResponse(notification, true)}
+                          disabled={isProcessing}
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                        >
+                          {isProcessing ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                          )}
+                          Approve Society
+                        </Button>
+                        <Button
+                          onClick={() => handleSocietyResponse(notification, false)}
+                          disabled={isProcessing}
+                          variant="destructive"
+                          className="flex-1"
+                        >
+                          {isProcessing ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                          ) : (
+                            <XCircle className="w-4 h-4 mr-2" />
+                          )}
+                          Reject Society
                         </Button>
                       </div>
                     )}
