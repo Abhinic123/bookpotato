@@ -33,8 +33,8 @@ const loginSchema = z.object({
 
 // Google OAuth configuration
 passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID || "dummy-client-id",
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET || "dummy-client-secret",
+  clientID: process.env.GOOGLE_CLIENT_ID || "87181857437-6dvvqvt19cd6796pq633h4eh540h480t.apps.googleusercontent.com",
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET || "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",
   callbackURL: "/api/auth/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
   try {
