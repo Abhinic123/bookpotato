@@ -123,6 +123,7 @@ BookShare is a community-driven digital library platform that enables book shari
 - June 22, 2025: Added user account with email "jia.a.maheshwari@gmail.com" and password "bossbaby@12"
 - July 5, 2025: Added admin account with email "abhinic@gmail.com" and password "admin123" with full admin privileges
 - July 5, 2025: Database endpoint issue discovered - Neon endpoint is disabled, requiring Replit support intervention
+- July 5, 2025: Database successfully restored! Original data recovered including societies and books. Application now using permanent PostgreSQL storage.
 - June 22, 2025: Fixed books data handling in enhanced-browse page to prevent array errors
 ```
 

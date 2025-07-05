@@ -1561,7 +1561,7 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
-console.log('🗄️ Using MemStorage for data operations');
+export const storage = new DatabaseStorage();
+console.log('🗄️ Using DatabaseStorage for data operations');
 // Expose db for direct queries when needed
 (storage as any).db = db;
