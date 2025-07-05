@@ -35,7 +35,7 @@ const loginSchema = z.object({
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID || "87181857437-6dvvqvt19cd6796pq633h4eh540h480t.apps.googleusercontent.com",
   clientSecret: process.env.GOOGLE_CLIENT_SECRET || "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",
-  callbackURL: "/api/auth/google/callback"
+  callbackURL: `${process.env.REPLIT_DEV_DOMAIN || 'https://59203db4-a967-4b1c-b1d8-9d66f27d10d9-00-3bzw6spzdofx2.picard.replit.dev'}/api/auth/google/callback`
 }, async (accessToken, refreshToken, profile, done) => {
   try {
     // Check if user exists
@@ -127,12 +127,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   app.get("/api/auth/google/callback", 
-    passport.authenticate("google", { 
-      failureRedirect: "/auth?error=oauth_failed",
-      successRedirect: "/"
-    }),
+    passport.authenticate("google", { failureRedirect: "/auth?error=oauth_failed" }),
     async (req, res) => {
-      // This shouldn't be reached due to successRedirect, but just in case
+      // OAuth success - manually handle session and redirect
       console.log("Google OAuth success:", req.user);
       req.session.userId = (req.user as any)?.id;
       req.session.save((err) => {
@@ -140,6 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Session save error:", err);
           return res.redirect("/auth?error=session");
         }
+        console.log("Session saved successfully, redirecting to home");
         res.redirect("/");
       });
     }
