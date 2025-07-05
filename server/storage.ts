@@ -803,26 +803,49 @@ export class DatabaseStorage implements IStorage {
 
   async reviewSocietyRequest(requestId: number, approved: boolean, reason?: string): Promise<void> {
     try {
-      await db
+      console.log('Database Storage: Reviewing society request', { requestId, approved, reason });
+      
+      // Update the request status
+      const updateResult = await db
         .update(societyRequests)
         .set({ 
           status: approved ? 'approved' : 'rejected',
           reviewReason: reason,
           reviewedAt: new Date()
         })
-        .where(eq(societyRequests.id, requestId));
+        .where(eq(societyRequests.id, requestId))
+        .returning();
+
+      console.log('Database Storage: Updated request status:', updateResult);
 
       if (approved) {
         const [request] = await db.select().from(societyRequests).where(eq(societyRequests.id, requestId));
+        console.log('Database Storage: Found request for society creation:', request);
+        
         if (request) {
-          await this.createSociety({
+          // Generate a unique society code
+          const generateCode = (name: string) => {
+            return name.replace(/[^a-zA-Z0-9]/g, '').substring(0, 6).toUpperCase() + Math.floor(Math.random() * 1000);
+          };
+
+          const societyData = {
             name: request.name,
             description: request.description,
             city: request.city,
             apartmentCount: request.apartmentCount,
             location: request.location,
+            code: generateCode(request.name),
+            status: 'active' as const,
             createdBy: request.requestedBy
-          });
+          };
+          
+          console.log('Database Storage: Creating society with data:', societyData);
+          const society = await this.createSociety(societyData);
+          console.log('Database Storage: Created society:', society);
+          
+          // Auto-join the creator to the society
+          await this.joinSociety(society.id, request.requestedBy);
+          console.log('Database Storage: Auto-joined creator to society');
         }
       }
     } catch (error) {
