@@ -1562,11 +1562,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { commissionRate, securityDeposit, minApartments, maxRentalDays } = req.body;
 
-      await pool.query(`
+      console.log('Updating platform settings:', { commissionRate, securityDeposit, minApartments, maxRentalDays });
+
+      const updateResult = await pool.query(`
         UPDATE platform_settings 
         SET commission_rate = $1, security_deposit = $2, min_apartments = $3, max_rental_days = $4, updated_at = CURRENT_TIMESTAMP
-        WHERE id = (SELECT id FROM platform_settings ORDER BY id DESC LIMIT 1)
+        WHERE id = 1
+        RETURNING *
       `, [commissionRate, securityDeposit, minApartments, maxRentalDays]);
+
+      console.log('Update result:', updateResult.rows[0]);
 
       res.json({ message: "Settings saved successfully" });
     } catch (error) {
