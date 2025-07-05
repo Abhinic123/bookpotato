@@ -272,6 +272,10 @@ export default function EnhancedProfile() {
                 <Phone className="w-4 h-4 mr-2" />
                 {(user as any)?.phone}
               </p>
+              <p className="text-gray-600 flex items-center">
+                <span className="w-4 h-4 mr-2 text-center font-bold">#</span>
+                User Number: {(user as any)?.userNumber || 'Not assigned'}
+              </p>
               {(user as any)?.isAdmin && (
                 <div className="flex items-center space-x-2">
                   <Crown className="w-4 h-4 text-yellow-600" />

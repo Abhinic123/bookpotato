@@ -127,6 +127,9 @@ BookShare is a community-driven digital library platform that enables book shari
 - July 5, 2025: Implemented dynamic platform settings system with admin panel
 - July 5, 2025: Fixed admin panel infinite re-render error
 - July 5, 2025: Restored comprehensive admin functionality including referral rewards management, badge creation, society request approval, and platform analytics
+- July 5, 2025: Fixed duplicate admin settings endpoints that prevented database updates - platform settings now save correctly
+- July 5, 2025: Added unique user number display in profile pages for all users
+- July 5, 2025: Implemented Google OAuth authentication with automatic user registration
 - June 22, 2025: Fixed books data handling in enhanced-browse page to prevent array errors
 ```
 

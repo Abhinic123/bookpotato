@@ -5,6 +5,8 @@ import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRent
 import { z } from "zod";
 import { db, pool } from "./db";
 import { sql } from "drizzle-orm";
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 
 // Session interface
 declare module "express-session" {
@@ -27,6 +29,47 @@ declare global {
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+});
+
+// Google OAuth configuration
+passport.use(new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID || "dummy-client-id",
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET || "dummy-client-secret",
+  callbackURL: "/api/auth/google/callback"
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    // Check if user exists
+    let user = await storage.getUserByEmail(profile.emails?.[0]?.value || '');
+    
+    if (!user) {
+      // Create new user
+      const userData = {
+        name: profile.displayName || 'Unknown User',
+        email: profile.emails?.[0]?.value || '',
+        phone: '0000000000', // Default phone for OAuth users
+        password: 'oauth-user', // OAuth users don't need password
+        address: ''
+      };
+      user = await storage.createUser(userData);
+    }
+    
+    return done(null, user);
+  } catch (error) {
+    return done(error, false);
+  }
+}));
+
+passport.serializeUser((user: any, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id: number, done) => {
+  try {
+    const user = await storage.getUser(id);
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
 });
 
 const borrowBookSchema = z.object({
@@ -74,6 +117,30 @@ async function getPlatformSettings() {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize passport
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  // Google OAuth routes
+  app.get("/api/auth/google", passport.authenticate("google", {
+    scope: ["profile", "email"]
+  }));
+
+  app.get("/api/auth/google/callback", 
+    passport.authenticate("google", { failureRedirect: "/auth" }),
+    async (req, res) => {
+      // Successful authentication
+      req.session.userId = (req.user as any)?.id;
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.redirect("/auth?error=session");
+        }
+        res.redirect("/"); // Redirect to home page after successful login
+      });
+    }
+  );
+
   // Authentication routes
   app.post("/api/auth/register", async (req, res) => {
     try {
