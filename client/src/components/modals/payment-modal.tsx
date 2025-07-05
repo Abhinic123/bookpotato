@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { CreditCard, Clock, Shield, IndianRupee } from "lucide-react";
 import {
   Dialog,
@@ -24,11 +24,18 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch platform settings
+  const { data: platformSettings } = useQuery({
+    queryKey: ["/api/admin/settings"],
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
   const dailyFee = parseFloat(book?.dailyFee || "0");
   const duration = 7; // Default 7 days
   const rentalFee = dailyFee * duration;
-  const platformFee = rentalFee * 0.05; // 5% commission
-  const securityDeposit = 100;
+  const commissionRate = platformSettings ? platformSettings.commissionRate / 100 : 0.05;
+  const platformFee = rentalFee * commissionRate;
+  const securityDeposit = platformSettings ? platformSettings.securityDeposit : 100;
   const totalAmount = rentalFee + securityDeposit;
 
   const borrowMutation = useMutation({
@@ -121,7 +128,7 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
                   <span>₹{rentalFee.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Platform Fee (5%)</span>
+                  <span>Platform Fee ({platformSettings ? platformSettings.commissionRate : 5}%)</span>
                   <span>₹{platformFee.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">

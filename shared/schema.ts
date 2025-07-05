@@ -132,6 +132,16 @@ export const societyRequests = pgTable("society_requests", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const platformSettings = pgTable("platform_settings", {
+  id: serial("id").primaryKey(),
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).default("5.00").notNull(),
+  securityDeposit: decimal("security_deposit", { precision: 10, scale: 2 }).default("100.00").notNull(),
+  minApartments: integer("min_apartments").default(90).notNull(),
+  maxRentalDays: integer("max_rental_days").default(30).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -230,6 +240,12 @@ export const insertSocietyRequestSchema = createInsertSchema(societyRequests).om
   reviewedAt: true,
 });
 
+export const insertPlatformSettingsSchema = createInsertSchema(platformSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
@@ -238,5 +254,8 @@ export type InsertReferralReward = z.infer<typeof insertReferralRewardSchema>;
 
 export type SocietyRequest = typeof societyRequests.$inferSelect;
 export type InsertSocietyRequest = z.infer<typeof insertSocietyRequestSchema>;
+
+export type PlatformSettings = typeof platformSettings.$inferSelect;
+export type InsertPlatformSettings = z.infer<typeof insertPlatformSettingsSchema>;
 
 

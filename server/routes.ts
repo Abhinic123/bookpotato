@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema } from "@shared/schema";
 import { z } from "zod";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { sql } from "drizzle-orm";
 
 // Session interface
@@ -41,6 +41,37 @@ const joinSocietySchema = z.object({
 }).refine(data => data.societyId || data.code, {
   message: "Either societyId or code must be provided"
 });
+
+// Helper function to get platform settings
+async function getPlatformSettings() {
+  try {
+    const result = await pool.query(`
+      SELECT commission_rate, security_deposit, min_apartments, max_rental_days 
+      FROM platform_settings 
+      ORDER BY id DESC 
+      LIMIT 1
+    `);
+    
+    if (result.rows.length > 0) {
+      return {
+        commissionRate: parseFloat(result.rows[0].commission_rate),
+        securityDeposit: parseFloat(result.rows[0].security_deposit),
+        minApartments: parseInt(result.rows[0].min_apartments),
+        maxRentalDays: parseInt(result.rows[0].max_rental_days)
+      };
+    }
+  } catch (error) {
+    console.error('Error fetching platform settings:', error);
+  }
+  
+  // Return default values if query fails
+  return {
+    commissionRate: 5,
+    securityDeposit: 100,
+    minApartments: 90,
+    maxRentalDays: 30
+  };
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
@@ -1322,13 +1353,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "You cannot borrow your own book" });
       }
 
-      // Calculate costs
+      // Get current platform settings
+      const settings = await getPlatformSettings();
+      
+      // Calculate costs using dynamic settings
       const dailyFee = parseFloat(book.dailyFee);
       const totalRentalFee = dailyFee * duration;
-      const platformFeeRate = 0.05; // 5%
+      const platformFeeRate = settings.commissionRate / 100; // Convert percentage to decimal
       const platformFee = totalRentalFee * platformFeeRate;
       const lenderAmount = totalRentalFee - platformFee;
-      const securityDeposit = 100; // Fixed security deposit
+      const securityDeposit = settings.securityDeposit;
       const totalAmount = totalRentalFee + securityDeposit;
 
       const endDate = new Date();
@@ -1489,6 +1523,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Mark messages read error:", error);
       res.status(500).json({ message: "Failed to mark messages as read" });
+    }
+  });
+
+  // Admin settings routes
+  app.get("/api/admin/settings", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const settings = await getPlatformSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Get admin settings error:", error);
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
+  app.post("/api/admin/settings", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { commissionRate, securityDeposit, minApartments, maxRentalDays } = req.body;
+
+      await pool.query(`
+        UPDATE platform_settings 
+        SET commission_rate = $1, security_deposit = $2, min_apartments = $3, max_rental_days = $4, updated_at = CURRENT_TIMESTAMP
+        WHERE id = (SELECT id FROM platform_settings ORDER BY id DESC LIMIT 1)
+      `, [commissionRate, securityDeposit, minApartments, maxRentalDays]);
+
+      res.json({ message: "Settings saved successfully" });
+    } catch (error) {
+      console.error("Update admin settings error:", error);
+      res.status(500).json({ message: "Failed to save settings" });
     }
   });
 
