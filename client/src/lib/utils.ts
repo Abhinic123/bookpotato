@@ -65,13 +65,20 @@ export function getBookStatusText(isAvailable: boolean, dueDate?: Date | string)
   return 'Available';
 }
 
-export function calculateRentalCost(dailyFee: number | string, duration: number) {
+export function calculateRentalCost(
+  dailyFee: number | string, 
+  duration: number, 
+  platformSettings?: { commissionRate: number; securityDeposit: number }
+) {
   const fee = typeof dailyFee === 'string' ? parseFloat(dailyFee) : dailyFee;
   const totalRentalFee = fee * duration;
-  const platformFeeRate = 0.05; // 5%
+  
+  // Use dynamic settings or fallback to defaults
+  const platformFeeRate = platformSettings ? (platformSettings.commissionRate / 100) : 0.05;
+  const securityDeposit = platformSettings ? platformSettings.securityDeposit : 100;
+  
   const platformFee = totalRentalFee * platformFeeRate;
   const lenderAmount = totalRentalFee - platformFee;
-  const securityDeposit = 100; // Fixed security deposit
   const totalAmount = totalRentalFee + securityDeposit;
 
   return {

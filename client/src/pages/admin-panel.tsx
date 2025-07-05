@@ -112,6 +112,7 @@ export default function AdminPanel() {
         description: "Platform settings have been successfully updated.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/platform/settings"] });
     },
     onError: () => {
       toast({

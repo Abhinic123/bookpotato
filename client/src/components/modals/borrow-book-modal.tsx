@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -57,6 +57,12 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch platform settings
+  const { data: platformSettings } = useQuery({
+    queryKey: ["/api/platform/settings"],
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
   const form = useForm<BorrowFormData>({
     resolver: zodResolver(borrowSchema),
     defaultValues: {
@@ -68,7 +74,11 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
   const watchedDuration = form.watch("duration");
   
   const rentalCost = book && watchedDuration 
-    ? calculateRentalCost(book.dailyFee, parseInt(watchedDuration))
+    ? calculateRentalCost(
+        book.dailyFee, 
+        parseInt(watchedDuration), 
+        platformSettings as { commissionRate: number; securityDeposit: number } | undefined
+      )
     : null;
 
   const borrowMutation = useMutation({

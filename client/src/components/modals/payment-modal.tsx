@@ -26,16 +26,16 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
 
   // Fetch platform settings
   const { data: platformSettings } = useQuery({
-    queryKey: ["/api/admin/settings"],
+    queryKey: ["/api/platform/settings"],
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
   const dailyFee = parseFloat(book?.dailyFee || "0");
   const duration = 7; // Default 7 days
   const rentalFee = dailyFee * duration;
-  const commissionRate = platformSettings ? platformSettings.commissionRate / 100 : 0.05;
+  const commissionRate = (platformSettings as any)?.commissionRate ? (platformSettings as any).commissionRate / 100 : 0.05;
   const platformFee = rentalFee * commissionRate;
-  const securityDeposit = platformSettings ? platformSettings.securityDeposit : 100;
+  const securityDeposit = (platformSettings as any)?.securityDeposit || 100;
   const totalAmount = rentalFee + securityDeposit;
 
   const borrowMutation = useMutation({

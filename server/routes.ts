@@ -1527,6 +1527,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin settings routes
+  // Public platform settings endpoint (no auth required)
+  app.get("/api/platform/settings", async (req, res) => {
+    try {
+      const settings = await getPlatformSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Get platform settings error:", error);
+      res.status(500).json({ message: "Failed to fetch settings" });
+    }
+  });
+
   app.get("/api/admin/settings", requireAuth, async (req, res) => {
     try {
       const user = await storage.getUser(req.session.userId!);
