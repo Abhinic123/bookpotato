@@ -127,8 +127,16 @@ export default function EnhancedAuth() {
   });
 
   const handleSocialLogin = (provider: string) => {
-    // Implement Google OAuth
-    window.location.href = `/api/auth/${provider}`;
+    try {
+      // Implement Google OAuth
+      window.location.href = `/api/auth/${provider}`;
+    } catch (error) {
+      toast({
+        title: "Connection Error",
+        description: "Unable to connect to Google. Please use email/password login instead.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

@@ -130,6 +130,7 @@ BookShare is a community-driven digital library platform that enables book shari
 - July 5, 2025: Fixed duplicate admin settings endpoints that prevented database updates - platform settings now save correctly
 - July 5, 2025: Added unique user number display in profile pages for all users
 - July 5, 2025: Implemented Google OAuth authentication with automatic user registration
+- July 5, 2025: Google OAuth configuration completed but network restrictions may block access in some environments
 - June 22, 2025: Fixed books data handling in enhanced-browse page to prevent array errors
 ```
 
