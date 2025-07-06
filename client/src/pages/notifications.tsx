@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDateRelative } from "@/lib/utils";
 import { Bell, Clock, CheckCircle, XCircle, BookOpen, Calendar, CreditCard } from "lucide-react";
+import { PaymentGatewayModal } from "@/components/modals/payment-gateway-modal";
 import type { Notification } from "@shared/schema";
 
 interface ExtensionData {
@@ -37,6 +38,15 @@ export default function NotificationsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [processingId, setProcessingId] = useState<number | null>(null);
+  const [paymentModal, setPaymentModal] = useState<{
+    isOpen: boolean;
+    notification: Notification | null;
+    paymentDetails: any;
+  }>({
+    isOpen: false,
+    notification: null,
+    paymentDetails: null
+  });
 
   const { data: rawNotifications = [], isLoading } = useQuery({
     queryKey: ["/api/notifications"],
@@ -99,6 +109,7 @@ export default function NotificationsPage() {
       
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       queryClient.invalidateQueries({ queryKey: ["/api/rentals/borrowed"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/rentals/lent"] });
       queryClient.invalidateQueries({ queryKey: ["/api/user/earnings"] });
       setProcessingId(null);
     },
@@ -207,20 +218,49 @@ export default function NotificationsPage() {
   };
 
   const handleExtensionPayment = (notification: Notification) => {
-    setProcessingId(notification.id);
-    
-    // Parse the request ID from notification data
+    // Parse the extension data from notification
     const extensionData = parseExtensionData(notification.data);
-    if (extensionData?.requestId) {
-      processExtensionPaymentMutation.mutate(extensionData.requestId);
-    } else {
+    if (!extensionData?.requestId) {
       toast({
         title: "Error",
         description: "Invalid extension payment data",
         variant: "destructive",
       });
-      setProcessingId(null);
+      return;
     }
+
+    // Open payment gateway modal
+    setPaymentModal({
+      isOpen: true,
+      notification,
+      paymentDetails: {
+        amount: extensionData.totalAmount,
+        description: `Extension for "${extensionData.bookTitle}" - ${extensionData.extensionDays} day(s)`,
+        breakdown: {
+          extensionFee: extensionData.totalAmount,
+          platformCommission: extensionData.platformCommission,
+          ownerEarnings: extensionData.lenderEarnings
+        }
+      }
+    });
+  };
+
+  const handlePaymentSuccess = () => {
+    if (!paymentModal.notification) return;
+    
+    setProcessingId(paymentModal.notification.id);
+    
+    const extensionData = parseExtensionData(paymentModal.notification.data);
+    if (extensionData?.requestId) {
+      processExtensionPaymentMutation.mutate(extensionData.requestId);
+    }
+    
+    // Close payment modal
+    setPaymentModal({
+      isOpen: false,
+      notification: null,
+      paymentDetails: null
+    });
   };
 
   const handleConfirmReturn = (rentalId: number) => {
@@ -613,6 +653,16 @@ export default function NotificationsPage() {
           )}
         </div>
       </div>
+
+      {/* Payment Gateway Modal */}
+      {paymentModal.paymentDetails && (
+        <PaymentGatewayModal
+          isOpen={paymentModal.isOpen}
+          onClose={() => setPaymentModal({ isOpen: false, notification: null, paymentDetails: null })}
+          onPaymentSuccess={handlePaymentSuccess}
+          paymentDetails={paymentModal.paymentDetails}
+        />
+      )}
     </div>
   );
 }
