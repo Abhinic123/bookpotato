@@ -1780,12 +1780,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const settings = await getPlatformSettings();
-      const extensionFeePerDay = parseFloat(settings.extensionFeePerDay);
+      // Use the book's actual daily fee for extension calculation
+      const extensionFeePerDay = parseFloat(rental.book.dailyFee);
       const commissionRate = parseFloat(settings.commissionRate) / 100;
 
       const totalExtensionFee = extensionFeePerDay * extensionDays;
       const platformCommission = totalExtensionFee * commissionRate;
       const lenderEarnings = totalExtensionFee - platformCommission;
+
+      console.log('Extension calculation:', {
+        bookTitle: rental.book.title,
+        bookDailyFee: rental.book.dailyFee,
+        extensionDays,
+        extensionFeePerDay,
+        totalExtensionFee,
+        platformCommission,
+        lenderEarnings
+      });
 
       res.json({
         extensionDays,
@@ -1846,7 +1857,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const settings = await getPlatformSettings();
-      const extensionFeePerDay = parseFloat(settings.extensionFeePerDay);
+      // Use the book's actual daily fee for extension calculation
+      const extensionFeePerDay = parseFloat(rental.book.dailyFee);
       const commissionRate = parseFloat(settings.commissionRate) / 100;
 
       const totalExtensionFee = extensionFeePerDay * extensionDays;
