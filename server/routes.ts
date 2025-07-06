@@ -1,10 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema, users } from "@shared/schema";
+import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema, users, rentalExtensions } from "@shared/schema";
 import { z } from "zod";
 import { db, pool } from "./db";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, and } from "drizzle-orm";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 
@@ -1214,18 +1214,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const borrowedRentals = await storage.getRentalsByBorrower(userId);
       console.log(`💰 Earnings API - User ${userId} - Borrowed rentals:`, borrowedRentals.length);
       
-      // Calculate totals - include active rentals in earnings calculation
+      // Calculate earnings from regular rentals
       const totalEarned = lentRentals
         .reduce((sum, rental) => sum + parseFloat(rental.lenderAmount || '0'), 0);
       
+      // Calculate spending from regular rentals
       const totalSpent = borrowedRentals
         .reduce((sum, rental) => sum + parseFloat(rental.totalAmount || '0'), 0);
+
+      // Add extension earnings for lent books
+      const extensionEarnings = await db
+        .select({ 
+          total: sql<string>`COALESCE(SUM(CAST(${rentalExtensions.lenderEarnings} AS DECIMAL)), 0)` 
+        })
+        .from(rentalExtensions)
+        .where(and(
+          eq(rentalExtensions.lenderId, userId),
+          eq(rentalExtensions.paymentStatus, 'completed')
+        ));
+
+      // Add extension spending for borrowed books
+      const extensionSpending = await db
+        .select({ 
+          total: sql<string>`COALESCE(SUM(CAST(${rentalExtensions.extensionFee} AS DECIMAL)), 0)` 
+        })
+        .from(rentalExtensions)
+        .where(and(
+          eq(rentalExtensions.userId, userId),
+          eq(rentalExtensions.paymentStatus, 'completed')
+        ));
+
+      const finalTotalEarned = totalEarned + parseFloat(extensionEarnings[0]?.total || '0');
+      const finalTotalSpent = totalSpent + parseFloat(extensionSpending[0]?.total || '0');
       
-      console.log(`💰 Earnings API - Total earned: ${totalEarned}, Total spent: ${totalSpent}`);
+      console.log(`💰 Earnings API - Total earned: ${finalTotalEarned} (rental: ${totalEarned} + extensions: ${parseFloat(extensionEarnings[0]?.total || '0')}), Total spent: ${finalTotalSpent} (rental: ${totalSpent} + extensions: ${parseFloat(extensionSpending[0]?.total || '0')})`);
       
       res.json({
-        totalEarned,
-        totalSpent,
+        totalEarned: finalTotalEarned,
+        totalSpent: finalTotalSpent,
         lentRentals: lentRentals.map(rental => ({
           id: rental.id,
           bookTitle: rental.book.title,
