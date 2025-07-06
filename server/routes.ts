@@ -2103,12 +2103,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create extension record for tracking
       await storage.createRentalExtension({
         rentalId: request.rentalId,
+        requestId: request.id,
+        userId: request.requesterId, // borrower
+        lenderId: request.ownerId, // book owner
         extensionDays: request.extensionDays,
         extensionFee: request.extensionFee,
         platformCommission: request.platformCommission,
         lenderEarnings: request.lenderEarnings,
         paymentId,
-        paymentStatus: 'completed'
+        paymentStatus: 'completed',
+        newDueDate: newEndDate
       });
 
       // Create success notification for borrower
