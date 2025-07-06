@@ -51,15 +51,16 @@ export default function NotificationsPage() {
   });
 
   const respondToExtensionMutation = useMutation({
-    mutationFn: async ({ notificationId, approved, reason }: { 
-      notificationId: number; 
+    mutationFn: async ({ requestId, approved, reason }: { 
+      requestId: number; 
       approved: boolean; 
       reason?: string 
     }) => {
-      const response = await apiRequest("POST", `/api/notifications/${notificationId}/respond-extension`, {
-        approved,
-        reason
-      });
+      const endpoint = approved 
+        ? `/api/rentals/extensions/requests/${requestId}/approve`
+        : `/api/rentals/extensions/requests/${requestId}/deny`;
+      
+      const response = await apiRequest("POST", endpoint, approved ? {} : { reason });
       return response.json();
     },
     onSuccess: (data, variables) => {
@@ -159,7 +160,23 @@ export default function NotificationsPage() {
 
   const handleExtensionResponse = (notification: Notification, approved: boolean) => {
     setProcessingId(notification.id);
-    respondToExtensionMutation.mutate({ notificationId: notification.id, approved });
+    
+    // Parse the request ID from notification data
+    const extensionData = parseExtensionData(notification.data);
+    if (extensionData?.requestId) {
+      respondToExtensionMutation.mutate({ 
+        requestId: extensionData.requestId, 
+        approved,
+        reason: approved ? undefined : "Owner declined the request"
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Invalid extension request data",
+        variant: "destructive",
+      });
+      setProcessingId(null);
+    }
   };
 
   const handleConfirmReturn = (rentalId: number) => {

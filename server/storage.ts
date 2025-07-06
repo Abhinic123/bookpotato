@@ -1,9 +1,10 @@
 import { 
-  users, societies, books, bookRentals, societyMembers, notifications, societyRequests, referralRewards, rentalExtensions,
+  users, societies, books, bookRentals, societyMembers, notifications, societyRequests, referralRewards, rentalExtensions, extensionRequests,
   type User, type InsertUser, type Society, type InsertSociety, 
   type Book, type InsertBook, type BookRental, type InsertBookRental,
   type SocietyMember, type InsertSocietyMember, type Notification, type InsertNotification,
-  type BookWithOwner, type RentalWithDetails, type SocietyWithStats, type RentalExtension, type InsertRentalExtension
+  type BookWithOwner, type RentalWithDetails, type SocietyWithStats, type RentalExtension, type InsertRentalExtension,
+  type ExtensionRequest, type InsertExtensionRequest
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, not, inArray, ilike, desc, count, sum, sql } from "drizzle-orm";
@@ -68,6 +69,13 @@ export interface IStorage {
   
   // Advanced search
   searchBooksAdvanced(filters: any): Promise<BookWithOwner[]>;
+  
+  // Extension Requests
+  createExtensionRequest(request: InsertExtensionRequest): Promise<ExtensionRequest>;
+  getExtensionRequestsByOwner(ownerId: number): Promise<ExtensionRequest[]>;
+  getExtensionRequest(requestId: number): Promise<ExtensionRequest | undefined>;
+  approveExtensionRequest(requestId: number): Promise<ExtensionRequest>;
+  denyExtensionRequest(requestId: number, reason: string): Promise<ExtensionRequest>;
   
   // Rental Extensions
   createRentalExtension(extension: InsertRentalExtension): Promise<RentalExtension>;
@@ -1062,6 +1070,81 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Rental Extension methods
+  // Extension Request methods
+  async createExtensionRequest(requestData: InsertExtensionRequest): Promise<ExtensionRequest> {
+    try {
+      const [request] = await db
+        .insert(extensionRequests)
+        .values(requestData)
+        .returning();
+      return request;
+    } catch (error) {
+      console.error('Error creating extension request:', error);
+      throw error;
+    }
+  }
+
+  async getExtensionRequestsByOwner(ownerId: number): Promise<ExtensionRequest[]> {
+    try {
+      const requests = await db
+        .select()
+        .from(extensionRequests)
+        .where(and(eq(extensionRequests.ownerId, ownerId), eq(extensionRequests.status, 'pending')))
+        .orderBy(desc(extensionRequests.createdAt));
+      return requests;
+    } catch (error) {
+      console.error('Error getting extension requests by owner:', error);
+      return [];
+    }
+  }
+
+  async getExtensionRequest(requestId: number): Promise<ExtensionRequest | undefined> {
+    try {
+      const [request] = await db
+        .select()
+        .from(extensionRequests)
+        .where(eq(extensionRequests.id, requestId));
+      return request;
+    } catch (error) {
+      console.error('Error getting extension request:', error);
+      return undefined;
+    }
+  }
+
+  async approveExtensionRequest(requestId: number): Promise<ExtensionRequest> {
+    try {
+      const [request] = await db
+        .update(extensionRequests)
+        .set({ 
+          status: 'approved',
+          approvedAt: new Date()
+        })
+        .where(eq(extensionRequests.id, requestId))
+        .returning();
+      return request;
+    } catch (error) {
+      console.error('Error approving extension request:', error);
+      throw error;
+    }
+  }
+
+  async denyExtensionRequest(requestId: number, reason: string): Promise<ExtensionRequest> {
+    try {
+      const [request] = await db
+        .update(extensionRequests)
+        .set({ 
+          status: 'denied',
+          reason: reason
+        })
+        .where(eq(extensionRequests.id, requestId))
+        .returning();
+      return request;
+    } catch (error) {
+      console.error('Error denying extension request:', error);
+      throw error;
+    }
+  }
+
   async createRentalExtension(extensionData: InsertRentalExtension): Promise<RentalExtension> {
     try {
       const [extension] = await db
@@ -1643,6 +1726,27 @@ export class MemStorage implements IStorage {
       .reduce((sum, rental) => sum + parseFloat(rental.lenderAmount), 0);
 
     return { borrowedBooks, lentBooks, totalEarnings };
+  }
+
+  // Extension Request methods (not implemented in memory storage)
+  async createExtensionRequest(requestData: InsertExtensionRequest): Promise<ExtensionRequest> {
+    throw new Error('Extension requests not supported in memory storage');
+  }
+
+  async getExtensionRequestsByOwner(ownerId: number): Promise<ExtensionRequest[]> {
+    return [];
+  }
+
+  async getExtensionRequest(requestId: number): Promise<ExtensionRequest | undefined> {
+    return undefined;
+  }
+
+  async approveExtensionRequest(requestId: number): Promise<ExtensionRequest> {
+    throw new Error('Extension requests not supported in memory storage');
+  }
+
+  async denyExtensionRequest(requestId: number, reason: string): Promise<ExtensionRequest> {
+    throw new Error('Extension requests not supported in memory storage');
   }
 
   // Extension methods (not implemented in memory storage)

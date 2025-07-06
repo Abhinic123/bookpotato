@@ -143,9 +143,27 @@ export const platformSettings = pgTable("platform_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const extensionRequests = pgTable("extension_requests", {
+  id: serial("id").primaryKey(),
+  rentalId: integer("rental_id").notNull(),
+  requesterId: integer("requester_id").notNull(),
+  ownerId: integer("owner_id").notNull(),
+  extensionDays: integer("extension_days").notNull(),
+  extensionFee: decimal("extension_fee", { precision: 10, scale: 2 }).notNull(),
+  platformCommission: decimal("platform_commission", { precision: 10, scale: 2 }).notNull(),
+  lenderEarnings: decimal("lender_earnings", { precision: 10, scale: 2 }).notNull(),
+  status: text("status").default("pending").notNull(), // pending, approved, denied
+  reason: text("reason"), // for denial reason
+  paymentId: text("payment_id"), // set when approved and payment processed
+  newDueDate: timestamp("new_due_date"), // calculated new due date
+  approvedAt: timestamp("approved_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const rentalExtensions = pgTable("rental_extensions", {
   id: serial("id").primaryKey(),
   rentalId: integer("rental_id").notNull(),
+  requestId: integer("request_id"), // link to approved request (nullable for existing records)
   userId: integer("user_id").notNull(),
   lenderId: integer("lender_id").notNull(),
   extensionDays: integer("extension_days").notNull(),
@@ -262,6 +280,12 @@ export const insertPlatformSettingsSchema = createInsertSchema(platformSettings)
   updatedAt: true,
 });
 
+export const insertExtensionRequestSchema = createInsertSchema(extensionRequests).omit({
+  id: true,
+  createdAt: true,
+  approvedAt: true,
+});
+
 export const insertRentalExtensionSchema = createInsertSchema(rentalExtensions).omit({
   id: true,
   createdAt: true,
@@ -278,6 +302,9 @@ export type InsertSocietyRequest = z.infer<typeof insertSocietyRequestSchema>;
 
 export type PlatformSettings = typeof platformSettings.$inferSelect;
 export type InsertPlatformSettings = z.infer<typeof insertPlatformSettingsSchema>;
+
+export type ExtensionRequest = typeof extensionRequests.$inferSelect;
+export type InsertExtensionRequest = z.infer<typeof insertExtensionRequestSchema>;
 
 export type RentalExtension = typeof rentalExtensions.$inferSelect;
 export type InsertRentalExtension = z.infer<typeof insertRentalExtensionSchema>;
