@@ -1865,9 +1865,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const platformCommission = totalExtensionFee * commissionRate;
       const lenderEarnings = totalExtensionFee - platformCommission;
 
-      // Calculate new due date
-      const currentDueDate = new Date(rental.dueDate);
-      const newDueDate = new Date(currentDueDate.getTime() + (extensionDays * 24 * 60 * 60 * 1000));
+      // Calculate new due date - handle potential missing due date
+      let currentDueDate = rental.dueDate ? new Date(rental.dueDate) : new Date(rental.endDate);
+      if (!currentDueDate || isNaN(currentDueDate.getTime())) {
+        // Fallback to end date or current date + original rental days
+        currentDueDate = rental.endDate ? new Date(rental.endDate) : new Date();
+      }
+      
+      const newDueDate = new Date(currentDueDate);
+      newDueDate.setDate(currentDueDate.getDate() + extensionDays);
+      
+      console.log('Date calculation:', {
+        originalDueDate: rental.dueDate,
+        originalEndDate: rental.endDate,
+        parsedCurrentDate: currentDueDate.toISOString(),
+        extensionDays,
+        newDueDate: newDueDate.toISOString()
+      });
 
       // Create extension record
       const extension = await storage.createRentalExtension({
@@ -1883,9 +1897,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         newDueDate
       });
 
-      // Update rental due date
+      // Update rental due date (using endDate field)
       await storage.updateRental(rentalId, {
-        dueDate: newDueDate
+        endDate: newDueDate
       });
 
       // Update lender's earnings
