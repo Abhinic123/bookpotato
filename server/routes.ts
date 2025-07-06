@@ -1662,16 +1662,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Admin access required" });
       }
 
-      const { commissionRate, securityDeposit, minApartments, maxRentalDays } = req.body;
+      const { commissionRate, securityDeposit, minApartments, maxRentalDays, extensionFeePerDay } = req.body;
 
-      console.log('Updating platform settings:', { commissionRate, securityDeposit, minApartments, maxRentalDays });
+      console.log('Updating platform settings:', { commissionRate, securityDeposit, minApartments, maxRentalDays, extensionFeePerDay });
 
       const updateResult = await pool.query(`
         UPDATE platform_settings 
-        SET commission_rate = $1, security_deposit = $2, min_apartments = $3, max_rental_days = $4, updated_at = CURRENT_TIMESTAMP
+        SET commission_rate = $1, security_deposit = $2, min_apartments = $3, max_rental_days = $4, extension_fee_per_day = $5, updated_at = CURRENT_TIMESTAMP
         WHERE id = 1
         RETURNING *
-      `, [commissionRate, securityDeposit, minApartments, maxRentalDays]);
+      `, [commissionRate, securityDeposit, minApartments, maxRentalDays, extensionFeePerDay || 10]);
 
       console.log('Update result:', updateResult.rows[0]);
 
@@ -1761,6 +1761,142 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get society requests error:", error);
       res.status(500).json({ message: "Failed to fetch society requests" });
+    }
+  });
+
+  // Extension payment processing
+  app.post("/api/rentals/extensions/calculate", requireAuth, async (req, res) => {
+    try {
+      const { rentalId, extensionDays } = req.body;
+      
+      const rental = await storage.getRental(rentalId);
+      if (!rental) {
+        return res.status(404).json({ message: "Rental not found" });
+      }
+
+      // Only the borrower can request extension
+      if (rental.borrowerId !== req.session.userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+
+      const settings = await getPlatformSettings();
+      const extensionFeePerDay = parseFloat(settings.extensionFeePerDay);
+      const commissionRate = parseFloat(settings.commissionRate) / 100;
+
+      const totalExtensionFee = extensionFeePerDay * extensionDays;
+      const platformCommission = totalExtensionFee * commissionRate;
+      const lenderEarnings = totalExtensionFee - platformCommission;
+
+      res.json({
+        extensionDays,
+        extensionFeePerDay,
+        totalExtensionFee,
+        platformCommission,
+        lenderEarnings,
+        commissionRate: settings.commissionRate
+      });
+    } catch (error) {
+      console.error("Extension calculation error:", error);
+      res.status(500).json({ message: "Failed to calculate extension cost" });
+    }
+  });
+
+  app.post("/api/rentals/extensions/create-payment", requireAuth, async (req, res) => {
+    try {
+      const { rentalId, extensionDays, totalAmount } = req.body;
+      
+      const rental = await storage.getRental(rentalId);
+      if (!rental) {
+        return res.status(404).json({ message: "Rental not found" });
+      }
+
+      if (rental.borrowerId !== req.session.userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+
+      // Create dummy payment intent (simulating Stripe/Razorpay)
+      const paymentId = `ext_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      res.json({
+        paymentId,
+        clientSecret: `${paymentId}_secret`,
+        amount: totalAmount
+      });
+    } catch (error) {
+      console.error("Extension payment creation error:", error);
+      res.status(500).json({ message: "Failed to create payment intent" });
+    }
+  });
+
+  app.post("/api/rentals/extensions/process", requireAuth, async (req, res) => {
+    try {
+      const { rentalId, extensionDays, paymentId, paymentStatus } = req.body;
+      
+      const rental = await storage.getRental(rentalId);
+      if (!rental) {
+        return res.status(404).json({ message: "Rental not found" });
+      }
+
+      if (rental.borrowerId !== req.session.userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+
+      if (paymentStatus !== 'completed') {
+        return res.status(400).json({ message: "Payment not completed" });
+      }
+
+      const settings = await getPlatformSettings();
+      const extensionFeePerDay = parseFloat(settings.extensionFeePerDay);
+      const commissionRate = parseFloat(settings.commissionRate) / 100;
+
+      const totalExtensionFee = extensionFeePerDay * extensionDays;
+      const platformCommission = totalExtensionFee * commissionRate;
+      const lenderEarnings = totalExtensionFee - platformCommission;
+
+      // Calculate new due date
+      const currentDueDate = new Date(rental.dueDate);
+      const newDueDate = new Date(currentDueDate.getTime() + (extensionDays * 24 * 60 * 60 * 1000));
+
+      // Create extension record
+      const extension = await storage.createRentalExtension({
+        rentalId,
+        userId: req.session.userId!,
+        lenderId: rental.lenderId,
+        extensionDays,
+        extensionFee: totalExtensionFee.toString(),
+        platformCommission: platformCommission.toString(),
+        lenderEarnings: lenderEarnings.toString(),
+        paymentStatus: 'completed',
+        paymentId,
+        newDueDate
+      });
+
+      // Update rental due date
+      await storage.updateRental(rentalId, {
+        dueDate: newDueDate
+      });
+
+      // Update lender's earnings
+      const currentStats = await storage.getUserStats(rental.lenderId);
+      const newEarnings = currentStats.totalEarnings + lenderEarnings;
+
+      // Notify the lender about the extension
+      await storage.createNotification({
+        userId: rental.lenderId,
+        title: "Book Extension Payment Received",
+        message: `Your book "${rental.book.title}" has been extended for ${extensionDays} days. You earned ₹${lenderEarnings.toFixed(2)}.`,
+        type: "extension_payment"
+      });
+
+      res.json({
+        message: "Extension processed successfully",
+        extension,
+        newDueDate,
+        lenderEarnings
+      });
+    } catch (error) {
+      console.error("Extension processing error:", error);
+      res.status(500).json({ message: "Failed to process extension" });
     }
   });
 

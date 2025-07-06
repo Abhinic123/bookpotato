@@ -138,8 +138,24 @@ export const platformSettings = pgTable("platform_settings", {
   securityDeposit: decimal("security_deposit", { precision: 10, scale: 2 }).default("100.00").notNull(),
   minApartments: integer("min_apartments").default(90).notNull(),
   maxRentalDays: integer("max_rental_days").default(30).notNull(),
+  extensionFeePerDay: decimal("extension_fee_per_day", { precision: 10, scale: 2 }).default("10.00").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const rentalExtensions = pgTable("rental_extensions", {
+  id: serial("id").primaryKey(),
+  rentalId: integer("rental_id").notNull(),
+  userId: integer("user_id").notNull(),
+  lenderId: integer("lender_id").notNull(),
+  extensionDays: integer("extension_days").notNull(),
+  extensionFee: decimal("extension_fee", { precision: 10, scale: 2 }).notNull(),
+  platformCommission: decimal("platform_commission", { precision: 10, scale: 2 }).notNull(),
+  lenderEarnings: decimal("lender_earnings", { precision: 10, scale: 2 }).notNull(),
+  paymentStatus: text("payment_status").notNull().default("pending"), // 'pending', 'completed', 'failed'
+  paymentId: text("payment_id"),
+  newDueDate: timestamp("new_due_date").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Insert schemas
@@ -246,6 +262,11 @@ export const insertPlatformSettingsSchema = createInsertSchema(platformSettings)
   updatedAt: true,
 });
 
+export const insertRentalExtensionSchema = createInsertSchema(rentalExtensions).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
@@ -257,5 +278,8 @@ export type InsertSocietyRequest = z.infer<typeof insertSocietyRequestSchema>;
 
 export type PlatformSettings = typeof platformSettings.$inferSelect;
 export type InsertPlatformSettings = z.infer<typeof insertPlatformSettingsSchema>;
+
+export type RentalExtension = typeof rentalExtensions.$inferSelect;
+export type InsertRentalExtension = z.infer<typeof insertRentalExtensionSchema>;
 
 

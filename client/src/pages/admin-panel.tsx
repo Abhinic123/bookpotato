@@ -17,6 +17,7 @@ const settingsSchema = z.object({
   securityDeposit: z.number().min(0),
   minApartments: z.number().min(1),
   maxRentalDays: z.number().min(1).max(365),
+  extensionFeePerDay: z.number().min(0),
 });
 
 const rewardSchema = z.object({
@@ -62,6 +63,7 @@ export default function AdminPanel() {
       securityDeposit: 100,
       minApartments: 90,
       maxRentalDays: 30,
+      extensionFeePerDay: 10,
     },
   });
 
@@ -85,6 +87,7 @@ export default function AdminPanel() {
         securityDeposit: settings.securityDeposit,
         minApartments: settings.minApartments,
         maxRentalDays: settings.maxRentalDays,
+        extensionFeePerDay: settings.extensionFeePerDay || 10,
       });
     }
   }, [settings]);
@@ -362,6 +365,22 @@ export default function AdminPanel() {
                     {form.formState.errors.maxRentalDays && (
                       <p className="text-sm text-red-500">
                         {form.formState.errors.maxRentalDays.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="extensionFeePerDay">Extension Fee Per Day (₹)</Label>
+                    <Input
+                      id="extensionFeePerDay"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      {...form.register("extensionFeePerDay", { valueAsNumber: true })}
+                    />
+                    {form.formState.errors.extensionFeePerDay && (
+                      <p className="text-sm text-red-500">
+                        {form.formState.errors.extensionFeePerDay.message}
                       </p>
                     )}
                   </div>

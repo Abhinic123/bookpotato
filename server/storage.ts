@@ -1,9 +1,9 @@
 import { 
-  users, societies, books, bookRentals, societyMembers, notifications, societyRequests, referralRewards,
+  users, societies, books, bookRentals, societyMembers, notifications, societyRequests, referralRewards, rentalExtensions,
   type User, type InsertUser, type Society, type InsertSociety, 
   type Book, type InsertBook, type BookRental, type InsertBookRental,
   type SocietyMember, type InsertSocietyMember, type Notification, type InsertNotification,
-  type BookWithOwner, type RentalWithDetails, type SocietyWithStats
+  type BookWithOwner, type RentalWithDetails, type SocietyWithStats, type RentalExtension, type InsertRentalExtension
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, not, inArray, ilike, desc, count, sum, sql } from "drizzle-orm";
@@ -68,6 +68,11 @@ export interface IStorage {
   
   // Advanced search
   searchBooksAdvanced(filters: any): Promise<BookWithOwner[]>;
+  
+  // Rental Extensions
+  createRentalExtension(extension: InsertRentalExtension): Promise<RentalExtension>;
+  getRentalExtensions(rentalId: number): Promise<RentalExtension[]>;
+  updateRentalExtensionPayment(extensionId: number, paymentId: string, status: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -740,11 +745,25 @@ export class DatabaseStorage implements IStorage {
         eq(bookRentals.lenderId, userId),
         eq(bookRentals.status, 'returned')
       ));
+
+    // Calculate total earnings from extensions
+    const extensionEarningsResult = await db
+      .select({ 
+        extensionEarnings: sql<string>`COALESCE(SUM(CAST(${rentalExtensions.lenderEarnings} AS DECIMAL)), 0)` 
+      })
+      .from(rentalExtensions)
+      .where(and(
+        eq(rentalExtensions.lenderId, userId),
+        eq(rentalExtensions.paymentStatus, 'completed')
+      ));
+    
+    const totalEarnings = parseFloat(earningsResult[0]?.totalEarnings || '0') + 
+                         parseFloat(extensionEarningsResult[0]?.extensionEarnings || '0');
     
     return {
       borrowedBooks: borrowedBooks.count,
       lentBooks: lentBooks.count,
-      totalEarnings: parseFloat(earningsResult[0]?.totalEarnings || '0')
+      totalEarnings
     };
   }
 
@@ -1039,6 +1058,49 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error in advanced search:', error);
       return [];
+    }
+  }
+
+  // Rental Extension methods
+  async createRentalExtension(extensionData: InsertRentalExtension): Promise<RentalExtension> {
+    try {
+      const [extension] = await db
+        .insert(rentalExtensions)
+        .values(extensionData)
+        .returning();
+      return extension;
+    } catch (error) {
+      console.error('Error creating rental extension:', error);
+      throw error;
+    }
+  }
+
+  async getRentalExtensions(rentalId: number): Promise<RentalExtension[]> {
+    try {
+      const extensions = await db
+        .select()
+        .from(rentalExtensions)
+        .where(eq(rentalExtensions.rentalId, rentalId))
+        .orderBy(desc(rentalExtensions.createdAt));
+      return extensions;
+    } catch (error) {
+      console.error('Error getting rental extensions:', error);
+      return [];
+    }
+  }
+
+  async updateRentalExtensionPayment(extensionId: number, paymentId: string, status: string): Promise<void> {
+    try {
+      await db
+        .update(rentalExtensions)
+        .set({ 
+          paymentId, 
+          paymentStatus: status,
+        })
+        .where(eq(rentalExtensions.id, extensionId));
+    } catch (error) {
+      console.error('Error updating rental extension payment:', error);
+      throw error;
     }
   }
 }
@@ -1581,6 +1643,19 @@ export class MemStorage implements IStorage {
       .reduce((sum, rental) => sum + parseFloat(rental.lenderAmount), 0);
 
     return { borrowedBooks, lentBooks, totalEarnings };
+  }
+
+  // Extension methods (not implemented in memory storage)
+  async createRentalExtension(extensionData: InsertRentalExtension): Promise<RentalExtension> {
+    throw new Error('Extensions not supported in memory storage');
+  }
+
+  async getRentalExtensions(rentalId: number): Promise<RentalExtension[]> {
+    return [];
+  }
+
+  async updateRentalExtensionPayment(extensionId: number, paymentId: string, status: string): Promise<void> {
+    // No-op for memory storage
   }
 }
 
