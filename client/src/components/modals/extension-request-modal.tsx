@@ -221,21 +221,21 @@ export default function ExtensionRequestModal({ isOpen, onClose, rental }: Exten
                   </h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span>Extension Fee (₹{calculationData.extensionFeePerDay}/day × {extensionDays} days):</span>
-                      <span className="font-medium">₹{calculationData.totalExtensionFee.toFixed(2)}</span>
+                      <span>Extension Fee (₹{calculationData?.extensionFeePerDay || 0}/day × {extensionDays} days):</span>
+                      <span className="font-medium">₹{calculationData?.totalExtensionFee?.toFixed(2) || '0.00'}</span>
                     </div>
                     <div className="flex justify-between text-gray-600">
-                      <span>Platform Commission ({calculationData.commissionRate}%):</span>
-                      <span>-₹{calculationData.platformCommission.toFixed(2)}</span>
+                      <span>Platform Commission ({calculationData?.commissionRate || 0}%):</span>
+                      <span>-₹{calculationData?.platformCommission?.toFixed(2) || '0.00'}</span>
                     </div>
                     <div className="flex justify-between text-gray-600">
                       <span>Lender Earnings:</span>
-                      <span>₹{calculationData.lenderEarnings.toFixed(2)}</span>
+                      <span>₹{calculationData?.lenderEarnings?.toFixed(2) || '0.00'}</span>
                     </div>
                     <hr className="border-blue-200" />
                     <div className="flex justify-between font-semibold text-blue-900">
                       <span>Total Amount:</span>
-                      <span>₹{calculationData.totalExtensionFee.toFixed(2)}</span>
+                      <span>₹{calculationData?.totalExtensionFee?.toFixed(2) || '0.00'}</span>
                     </div>
                   </div>
                 </div>
@@ -282,7 +282,7 @@ export default function ExtensionRequestModal({ isOpen, onClose, rental }: Exten
                   </div>
                   <div className="flex justify-between">
                     <span>Total Amount:</span>
-                    <span className="font-semibold">₹{calculationData?.totalExtensionFee.toFixed(2)}</span>
+                    <span className="font-semibold">₹{calculationData?.totalExtensionFee?.toFixed(2) || '0.00'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Payment ID:</span>
