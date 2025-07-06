@@ -1975,13 +1975,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get rental details for notifications
       const rental = await storage.getRental(request.rentalId);
       if (rental) {
-        // Create notification for borrower about approval
+        // Create notification for borrower about approval with payment details
         await storage.createNotification({
           userId: request.requesterId,
           title: "Extension Request Approved",
-          message: `Your extension request for "${rental.book.title}" has been approved! Please complete payment to confirm the extension.`,
+          message: `Your extension request for "${rental.book.title}" has been approved! Click "Pay Now" to complete the extension.`,
           type: "extension_approved",
-          data: JSON.stringify({ requestId, rentalId: request.rentalId })
+          data: JSON.stringify({ 
+            requestId, 
+            rentalId: request.rentalId,
+            bookTitle: rental.book.title,
+            extensionDays: request.extensionDays,
+            totalAmount: parseFloat(request.extensionFee.toString()),
+            platformCommission: parseFloat(request.platformCommission.toString()),
+            lenderEarnings: parseFloat(request.lenderEarnings.toString()),
+            newDueDate: request.newDueDate?.toISOString(),
+            paymentRequired: true
+          })
         });
       }
 
@@ -2042,6 +2052,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error denying extension request:', error);
       res.status(500).json({ message: "Failed to deny extension request" });
+    }
+  });
+
+  // Process payment for approved extension request
+  app.post("/api/rentals/extensions/requests/:requestId/pay", requireAuth, async (req, res) => {
+    try {
+      const requestId = parseInt(req.params.requestId);
+      const userId = req.session.userId!;
+      
+      const request = await storage.getExtensionRequest(requestId);
+      if (!request) {
+        return res.status(404).json({ message: "Extension request not found" });
+      }
+
+      if (request.requesterId !== userId) {
+        return res.status(403).json({ message: "Unauthorized - you are not the requester" });
+      }
+
+      if (request.status !== 'approved') {
+        return res.status(400).json({ message: "Request is not approved for payment" });
+      }
+
+      if (request.paymentId) {
+        return res.status(400).json({ message: "Payment already processed for this request" });
+      }
+
+      // Get rental details
+      const rental = await storage.getRental(request.rentalId);
+      if (!rental) {
+        return res.status(404).json({ message: "Rental not found" });
+      }
+
+      // Create dummy payment ID (simulating payment processing)
+      const paymentId = `ext_payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Calculate new due date
+      const currentEndDate = new Date(rental.endDate);
+      const newEndDate = new Date(currentEndDate);
+      newEndDate.setDate(currentEndDate.getDate() + request.extensionDays);
+
+      // Update the rental with new end date
+      await storage.updateRental(request.rentalId, {
+        endDate: newEndDate
+      });
+
+      // Update extension request with payment info
+      await storage.updateRentalExtensionPayment(requestId, paymentId, 'completed');
+
+      // Create extension record for tracking
+      await storage.createRentalExtension({
+        rentalId: request.rentalId,
+        extensionDays: request.extensionDays,
+        extensionFee: request.extensionFee,
+        platformCommission: request.platformCommission,
+        lenderEarnings: request.lenderEarnings,
+        paymentId,
+        paymentStatus: 'completed'
+      });
+
+      // Create success notification for borrower
+      await storage.createNotification({
+        userId: request.requesterId,
+        title: "Extension Payment Successful",
+        message: `Payment successful! Your book "${rental.book.title}" has been extended for ${request.extensionDays} days. New due date: ${newEndDate.toLocaleDateString()}`,
+        type: "extension_completed",
+        data: JSON.stringify({ 
+          rentalId: request.rentalId,
+          extensionDays: request.extensionDays,
+          newDueDate: newEndDate.toISOString(),
+          paymentId
+        })
+      });
+
+      // Create earnings notification for book owner
+      await storage.createNotification({
+        userId: request.ownerId,
+        title: "Extension Payment Received",
+        message: `You've earned ₹${parseFloat(request.lenderEarnings.toString()).toFixed(2)} from the extension of "${rental.book.title}"`,
+        type: "earnings_notification",
+        data: JSON.stringify({ 
+          rentalId: request.rentalId,
+          earnings: parseFloat(request.lenderEarnings.toString()),
+          paymentId
+        })
+      });
+
+      res.json({
+        success: true,
+        message: "Extension payment processed successfully",
+        newDueDate: newEndDate.toISOString(),
+        paymentId,
+        extensionDays: request.extensionDays
+      });
+
+    } catch (error: any) {
+      console.error('Error processing extension payment:', error);
+      res.status(500).json({ message: "Failed to process extension payment" });
     }
   });
 

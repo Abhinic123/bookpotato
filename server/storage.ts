@@ -1172,17 +1172,19 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateRentalExtensionPayment(extensionId: number, paymentId: string, status: string): Promise<void> {
+  async updateRentalExtensionPayment(requestId: number, paymentId: string, status: string): Promise<void> {
     try {
+      // Update the extension request with payment information
       await db
-        .update(rentalExtensions)
+        .update(extensionRequests)
         .set({ 
-          paymentId, 
-          paymentStatus: status,
+          paymentId: paymentId,
         })
-        .where(eq(rentalExtensions.id, extensionId));
+        .where(eq(extensionRequests.id, requestId));
+      
+      console.log(`Updated extension request ${requestId} with payment ${paymentId}`);
     } catch (error) {
-      console.error('Error updating rental extension payment:', error);
+      console.error('Error updating extension request payment:', error);
       throw error;
     }
   }

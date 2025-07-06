@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDateRelative } from "@/lib/utils";
-import { Bell, Clock, CheckCircle, XCircle, BookOpen, Calendar } from "lucide-react";
+import { Bell, Clock, CheckCircle, XCircle, BookOpen, Calendar, CreditCard } from "lucide-react";
 import type { Notification } from "@shared/schema";
 
 interface ExtensionData {
@@ -79,6 +79,33 @@ export default function NotificationsPage() {
       toast({
         title: "Error",
         description: error.message || "Failed to respond to extension request",
+        variant: "destructive",
+      });
+      setProcessingId(null);
+    },
+  });
+
+  // Mutation for processing extension payment
+  const processExtensionPaymentMutation = useMutation({
+    mutationFn: async (requestId: number) => {
+      const response = await apiRequest("POST", `/api/rentals/extensions/requests/${requestId}/pay`);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Payment Successful",
+        description: `Extension payment processed successfully! New due date: ${new Date(data.newDueDate).toLocaleDateString()}`,
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/rentals/borrowed"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/earnings"] });
+      setProcessingId(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Payment Failed",
+        description: error.message || "Failed to process extension payment",
         variant: "destructive",
       });
       setProcessingId(null);
@@ -173,6 +200,23 @@ export default function NotificationsPage() {
       toast({
         title: "Error",
         description: "Invalid extension request data",
+        variant: "destructive",
+      });
+      setProcessingId(null);
+    }
+  };
+
+  const handleExtensionPayment = (notification: Notification) => {
+    setProcessingId(notification.id);
+    
+    // Parse the request ID from notification data
+    const extensionData = parseExtensionData(notification.data);
+    if (extensionData?.requestId) {
+      processExtensionPaymentMutation.mutate(extensionData.requestId);
+    } else {
+      toast({
+        title: "Error",
+        description: "Invalid extension payment data",
         variant: "destructive",
       });
       setProcessingId(null);
@@ -295,6 +339,7 @@ export default function NotificationsPage() {
               const returnRequestData = parseReturnRequestData(notification.data);
               const societyRequestData = parseSocietyRequestData(notification.data);
               const isExtensionRequest = notification.type === "extension_request";
+              const isExtensionApproved = notification.type === "extension_approved";
               const isReturnRequest = notification.type === "return_request";
               const isSocietyRequest = notification.type === "society_request";
               const isProcessing = processingId === notification.id;
@@ -351,6 +396,68 @@ export default function NotificationsPage() {
                           <span className="text-gray-600 text-sm">Reason:</span>
                           <p className="text-gray-800 text-sm mt-1 italic">"{extensionData.reason}"</p>
                         </div>
+                      </div>
+                    )}
+
+                    {isExtensionApproved && extensionData && extensionData.paymentRequired && (
+                      <div className="bg-green-50 rounded-lg p-4 mb-4 border border-green-200">
+                        <h4 className="font-medium text-green-900 mb-3">Extension Approved - Payment Required</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
+                          <div className="flex items-center space-x-2">
+                            <BookOpen className="w-4 h-4 text-green-600" />
+                            <span className="text-gray-600">Book:</span>
+                            <span className="font-medium">{extensionData.bookTitle}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="w-4 h-4 text-green-600" />
+                            <span className="text-gray-600">Extension:</span>
+                            <span className="font-medium">{extensionData.extensionDays} day(s)</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="w-4 h-4 text-green-600" />
+                            <span className="text-gray-600">New due date:</span>
+                            <span className="font-medium">
+                              {new Date(extensionData.newDueDate).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-gray-600">Total amount:</span>
+                            <span className="font-medium text-green-700">₹{extensionData.totalAmount}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white rounded-lg p-3 mb-4">
+                          <h5 className="text-sm font-medium text-gray-900 mb-2">Payment Breakdown</h5>
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Extension fee:</span>
+                              <span>₹{extensionData.totalAmount}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Platform commission:</span>
+                              <span>₹{extensionData.platformCommission}</span>
+                            </div>
+                            <div className="flex justify-between font-medium">
+                              <span className="text-gray-600">Owner earnings:</span>
+                              <span className="text-green-600">₹{extensionData.lenderEarnings}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {!notification.isRead && (
+                          <Button
+                            onClick={() => handleExtensionPayment(notification)}
+                            disabled={isProcessing}
+                            className="w-full bg-green-600 hover:bg-green-700"
+                          >
+                            {isProcessing ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                            ) : (
+                              <CreditCard className="w-4 h-4 mr-2" />
+                            )}
+                            Pay Now - ₹{extensionData.totalAmount}
+                          </Button>
+                        )}
                       </div>
                     )}
 
