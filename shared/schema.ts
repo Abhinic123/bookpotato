@@ -176,6 +176,68 @@ export const rentalExtensions = pgTable("rental_extensions", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Credits system (Brocks)
+export const userCredits = pgTable("user_credits", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  balance: integer("balance").notNull().default(0),
+  totalEarned: integer("total_earned").notNull().default(0),
+  totalSpent: integer("total_spent").notNull().default(0),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const creditTransactions = pgTable("credit_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  amount: integer("amount").notNull(), // positive for earned, negative for spent
+  type: text("type").notNull(), // 'welcome_bonus', 'referral', 'upload_bonus', 'purchase', 'spending'
+  description: text("description").notNull(),
+  relatedId: integer("related_id"), // related entity ID (referral ID, book ID, etc.)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Referral system
+export const referrals = pgTable("referrals", {
+  id: serial("id").primaryKey(),
+  referrerId: integer("referrer_id").notNull(),
+  refereeId: integer("referee_id").notNull(),
+  status: text("status").notNull().default("pending"), // 'pending', 'completed'
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+});
+
+// User badges
+export const userBadges = pgTable("user_badges", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  badgeType: text("badge_type").notNull(), // 'silver', 'gold', 'platinum'
+  category: text("category").notNull(), // 'referral', 'upload'
+  earnedAt: timestamp("earned_at").defaultNow().notNull(),
+  value: integer("value").notNull(), // number of referrals/uploads that earned this badge
+});
+
+// Commission-free periods
+export const commissionFreePeriods = pgTable("commission_free_periods", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  daysRemaining: integer("days_remaining").notNull(),
+  reason: text("reason").notNull(), // 'book_upload_reward', 'referral_bonus'
+  relatedValue: integer("related_value"), // number of books uploaded, referrals made
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Reward system settings
+export const rewardSettings = pgTable("reward_settings", {
+  id: serial("id").primaryKey(),
+  settingKey: text("setting_key").notNull().unique(),
+  settingValue: text("setting_value").notNull(),
+  description: text("description"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -224,6 +286,48 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   data: z.string().optional().nullable(),
 });
 
+export const insertExtensionRequestSchema = createInsertSchema(extensionRequests).omit({
+  id: true,
+  status: true,
+  approvedAt: true,
+  createdAt: true,
+});
+
+export const insertRentalExtensionSchema = createInsertSchema(rentalExtensions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserCreditsSchema = createInsertSchema(userCredits).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertCreditTransactionSchema = createInsertSchema(creditTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReferralSchema = createInsertSchema(referrals).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUserBadgeSchema = createInsertSchema(userBadges).omit({
+  id: true,
+  earnedAt: true,
+});
+
+export const insertCommissionFreePeriodSchema = createInsertSchema(commissionFreePeriods).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertRewardSettingSchema = createInsertSchema(rewardSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -242,6 +346,30 @@ export type InsertSocietyMember = z.infer<typeof insertSocietyMemberSchema>;
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+export type ExtensionRequest = typeof extensionRequests.$inferSelect;
+export type InsertExtensionRequest = z.infer<typeof insertExtensionRequestSchema>;
+
+export type RentalExtension = typeof rentalExtensions.$inferSelect;
+export type InsertRentalExtension = z.infer<typeof insertRentalExtensionSchema>;
+
+export type UserCredits = typeof userCredits.$inferSelect;
+export type InsertUserCredits = z.infer<typeof insertUserCreditsSchema>;
+
+export type CreditTransaction = typeof creditTransactions.$inferSelect;
+export type InsertCreditTransaction = z.infer<typeof insertCreditTransactionSchema>;
+
+export type Referral = typeof referrals.$inferSelect;
+export type InsertReferral = z.infer<typeof insertReferralSchema>;
+
+export type UserBadge = typeof userBadges.$inferSelect;
+export type InsertUserBadge = z.infer<typeof insertUserBadgeSchema>;
+
+export type CommissionFreePeriod = typeof commissionFreePeriods.$inferSelect;
+export type InsertCommissionFreePeriod = z.infer<typeof insertCommissionFreePeriodSchema>;
+
+export type RewardSetting = typeof rewardSettings.$inferSelect;
+export type InsertRewardSetting = z.infer<typeof insertRewardSettingSchema>;
 
 // Extended types for API responses
 export type BookWithOwner = Book & {
@@ -280,16 +408,7 @@ export const insertPlatformSettingsSchema = createInsertSchema(platformSettings)
   updatedAt: true,
 });
 
-export const insertExtensionRequestSchema = createInsertSchema(extensionRequests).omit({
-  id: true,
-  createdAt: true,
-  approvedAt: true,
-});
 
-export const insertRentalExtensionSchema = createInsertSchema(rentalExtensions).omit({
-  id: true,
-  createdAt: true,
-});
 
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
@@ -302,11 +421,5 @@ export type InsertSocietyRequest = z.infer<typeof insertSocietyRequestSchema>;
 
 export type PlatformSettings = typeof platformSettings.$inferSelect;
 export type InsertPlatformSettings = z.infer<typeof insertPlatformSettingsSchema>;
-
-export type ExtensionRequest = typeof extensionRequests.$inferSelect;
-export type InsertExtensionRequest = z.infer<typeof insertExtensionRequestSchema>;
-
-export type RentalExtension = typeof rentalExtensions.$inferSelect;
-export type InsertRentalExtension = z.infer<typeof insertRentalExtensionSchema>;
 
 

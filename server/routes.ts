@@ -2260,6 +2260,183 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Credits and Rewards System Routes
+  
+  // Get user credits and statistics
+  app.get("/api/user/credits", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      let userCredits = await storage.getUserCredits(userId);
+      if (!userCredits) {
+        // Create initial credits account with opening balance
+        const openingCredits = await storage.getRewardSetting('opening_credits');
+        const initialBalance = parseInt(openingCredits?.settingValue || '100');
+        
+        userCredits = await storage.createUserCredits({
+          userId,
+          balance: initialBalance,
+          totalEarned: initialBalance,
+          totalSpent: 0
+        });
+        
+        // Add welcome bonus transaction
+        await storage.addCreditTransaction({
+          userId,
+          amount: initialBalance,
+          type: 'welcome_bonus',
+          description: 'Welcome bonus - Initial Brocks credit',
+          relatedId: null
+        });
+      }
+      
+      const transactions = await storage.getCreditTransactions(userId);
+      const badges = await storage.getUserBadges(userId);
+      const referralCount = await storage.getReferralCount(userId);
+      const commissionFreePeriods = await storage.getActiveCommissionFreePeriods(userId);
+      
+      res.json({
+        credits: userCredits,
+        transactions,
+        badges,
+        referralCount,
+        commissionFreePeriods
+      });
+    } catch (error) {
+      console.error("Get user credits error:", error);
+      res.status(500).json({ message: "Failed to fetch user credits" });
+    }
+  });
+
+  // Get reward settings for admin
+  app.get("/api/admin/rewards/settings", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const settings = await storage.getAllRewardSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Get reward settings error:", error);
+      res.status(500).json({ message: "Failed to fetch reward settings" });
+    }
+  });
+
+  // Update reward settings
+  app.post("/api/admin/rewards/settings", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { settings } = req.body;
+      
+      for (const setting of settings) {
+        await storage.updateRewardSetting(setting.key, setting.value);
+      }
+      
+      res.json({ message: "Reward settings updated successfully" });
+    } catch (error) {
+      console.error("Update reward settings error:", error);
+      res.status(500).json({ message: "Failed to update reward settings" });
+    }
+  });
+
+  // Get user referrals and badge progress
+  app.get("/api/user/referrals", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const referrals = await storage.getReferralsByUser(userId);
+      const referralCount = await storage.getReferralCount(userId);
+      const badges = await storage.getUserBadges(userId);
+      
+      // Get badge thresholds
+      const silverThreshold = await storage.getRewardSetting('silver_referrals');
+      const goldThreshold = await storage.getRewardSetting('gold_referrals');
+      const platinumThreshold = await storage.getRewardSetting('platinum_referrals');
+      
+      const badgeProgress = {
+        silver: {
+          threshold: parseInt(silverThreshold?.settingValue || '5'),
+          current: referralCount,
+          earned: badges.some(b => b.badgeType === 'silver' && b.category === 'referral')
+        },
+        gold: {
+          threshold: parseInt(goldThreshold?.settingValue || '10'),
+          current: referralCount,
+          earned: badges.some(b => b.badgeType === 'gold' && b.category === 'referral')
+        },
+        platinum: {
+          threshold: parseInt(platinumThreshold?.settingValue || '15'),
+          current: referralCount,
+          earned: badges.some(b => b.badgeType === 'platinum' && b.category === 'referral')
+        }
+      };
+      
+      res.json({
+        referrals,
+        referralCount,
+        badgeProgress,
+        badges: badges.filter(b => b.category === 'referral')
+      });
+    } catch (error) {
+      console.error("Get user referrals error:", error);
+      res.status(500).json({ message: "Failed to fetch referrals" });
+    }
+  });
+
+  // Get upload rewards progress
+  app.get("/api/user/upload-rewards", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      const user = await storage.getUser(userId);
+      const booksUploaded = user?.booksUploaded || 0;
+      const badges = await storage.getUserBadges(userId);
+      const commissionFreePeriods = await storage.getActiveCommissionFreePeriods(userId);
+      
+      // Get upload reward thresholds
+      const upload10Reward = await storage.getRewardSetting('upload_10_reward');
+      const upload20Reward = await storage.getRewardSetting('upload_20_reward');
+      const upload30Reward = await storage.getRewardSetting('upload_30_reward');
+      
+      const uploadProgress = {
+        books10: {
+          threshold: 10,
+          current: booksUploaded,
+          reward: parseInt(upload10Reward?.settingValue || '10'),
+          earned: booksUploaded >= 10
+        },
+        books20: {
+          threshold: 20,
+          current: booksUploaded,
+          reward: parseInt(upload20Reward?.settingValue || '20'),
+          earned: booksUploaded >= 20
+        },
+        books30: {
+          threshold: 30,
+          current: booksUploaded,
+          reward: parseInt(upload30Reward?.settingValue || '60'),
+          earned: booksUploaded >= 30
+        }
+      };
+      
+      res.json({
+        booksUploaded,
+        uploadProgress,
+        badges: badges.filter(b => b.category === 'upload'),
+        commissionFreePeriods
+      });
+    } catch (error) {
+      console.error("Get upload rewards error:", error);
+      res.status(500).json({ message: "Failed to fetch upload rewards" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

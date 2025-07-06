@@ -1,10 +1,14 @@
 import { 
   users, societies, books, bookRentals, societyMembers, notifications, societyRequests, referralRewards, rentalExtensions, extensionRequests,
+  userCredits, creditTransactions, referrals, userBadges, commissionFreePeriods, rewardSettings,
   type User, type InsertUser, type Society, type InsertSociety, 
   type Book, type InsertBook, type BookRental, type InsertBookRental,
   type SocietyMember, type InsertSocietyMember, type Notification, type InsertNotification,
   type BookWithOwner, type RentalWithDetails, type SocietyWithStats, type RentalExtension, type InsertRentalExtension,
-  type ExtensionRequest, type InsertExtensionRequest
+  type ExtensionRequest, type InsertExtensionRequest, type UserCredits, type InsertUserCredits,
+  type CreditTransaction, type InsertCreditTransaction, type Referral, type InsertReferral,
+  type UserBadge, type InsertUserBadge, type CommissionFreePeriod, type InsertCommissionFreePeriod,
+  type RewardSetting, type InsertRewardSetting
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, not, inArray, ilike, desc, count, sum, sql } from "drizzle-orm";
@@ -81,6 +85,33 @@ export interface IStorage {
   createRentalExtension(extension: InsertRentalExtension): Promise<RentalExtension>;
   getRentalExtensions(rentalId: number): Promise<RentalExtension[]>;
   updateRentalExtensionPayment(extensionId: number, paymentId: string, status: string): Promise<void>;
+  
+  // Credits system
+  getUserCredits(userId: number): Promise<UserCredits | undefined>;
+  createUserCredits(credits: InsertUserCredits): Promise<UserCredits>;
+  updateUserCredits(userId: number, balance: number): Promise<void>;
+  addCreditTransaction(transaction: InsertCreditTransaction): Promise<CreditTransaction>;
+  getCreditTransactions(userId: number): Promise<CreditTransaction[]>;
+  
+  // Referral system
+  createReferral(referral: InsertReferral): Promise<Referral>;
+  getReferralsByUser(userId: number): Promise<Referral[]>;
+  completeReferral(referralId: number): Promise<Referral>;
+  getReferralCount(userId: number): Promise<number>;
+  
+  // Badges system
+  awardBadge(badge: InsertUserBadge): Promise<UserBadge>;
+  getUserBadges(userId: number): Promise<UserBadge[]>;
+  
+  // Commission-free periods
+  createCommissionFreePeriod(period: InsertCommissionFreePeriod): Promise<CommissionFreePeriod>;
+  getActiveCommissionFreePeriods(userId: number): Promise<CommissionFreePeriod[]>;
+  updateCommissionFreePeriod(periodId: number, daysRemaining: number): Promise<void>;
+  
+  // Reward settings
+  getRewardSetting(key: string): Promise<RewardSetting | undefined>;
+  updateRewardSetting(key: string, value: string): Promise<void>;
+  getAllRewardSettings(): Promise<RewardSetting[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1185,6 +1216,241 @@ export class DatabaseStorage implements IStorage {
       console.log(`Updated extension request ${requestId} with payment ${paymentId}`);
     } catch (error) {
       console.error('Error updating extension request payment:', error);
+      throw error;
+    }
+  }
+
+  // Credits system methods
+  async getUserCredits(userId: number): Promise<UserCredits | undefined> {
+    try {
+      const [credits] = await db.select().from(userCredits).where(eq(userCredits.userId, userId));
+      return credits;
+    } catch (error) {
+      console.error('Error fetching user credits:', error);
+      throw error;
+    }
+  }
+
+  async createUserCredits(credits: InsertUserCredits): Promise<UserCredits> {
+    try {
+      const [newCredits] = await db
+        .insert(userCredits)
+        .values(credits)
+        .returning();
+      return newCredits;
+    } catch (error) {
+      console.error('Error creating user credits:', error);
+      throw error;
+    }
+  }
+
+  async updateUserCredits(userId: number, balance: number): Promise<void> {
+    try {
+      await db
+        .update(userCredits)
+        .set({ 
+          balance,
+          updatedAt: new Date()
+        })
+        .where(eq(userCredits.userId, userId));
+    } catch (error) {
+      console.error('Error updating user credits:', error);
+      throw error;
+    }
+  }
+
+  async addCreditTransaction(transaction: InsertCreditTransaction): Promise<CreditTransaction> {
+    try {
+      const [newTransaction] = await db
+        .insert(creditTransactions)
+        .values(transaction)
+        .returning();
+      return newTransaction;
+    } catch (error) {
+      console.error('Error adding credit transaction:', error);
+      throw error;
+    }
+  }
+
+  async getCreditTransactions(userId: number): Promise<CreditTransaction[]> {
+    try {
+      return await db
+        .select()
+        .from(creditTransactions)
+        .where(eq(creditTransactions.userId, userId))
+        .orderBy(desc(creditTransactions.createdAt));
+    } catch (error) {
+      console.error('Error fetching credit transactions:', error);
+      throw error;
+    }
+  }
+
+  // Referral system methods
+  async createReferral(referral: InsertReferral): Promise<Referral> {
+    try {
+      const [newReferral] = await db
+        .insert(referrals)
+        .values(referral)
+        .returning();
+      return newReferral;
+    } catch (error) {
+      console.error('Error creating referral:', error);
+      throw error;
+    }
+  }
+
+  async getReferralsByUser(userId: number): Promise<Referral[]> {
+    try {
+      return await db
+        .select()
+        .from(referrals)
+        .where(eq(referrals.referrerId, userId))
+        .orderBy(desc(referrals.createdAt));
+    } catch (error) {
+      console.error('Error fetching referrals:', error);
+      throw error;
+    }
+  }
+
+  async completeReferral(referralId: number): Promise<Referral> {
+    try {
+      const [updatedReferral] = await db
+        .update(referrals)
+        .set({ 
+          status: 'completed',
+          completedAt: new Date()
+        })
+        .where(eq(referrals.id, referralId))
+        .returning();
+      return updatedReferral;
+    } catch (error) {
+      console.error('Error completing referral:', error);
+      throw error;
+    }
+  }
+
+  async getReferralCount(userId: number): Promise<number> {
+    try {
+      const result = await db
+        .select({ count: count() })
+        .from(referrals)
+        .where(and(
+          eq(referrals.referrerId, userId),
+          eq(referrals.status, 'completed')
+        ));
+      return result[0]?.count || 0;
+    } catch (error) {
+      console.error('Error fetching referral count:', error);
+      throw error;
+    }
+  }
+
+  // Badges system methods
+  async awardBadge(badge: InsertUserBadge): Promise<UserBadge> {
+    try {
+      const [newBadge] = await db
+        .insert(userBadges)
+        .values(badge)
+        .returning();
+      return newBadge;
+    } catch (error) {
+      console.error('Error awarding badge:', error);
+      throw error;
+    }
+  }
+
+  async getUserBadges(userId: number): Promise<UserBadge[]> {
+    try {
+      return await db
+        .select()
+        .from(userBadges)
+        .where(eq(userBadges.userId, userId))
+        .orderBy(desc(userBadges.earnedAt));
+    } catch (error) {
+      console.error('Error fetching user badges:', error);
+      throw error;
+    }
+  }
+
+  // Commission-free periods methods
+  async createCommissionFreePeriod(period: InsertCommissionFreePeriod): Promise<CommissionFreePeriod> {
+    try {
+      const [newPeriod] = await db
+        .insert(commissionFreePeriods)
+        .values(period)
+        .returning();
+      return newPeriod;
+    } catch (error) {
+      console.error('Error creating commission-free period:', error);
+      throw error;
+    }
+  }
+
+  async getActiveCommissionFreePeriods(userId: number): Promise<CommissionFreePeriod[]> {
+    try {
+      return await db
+        .select()
+        .from(commissionFreePeriods)
+        .where(and(
+          eq(commissionFreePeriods.userId, userId),
+          eq(commissionFreePeriods.isActive, true)
+        ))
+        .orderBy(desc(commissionFreePeriods.endDate));
+    } catch (error) {
+      console.error('Error fetching active commission-free periods:', error);
+      throw error;
+    }
+  }
+
+  async updateCommissionFreePeriod(periodId: number, daysRemaining: number): Promise<void> {
+    try {
+      await db
+        .update(commissionFreePeriods)
+        .set({ daysRemaining })
+        .where(eq(commissionFreePeriods.id, periodId));
+    } catch (error) {
+      console.error('Error updating commission-free period:', error);
+      throw error;
+    }
+  }
+
+  // Reward settings methods
+  async getRewardSetting(key: string): Promise<RewardSetting | undefined> {
+    try {
+      const [setting] = await db
+        .select()
+        .from(rewardSettings)
+        .where(eq(rewardSettings.settingKey, key));
+      return setting;
+    } catch (error) {
+      console.error('Error fetching reward setting:', error);
+      throw error;
+    }
+  }
+
+  async updateRewardSetting(key: string, value: string): Promise<void> {
+    try {
+      await db
+        .update(rewardSettings)
+        .set({ 
+          settingValue: value,
+          updatedAt: new Date()
+        })
+        .where(eq(rewardSettings.settingKey, key));
+    } catch (error) {
+      console.error('Error updating reward setting:', error);
+      throw error;
+    }
+  }
+
+  async getAllRewardSettings(): Promise<RewardSetting[]> {
+    try {
+      return await db
+        .select()
+        .from(rewardSettings)
+        .orderBy(rewardSettings.settingKey);
+    } catch (error) {
+      console.error('Error fetching all reward settings:', error);
       throw error;
     }
   }

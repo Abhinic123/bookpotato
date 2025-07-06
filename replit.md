@@ -135,6 +135,10 @@ BookShare is a community-driven digital library platform that enables book shari
 - July 6, 2025: Extension requests now require book owner approval before payment processing
 - July 6, 2025: Added extension request notifications with approve/deny functionality
 - July 6, 2025: Updated extension modal to send approval requests instead of direct payments
+- July 6, 2025: Implemented Brocks credit system with admin-configurable settings
+- July 6, 2025: Added referral badge system (Silver: 5, Gold: 10, Platinum: 15 referrals)
+- July 6, 2025: Implemented book upload rewards with commission-free periods
+- July 6, 2025: Created comprehensive rewards database schema and API endpoints
 - June 22, 2025: Fixed books data handling in enhanced-browse page to prevent array errors
 ```
 
