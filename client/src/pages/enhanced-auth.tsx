@@ -11,7 +11,7 @@ import { z } from "zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { BookOpen, Mail, Phone, User, Chrome, Facebook, Github } from "lucide-react";
+import { BookOpen, Mail, Phone, User, Chrome, Facebook, Github, Eye, EyeOff } from "lucide-react";
 
 const INDIAN_CITIES = [
   "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad",
@@ -48,6 +48,8 @@ type ForgotPasswordData = z.infer<typeof forgotPasswordSchema>;
 
 export default function EnhancedAuth() {
   const [activeTab, setActiveTab] = useState("login");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -203,12 +205,25 @@ export default function EnhancedAuth() {
 
                   <div>
                     <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      {...loginForm.register("password")}
-                      className="mt-1"
-                    />
+                    <div className="relative mt-1">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        {...loginForm.register("password")}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
                     {loginForm.formState.errors.password && (
                       <p className="text-sm text-red-600 mt-1">
                         {loginForm.formState.errors.password.message}
@@ -337,12 +352,25 @@ export default function EnhancedAuth() {
 
                   <div>
                     <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      {...registerForm.register("password")}
-                      className="mt-1"
-                    />
+                    <div className="relative mt-1">
+                      <Input
+                        id="password"
+                        type={showRegisterPassword ? "text" : "password"}
+                        {...registerForm.register("password")}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                      >
+                        {showRegisterPassword ? (
+                          <EyeOff className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <Eye className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
                     {registerForm.formState.errors.password && (
                       <p className="text-sm text-red-600 mt-1">
                         {registerForm.formState.errors.password.message}
