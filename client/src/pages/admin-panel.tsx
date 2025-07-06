@@ -293,7 +293,7 @@ export default function AdminPanel() {
       <Tabs defaultValue="settings" className="space-y-4">
         <TabsList>
           <TabsTrigger value="settings">Platform Settings</TabsTrigger>
-          <TabsTrigger value="rewards">Referral Rewards</TabsTrigger>
+          <TabsTrigger value="brocks">Brocks Rewards</TabsTrigger>
           <TabsTrigger value="societies">Society Requests</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
@@ -398,127 +398,135 @@ export default function AdminPanel() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="rewards">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Plus className="w-5 h-5" />
-                  <span>Create Referral Reward</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={rewardForm.handleSubmit(onCreateReward)} className="space-y-4">
+        <TabsContent value="brocks">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Gift className="w-5 h-5 text-purple-600" />
+                <span>Brocks Credit & Rewards System</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="grid md:grid-cols-3 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
+                    <Label htmlFor="opening_credits">Opening Credits (Brocks)</Label>
                     <Input
-                      id="description"
-                      placeholder="e.g., Commission-free for 1 month"
-                      {...rewardForm.register("description")}
-                    />
-                    {rewardForm.formState.errors.description && (
-                      <p className="text-sm text-red-500">
-                        {rewardForm.formState.errors.description.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="rewardType">Reward Type</Label>
-                    <select
-                      id="rewardType"
-                      className="w-full p-2 border rounded-md"
-                      {...rewardForm.register("rewardType")}
-                    >
-                      <option value="commission_free">Commission Free</option>
-                      <option value="bonus_earning">Bonus Earning</option>
-                      <option value="badge">Badge</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="value">Value</Label>
-                    <Input
-                      id="value"
-                      placeholder="e.g., 30 (days) or 100 (rupees)"
-                      {...rewardForm.register("value")}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="requiredReferrals">Required Referrals</Label>
-                    <Input
-                      id="requiredReferrals"
-                      type="number"
-                      min="1"
-                      {...rewardForm.register("requiredReferrals", { valueAsNumber: true })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="requiredBooksPerReferral">Books Per Referral</Label>
-                    <Input
-                      id="requiredBooksPerReferral"
+                      id="opening_credits"
                       type="number"
                       min="0"
-                      {...rewardForm.register("requiredBooksPerReferral", { valueAsNumber: true })}
+                      placeholder="100"
+                      defaultValue="100"
                     />
+                    <p className="text-xs text-gray-500">Credits given to new users</p>
                   </div>
 
-                  <Button
-                    type="submit"
-                    disabled={createRewardMutation.isPending}
-                    className="w-full"
-                  >
-                    {createRewardMutation.isPending ? "Creating..." : "Create Reward"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+                  <div className="space-y-2">
+                    <Label htmlFor="silver_referrals">Silver Badge (Referrals)</Label>
+                    <Input
+                      id="silver_referrals"
+                      type="number"
+                      min="1"
+                      placeholder="5"
+                      defaultValue="5"
+                    />
+                    <p className="text-xs text-gray-500">Referrals for silver badge</p>
+                  </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Gift className="w-5 h-5" />
-                  <span>Active Rewards</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {rewards.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <Gift className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No rewards created yet</p>
-                    </div>
-                  ) : (
-                    rewards.map((reward: any) => (
-                      <div key={reward.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2">
-                            <Badge variant="secondary">
-                              {reward.rewardType.replace('_', ' ')}
-                            </Badge>
-                            <span className="text-sm font-medium">{reward.description}</span>
-                          </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {reward.requiredReferrals} referrals • {reward.requiredBooksPerReferral} books each
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onDeleteReward(reward.id)}
-                          disabled={deleteRewardMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                    ))
-                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="gold_referrals">Gold Badge (Referrals)</Label>
+                    <Input
+                      id="gold_referrals"
+                      type="number"
+                      min="1"
+                      placeholder="10"
+                      defaultValue="10"
+                    />
+                    <p className="text-xs text-gray-500">Referrals for gold badge</p>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="platinum_referrals">Platinum Badge (Referrals)</Label>
+                    <Input
+                      id="platinum_referrals"
+                      type="number"
+                      min="1"
+                      placeholder="15"
+                      defaultValue="15"
+                    />
+                    <p className="text-xs text-gray-500">Referrals for platinum badge</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="upload_10_reward">10 Books Upload Reward</Label>
+                    <Input
+                      id="upload_10_reward"
+                      type="number"
+                      min="0"
+                      placeholder="10"
+                      defaultValue="10"
+                    />
+                    <p className="text-xs text-gray-500">Commission-free days</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="upload_20_reward">20 Books Upload Reward</Label>
+                    <Input
+                      id="upload_20_reward"
+                      type="number"
+                      min="0"
+                      placeholder="20"
+                      defaultValue="20"
+                    />
+                    <p className="text-xs text-gray-500">Commission-free days</p>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="upload_30_reward">30 Books Upload Reward</Label>
+                    <Input
+                      id="upload_30_reward"
+                      type="number"
+                      min="0"
+                      placeholder="60"
+                      defaultValue="60"
+                    />
+                    <p className="text-xs text-gray-500">Commission-free days</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="credit_value_rupees">Credit Value (₹ per Brock)</Label>
+                    <Input
+                      id="credit_value_rupees"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="1.00"
+                      defaultValue="1.00"
+                    />
+                    <p className="text-xs text-gray-500">Value of each Brock in rupees</p>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 mb-2">Brocks Credit System</h4>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• Users receive opening credits when they create an account</li>
+                    <li>• Brocks can be earned through referrals, book uploads, and activities</li>
+                    <li>• Credits can be used for payments and unlock special features</li>
+                    <li>• Badge system rewards active community members</li>
+                  </ul>
+                </div>
+
+                <Button className="w-full md:w-auto">
+                  Save Brocks Settings
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="societies">

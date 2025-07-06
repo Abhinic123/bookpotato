@@ -1708,71 +1708,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Referral rewards management
-  app.get("/api/admin/rewards", requireAuth, async (req, res) => {
-    try {
-      const user = await storage.getUser(req.session.userId!);
-      if (!user?.isAdmin) {
-        return res.status(403).json({ message: "Admin access required" });
-      }
 
-      const result = await pool.query(`
-        SELECT * FROM referral_rewards 
-        ORDER BY created_at DESC
-      `);
-
-      res.json(result.rows);
-    } catch (error) {
-      console.error("Get admin rewards error:", error);
-      res.status(500).json({ message: "Failed to fetch rewards" });
-    }
-  });
-
-  app.post("/api/admin/rewards", requireAuth, async (req, res) => {
-    try {
-      const user = await storage.getUser(req.session.userId!);
-      if (!user?.isAdmin) {
-        return res.status(403).json({ message: "Admin access required" });
-      }
-
-      const { description, rewardType, value, requiredReferrals, requiredBooksPerReferral } = req.body;
-
-      const result = await pool.query(`
-        INSERT INTO referral_rewards (user_id, description, reward_type, value, is_active, expires_at)
-        VALUES ($1, $2, $3, $4, true, NULL)
-        RETURNING *
-      `, [0, description, rewardType, JSON.stringify({ 
-        requiredReferrals, 
-        requiredBooksPerReferral,
-        value
-      })]);
-
-      res.json(result.rows[0]);
-    } catch (error) {
-      console.error("Create admin reward error:", error);
-      res.status(500).json({ message: "Failed to create reward" });
-    }
-  });
-
-  app.delete("/api/admin/rewards/:id", requireAuth, async (req, res) => {
-    try {
-      const user = await storage.getUser(req.session.userId!);
-      if (!user?.isAdmin) {
-        return res.status(403).json({ message: "Admin access required" });
-      }
-
-      const rewardId = parseInt(req.params.id);
-      
-      await pool.query(`
-        DELETE FROM referral_rewards WHERE id = $1
-      `, [rewardId]);
-
-      res.json({ message: "Reward deleted successfully" });
-    } catch (error) {
-      console.error("Delete admin reward error:", error);
-      res.status(500).json({ message: "Failed to delete reward" });
-    }
-  });
 
   // Society requests management
   app.get("/api/admin/society-requests", requireAuth, async (req, res) => {

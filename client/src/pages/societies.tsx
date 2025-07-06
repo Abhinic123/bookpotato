@@ -30,6 +30,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { getInitials } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { SocietyWithStats } from "@shared/schema";
+import LocationPicker from "@/components/map/location-picker";
 
 const INDIAN_CITIES = [
   "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad",
@@ -150,6 +151,8 @@ export default function Societies() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showMergeOptions, setShowMergeOptions] = useState(false);
   const [mergeData, setMergeData] = useState<MergeData | null>(null);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{address: string; coordinates: [number, number]} | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -280,6 +283,16 @@ export default function Societies() {
 
   const handleJoinById = (societyId: number) => {
     joinByIdMutation.mutate(societyId);
+  };
+
+  const handleLocationSelect = (location: { address: string; coordinates: [number, number] }) => {
+    setSelectedLocation(location);
+    form.setValue("location", location.address);
+    setShowLocationPicker(false);
+  };
+
+  const openLocationPicker = () => {
+    setShowLocationPicker(true);
   };
 
   function renderMySocieties() {
@@ -575,9 +588,20 @@ export default function Societies() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Location (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter specific location" {...field} />
-                    </FormControl>
+                    <div className="flex space-x-2">
+                      <FormControl>
+                        <Input placeholder="Enter specific location" {...field} />
+                      </FormControl>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={openLocationPicker}
+                        className="flex items-center space-x-2"
+                      >
+                        <MapPin className="w-4 h-4" />
+                        <span>Map</span>
+                      </Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -664,6 +688,13 @@ export default function Societies() {
           )}
         </DialogContent>
       </Dialog>
+
+      <LocationPicker
+        isOpen={showLocationPicker}
+        onClose={() => setShowLocationPicker(false)}
+        onLocationSelect={handleLocationSelect}
+        city={form.watch("city")}
+      />
     </div>
   );
 }
