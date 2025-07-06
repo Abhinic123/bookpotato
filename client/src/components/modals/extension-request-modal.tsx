@@ -70,7 +70,7 @@ export default function ExtensionRequestModal({ isOpen, onClose, rental }: Exten
       const response = await apiRequest("POST", "/api/rentals/extensions/create-payment", {
         rentalId: rental.id,
         extensionDays,
-        totalAmount: calculationData.totalExtensionFee,
+        totalAmount: calculationData?.totalExtensionFee || 0,
       });
       return response.json();
     },
@@ -131,7 +131,9 @@ export default function ExtensionRequestModal({ isOpen, onClose, rental }: Exten
   };
 
   const handlePayment = () => {
-    createPaymentMutation.mutate();
+    if (calculationData?.totalExtensionFee) {
+      createPaymentMutation.mutate();
+    }
   };
 
   const confirmPayment = () => {
@@ -263,7 +265,7 @@ export default function ExtensionRequestModal({ isOpen, onClose, rental }: Exten
                   ) : (
                     <>
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Pay ₹{calculationData?.totalExtensionFee.toFixed(2) || '0.00'}
+                      Pay ₹{calculationData?.totalExtensionFee?.toFixed(2) || '0.00'}
                     </>
                   )}
                 </Button>
