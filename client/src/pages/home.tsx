@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Building2, ChevronRight, Clock } from "lucide-react";
+import { Building2, ChevronRight, Clock, IndianRupee, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,10 @@ export default function Home() {
 
   const { data: activeRentals } = useQuery({
     queryKey: ["/api/rentals/active"],
+  });
+
+  const { data: earningsData } = useQuery({
+    queryKey: ["/api/user/earnings"],
   });
 
   // Filter recent books (limit to 3 most recent)
@@ -111,15 +115,62 @@ export default function Home() {
             <div className="text-sm text-text-secondary">Available Books</div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer" onClick={() => window.location.href = '/my-books?tab=borrowed'}>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/earnings')}>
           <CardContent className="pt-6 text-center">
-            <div className="text-2xl font-bold text-secondary">
-              {(userStats as any)?.borrowedBooks || 0}
+            <div className="flex items-center justify-center space-x-1 mb-1">
+              <IndianRupee className="h-5 w-5 text-green-600" />
+              <div className="text-2xl font-bold text-green-600">
+                {((earningsData?.totalEarned || 0) - (earningsData?.totalSpent || 0)) >= 0 
+                  ? `+${(earningsData?.totalEarned || 0) - (earningsData?.totalSpent || 0)}`
+                  : (earningsData?.totalEarned || 0) - (earningsData?.totalSpent || 0)
+                }
+              </div>
             </div>
-            <div className="text-sm text-text-secondary">Your Borrows</div>
+            <div className="text-sm text-text-secondary">Net Earnings</div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Earnings Summary */}
+      {earningsData && (
+        <div className="p-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-text-primary">Earnings Overview</h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate('/earnings')}
+                  className="text-primary"
+                >
+                  View Details <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-1 mb-1">
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                    <span className="text-lg font-semibold text-green-600">
+                      ₹{earningsData.totalEarned || 0}
+                    </span>
+                  </div>
+                  <div className="text-xs text-text-secondary">Total Earned</div>
+                </div>
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-1 mb-1">
+                    <IndianRupee className="h-4 w-4 text-red-600" />
+                    <span className="text-lg font-semibold text-red-600">
+                      ₹{earningsData.totalSpent || 0}
+                    </span>
+                  </div>
+                  <div className="text-xs text-text-secondary">Total Spent</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Due Soon Section */}
       {dueSoonRentals.length > 0 && (

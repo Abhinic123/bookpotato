@@ -1201,6 +1201,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin Brocks settings endpoint
+  app.post("/api/admin/brocks-settings", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const { 
+        opening_credits, 
+        silver_referrals, 
+        gold_referrals, 
+        platinum_referrals,
+        upload_10_reward,
+        upload_20_reward,
+        upload_30_reward,
+        credit_value_rupees
+      } = req.body;
+
+      // Update reward settings in the database
+      const settingsToUpdate = [
+        { key: 'opening_credits', value: opening_credits.toString() },
+        { key: 'silver_referrals', value: silver_referrals.toString() },
+        { key: 'gold_referrals', value: gold_referrals.toString() },
+        { key: 'platinum_referrals', value: platinum_referrals.toString() },
+        { key: 'upload_10_reward', value: upload_10_reward.toString() },
+        { key: 'upload_20_reward', value: upload_20_reward.toString() },
+        { key: 'upload_30_reward', value: upload_30_reward.toString() },
+        { key: 'credit_value_rupees', value: credit_value_rupees.toString() }
+      ];
+
+      for (const setting of settingsToUpdate) {
+        await storage.updateRewardSetting(setting.key, setting.value);
+      }
+
+      res.json({ message: "Brocks settings updated successfully" });
+    } catch (error) {
+      console.error("Update Brocks settings error:", error);
+      res.status(500).json({ message: "Failed to update Brocks settings" });
+    }
+  });
+
   // Get user earnings details
   app.get("/api/user/earnings", requireAuth, async (req, res) => {
     try {

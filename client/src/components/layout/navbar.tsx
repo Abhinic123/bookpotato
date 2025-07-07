@@ -9,7 +9,8 @@ import {
   Search,
   User,
   Menu,
-  X
+  X,
+  IndianRupee
 } from "lucide-react";
 import MessagingSystem from "@/components/messaging/messaging-system";
 
@@ -32,7 +33,13 @@ export default function Navbar({ user }: NavbarProps) {
     queryKey: ["/api/messages/unread-count"],
   });
 
+  // Fetch user earnings
+  const { data: earningsData } = useQuery({
+    queryKey: ["/api/user/earnings"],
+  });
+
   const unreadNotifications = notifications.filter((n: any) => !n.read).length;
+  const netEarnings = (earningsData?.totalEarned || 0) - (earningsData?.totalSpent || 0);
 
   const navItems = [
     { label: "Home", path: "/" },
@@ -71,6 +78,19 @@ export default function Navbar({ user }: NavbarProps) {
 
             {/* Right Side Icons */}
             <div className="flex items-center space-x-4">
+              {/* Earnings Display */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/earnings")}
+                className="flex items-center space-x-1 px-2"
+              >
+                <IndianRupee className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-green-600">
+                  {netEarnings >= 0 ? `+${netEarnings}` : netEarnings}
+                </span>
+              </Button>
+
               {/* Search Button */}
               <Button
                 variant="ghost"

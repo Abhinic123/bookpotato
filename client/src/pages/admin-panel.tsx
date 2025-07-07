@@ -20,6 +20,17 @@ const settingsSchema = z.object({
   extensionFeePerDay: z.number().min(0),
 });
 
+const brocksSchema = z.object({
+  opening_credits: z.number().min(0),
+  silver_referrals: z.number().min(1),
+  gold_referrals: z.number().min(1),
+  platinum_referrals: z.number().min(1),
+  upload_10_reward: z.number().min(0),
+  upload_20_reward: z.number().min(0),
+  upload_30_reward: z.number().min(0),
+  credit_value_rupees: z.number().min(0),
+});
+
 const rewardSchema = z.object({
   description: z.string().min(1),
   rewardType: z.enum(["commission_free", "bonus_earning", "badge"]),
@@ -29,6 +40,7 @@ const rewardSchema = z.object({
 });
 
 type SettingsForm = z.infer<typeof settingsSchema>;
+type BrocksForm = z.infer<typeof brocksSchema>;
 type RewardForm = z.infer<typeof rewardSchema>;
 
 export default function AdminPanel() {
@@ -76,6 +88,21 @@ export default function AdminPanel() {
       value: "",
       requiredReferrals: 1,
       requiredBooksPerReferral: 0,
+    },
+  });
+
+  // Form for Brocks settings
+  const brocksForm = useForm<BrocksForm>({
+    resolver: zodResolver(brocksSchema),
+    defaultValues: {
+      opening_credits: 100,
+      silver_referrals: 5,
+      gold_referrals: 10,
+      platinum_referrals: 15,
+      upload_10_reward: 10,
+      upload_20_reward: 20,
+      upload_30_reward: 60,
+      credit_value_rupees: 1.00,
     },
   });
 
@@ -193,6 +220,39 @@ export default function AdminPanel() {
     },
   });
 
+  // Mutation to update Brocks settings
+  const updateBrocksMutation = useMutation({
+    mutationFn: async (data: BrocksForm) => {
+      const response = await fetch("/api/admin/brocks-settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update Brocks settings");
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Brocks Settings Updated",
+        description: "Brocks credit and rewards settings have been successfully updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/brocks-settings"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error", 
+        description: "Failed to update Brocks settings. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: SettingsForm) => {
     updateSettingsMutation.mutate(data);
   };
@@ -205,6 +265,10 @@ export default function AdminPanel() {
     if (confirm("Are you sure you want to delete this reward?")) {
       deleteRewardMutation.mutate(rewardId);
     }
+  };
+
+  const onSubmitBrocks = (data: BrocksForm) => {
+    updateBrocksMutation.mutate(data);
   };
 
   if (settingsLoading || statsLoading) {
@@ -407,7 +471,7 @@ export default function AdminPanel() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
+              <form onSubmit={brocksForm.handleSubmit(onSubmitBrocks)} className="space-y-6">
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="opening_credits">Opening Credits (Brocks)</Label>
@@ -415,10 +479,12 @@ export default function AdminPanel() {
                       id="opening_credits"
                       type="number"
                       min="0"
-                      placeholder="100"
-                      defaultValue="100"
+                      {...brocksForm.register("opening_credits", { valueAsNumber: true })}
                     />
                     <p className="text-xs text-gray-500">Credits given to new users</p>
+                    {brocksForm.formState.errors.opening_credits && (
+                      <p className="text-xs text-red-500">{brocksForm.formState.errors.opening_credits.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -427,10 +493,12 @@ export default function AdminPanel() {
                       id="silver_referrals"
                       type="number"
                       min="1"
-                      placeholder="5"
-                      defaultValue="5"
+                      {...brocksForm.register("silver_referrals", { valueAsNumber: true })}
                     />
                     <p className="text-xs text-gray-500">Referrals for silver badge</p>
+                    {brocksForm.formState.errors.silver_referrals && (
+                      <p className="text-xs text-red-500">{brocksForm.formState.errors.silver_referrals.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -439,10 +507,12 @@ export default function AdminPanel() {
                       id="gold_referrals"
                       type="number"
                       min="1"
-                      placeholder="10"
-                      defaultValue="10"
+                      {...brocksForm.register("gold_referrals", { valueAsNumber: true })}
                     />
                     <p className="text-xs text-gray-500">Referrals for gold badge</p>
+                    {brocksForm.formState.errors.gold_referrals && (
+                      <p className="text-xs text-red-500">{brocksForm.formState.errors.gold_referrals.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -453,10 +523,12 @@ export default function AdminPanel() {
                       id="platinum_referrals"
                       type="number"
                       min="1"
-                      placeholder="15"
-                      defaultValue="15"
+                      {...brocksForm.register("platinum_referrals", { valueAsNumber: true })}
                     />
                     <p className="text-xs text-gray-500">Referrals for platinum badge</p>
+                    {brocksForm.formState.errors.platinum_referrals && (
+                      <p className="text-xs text-red-500">{brocksForm.formState.errors.platinum_referrals.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -465,10 +537,12 @@ export default function AdminPanel() {
                       id="upload_10_reward"
                       type="number"
                       min="0"
-                      placeholder="10"
-                      defaultValue="10"
+                      {...brocksForm.register("upload_10_reward", { valueAsNumber: true })}
                     />
                     <p className="text-xs text-gray-500">Commission-free days</p>
+                    {brocksForm.formState.errors.upload_10_reward && (
+                      <p className="text-xs text-red-500">{brocksForm.formState.errors.upload_10_reward.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -477,10 +551,12 @@ export default function AdminPanel() {
                       id="upload_20_reward"
                       type="number"
                       min="0"
-                      placeholder="20"
-                      defaultValue="20"
+                      {...brocksForm.register("upload_20_reward", { valueAsNumber: true })}
                     />
                     <p className="text-xs text-gray-500">Commission-free days</p>
+                    {brocksForm.formState.errors.upload_20_reward && (
+                      <p className="text-xs text-red-500">{brocksForm.formState.errors.upload_20_reward.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -491,10 +567,12 @@ export default function AdminPanel() {
                       id="upload_30_reward"
                       type="number"
                       min="0"
-                      placeholder="60"
-                      defaultValue="60"
+                      {...brocksForm.register("upload_30_reward", { valueAsNumber: true })}
                     />
                     <p className="text-xs text-gray-500">Commission-free days</p>
+                    {brocksForm.formState.errors.upload_30_reward && (
+                      <p className="text-xs text-red-500">{brocksForm.formState.errors.upload_30_reward.message}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -504,10 +582,12 @@ export default function AdminPanel() {
                       type="number"
                       step="0.01"
                       min="0"
-                      placeholder="1.00"
-                      defaultValue="1.00"
+                      {...brocksForm.register("credit_value_rupees", { valueAsNumber: true })}
                     />
                     <p className="text-xs text-gray-500">Value of each Brock in rupees</p>
+                    {brocksForm.formState.errors.credit_value_rupees && (
+                      <p className="text-xs text-red-500">{brocksForm.formState.errors.credit_value_rupees.message}</p>
+                    )}
                   </div>
                 </div>
 
@@ -521,10 +601,10 @@ export default function AdminPanel() {
                   </ul>
                 </div>
 
-                <Button className="w-full md:w-auto">
-                  Save Brocks Settings
+                <Button type="submit" className="w-full md:w-auto" disabled={updateBrocksMutation.isPending}>
+                  {updateBrocksMutation.isPending ? "Saving..." : "Save Brocks Settings"}
                 </Button>
-              </div>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>
