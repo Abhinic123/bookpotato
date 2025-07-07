@@ -124,7 +124,7 @@ export default function Home() {
             <div className="flex items-center justify-center space-x-1 mb-1">
               <Coins className="h-5 w-5 text-amber-600" />
               <div className="text-2xl font-bold text-amber-600">
-                {userCredits?.balance || 0}
+                {userCredits?.credits?.balance || userCredits?.balance || 0}
               </div>
             </div>
             <div className="text-sm text-text-secondary">Brocks Credits</div>

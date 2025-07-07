@@ -230,6 +230,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       req.session.userId = user.id;
+      
+      // Initialize starting credits for existing users if they don't have any
+      try {
+        const existingCredits = await storage.getUserCredits(user.id);
+        if (!existingCredits) {
+          const settings = await getPlatformSettings();
+          const startingCredits = parseInt(settings.startingCredits || '100');
+          if (startingCredits > 0) {
+            await storage.awardCredits(user.id, startingCredits, "Starting credits");
+            console.log(`🎁 Awarded ${startingCredits} starting credits to user ${user.id}`);
+          }
+        }
+      } catch (error) {
+        console.error("Error initializing starting credits:", error);
+      }
+      
       req.session.save((err) => {
         if (err) {
           console.error("Session save error:", err);
@@ -1335,6 +1351,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get user credits error:", error);
       res.status(500).json({ message: "Failed to fetch user credits" });
+    }
+  });
+
+  // Initialize starting credits for user
+  app.post("/api/user/initialize-credits", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      // Check if user already has credits
+      const existingCredits = await storage.getUserCredits(userId);
+      if (existingCredits) {
+        return res.json({ message: "User already has credits", credits: existingCredits });
+      }
+      
+      // Award starting credits (100 by default)
+      await storage.awardCredits(userId, 100, "Starting credits bonus");
+      
+      const newCredits = await storage.getUserCredits(userId);
+      res.json({ message: "Starting credits awarded", credits: newCredits });
+    } catch (error) {
+      console.error("Initialize credits error:", error);
+      res.status(500).json({ message: "Failed to initialize credits" });
+    }
+  });
+
+  // Manual award credits (temporary endpoint for fixing existing users)
+  app.post("/api/user/manual-award-credits", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const { credits, reason } = req.body;
+      
+      if (!credits || credits <= 0) {
+        return res.status(400).json({ message: "Invalid credits amount" });
+      }
+      
+      // Award credits directly
+      await storage.awardCredits(userId, credits, reason || "Manual credit award");
+      
+      const updatedCredits = await storage.getUserCredits(userId);
+      res.json({ message: "Credits awarded successfully", credits: updatedCredits });
+    } catch (error) {
+      console.error("Manual award credits error:", error);
+      res.status(500).json({ message: "Failed to award credits" });
     }
   });
 
