@@ -140,9 +140,10 @@ BookShare is a community-driven digital library platform that enables book shari
 - July 6, 2025: Implemented book upload rewards with commission-free periods
 - July 6, 2025: Created comprehensive rewards database schema and API endpoints
 - July 7, 2025: Fixed Brocks rewards admin panel form handling and saving functionality
-- July 7, 2025: Added earnings display to navigation bar and home page with real-time data
+- July 7, 2025: Replaced earnings display with Brocks credits system in navigation and home page
+- July 7, 2025: Added Brocks credits API endpoints for user credits and recent rewards tracking
 - July 7, 2025: Implemented proper form validation and backend API for Brocks settings
-- July 7, 2025: Enhanced UI with earnings widgets showing net balance, total earned, and total spent
+- July 7, 2025: Enhanced UI to show Brocks credits balance instead of general earnings
 - June 22, 2025: Fixed books data handling in enhanced-browse page to prevent array errors
 ```
 

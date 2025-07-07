@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, BookOpen, Home, Search, Users, Bookmark, Plus, LogOut, User, Settings, Wallet, IndianRupee } from "lucide-react";
+import { Bell, BookOpen, Home, Search, Users, Bookmark, Plus, LogOut, User, Settings, Wallet, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -40,13 +40,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
     enabled: !!authData?.user,
   });
 
-  const { data: earningsData } = useQuery({
-    queryKey: ["/api/user/earnings"],
+  const { data: userCredits } = useQuery({
+    queryKey: ["/api/user/credits"],
     enabled: !!authData?.user,
   });
 
   const unreadCount = (notifications as any[])?.filter((n: any) => !n.isRead).length || 0;
-  const netEarnings = (earningsData?.totalEarned || 0) - (earningsData?.totalSpent || 0);
 
   const handleLogout = async () => {
     try {
@@ -93,9 +92,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <div className="flex items-center space-x-3">
             <Link href="/earnings">
               <Button variant="ghost" size="sm" className="flex items-center space-x-1 px-2">
-                <IndianRupee className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-600">
-                  {netEarnings >= 0 ? `+${netEarnings}` : netEarnings}
+                <Coins className="h-4 w-4 text-amber-600" />
+                <span className="text-sm font-medium text-amber-600">
+                  {userCredits?.balance || 0}
                 </span>
               </Button>
             </Link>

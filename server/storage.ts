@@ -112,6 +112,10 @@ export interface IStorage {
   getRewardSetting(key: string): Promise<RewardSetting | undefined>;
   updateRewardSetting(key: string, value: string): Promise<void>;
   getAllRewardSettings(): Promise<RewardSetting[]>;
+  
+  // User credits
+  getUserCredits(userId: number): Promise<{ balance: number; totalEarned: number } | null>;
+  getUserRecentRewards(userId: number): Promise<any[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1454,6 +1458,39 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  async getUserCredits(userId: number): Promise<{ balance: number; totalEarned: number } | null> {
+    try {
+      const [result] = await db
+        .select()
+        .from(userCredits)
+        .where(eq(userCredits.userId, userId));
+      
+      if (!result) {
+        // Return default credits for new users
+        return { balance: 0, totalEarned: 0 };
+      }
+      
+      return {
+        balance: parseFloat(result.currentBalance.toString()),
+        totalEarned: parseFloat(result.totalEarned.toString())
+      };
+    } catch (error) {
+      console.error('Error fetching user credits:', error);
+      return { balance: 0, totalEarned: 0 };
+    }
+  }
+
+  async getUserRecentRewards(userId: number): Promise<any[]> {
+    try {
+      // For now, return empty array as we need to implement the rewards tracking
+      // This would eventually query a rewards history table
+      return [];
+    } catch (error) {
+      console.error('Error fetching user recent rewards:', error);
+      return [];
+    }
+  }
 }
 
 export class MemStorage implements IStorage {
@@ -2028,6 +2065,55 @@ export class MemStorage implements IStorage {
 
   async updateRentalExtensionPayment(extensionId: number, paymentId: string, status: string): Promise<void> {
     // No-op for memory storage
+  }
+
+  // Rewards and badge methods (not implemented in memory storage)
+  async createUserBadge(badge: InsertUserBadge): Promise<UserBadge> {
+    throw new Error('User badges not supported in memory storage');
+  }
+
+  async getUserBadges(userId: number): Promise<UserBadge[]> {
+    return [];
+  }
+
+  async createUserReferral(referral: InsertUserReferral): Promise<UserReferral> {
+    throw new Error('User referrals not supported in memory storage');
+  }
+
+  async getUserReferrals(userId: number): Promise<UserReferral[]> {
+    return [];
+  }
+
+  async createCommissionFreePeriod(period: InsertCommissionFreePeriod): Promise<CommissionFreePeriod> {
+    throw new Error('Commission-free periods not supported in memory storage');
+  }
+
+  async getActiveCommissionFreePeriods(userId: number): Promise<CommissionFreePeriod[]> {
+    return [];
+  }
+
+  async updateCommissionFreePeriod(periodId: number, daysRemaining: number): Promise<void> {
+    // No-op for memory storage
+  }
+
+  async getRewardSetting(key: string): Promise<RewardSetting | undefined> {
+    return undefined;
+  }
+
+  async updateRewardSetting(key: string, value: string): Promise<void> {
+    // No-op for memory storage
+  }
+
+  async getAllRewardSettings(): Promise<RewardSetting[]> {
+    return [];
+  }
+
+  async getUserCredits(userId: number): Promise<{ balance: number; totalEarned: number } | null> {
+    return { balance: 0, totalEarned: 0 };
+  }
+
+  async getUserRecentRewards(userId: number): Promise<any[]> {
+    return [];
   }
 }
 

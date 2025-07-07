@@ -1243,6 +1243,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user Brocks credits
+  app.get("/api/user/credits", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const credits = await storage.getUserCredits(userId);
+      res.json(credits || { balance: 0, totalEarned: 0 });
+    } catch (error) {
+      console.error("Get user credits error:", error);
+      res.status(500).json({ message: "Failed to fetch user credits" });
+    }
+  });
+
+  // Get user recent rewards
+  app.get("/api/user/recent-rewards", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const rewards = await storage.getUserRecentRewards(userId);
+      res.json(rewards || []);
+    } catch (error) {
+      console.error("Get user recent rewards error:", error);
+      res.status(500).json({ message: "Failed to fetch user recent rewards" });
+    }
+  });
+
   // Get user earnings details
   app.get("/api/user/earnings", requireAuth, async (req, res) => {
     try {
