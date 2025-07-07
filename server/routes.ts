@@ -168,6 +168,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.createUser(userData);
       req.session.userId = user.id;
       
+      // Award starting credits to new user
+      const startingCreditsSetting = await storage.getRewardSetting('starting_credits');
+      const startingCredits = parseInt(startingCreditsSetting?.settingValue || '100');
+      
+      if (startingCredits > 0) {
+        await storage.awardCredits(user.id, startingCredits, "Welcome bonus for new user");
+        console.log(`🎉 Awarded ${startingCredits} starting credits to new user ${user.name}`);
+      }
+      
       // Handle referral if provided
       const { referralCode } = req.body;
       if (referralCode) {
@@ -1306,7 +1315,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/user/credits", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const credits = await storage.getUserCredits(userId);
+      let credits = await storage.getUserCredits(userId);
+      
+      // If user has no credits, award starting credits
+      if (!credits || (credits.balance === 0 && credits.totalEarned === 0)) {
+        const startingCreditsSetting = await storage.getRewardSetting('starting_credits');
+        const startingCredits = parseInt(startingCreditsSetting?.settingValue || '100');
+        
+        if (startingCredits > 0) {
+          await storage.awardCredits(userId, startingCredits, "Welcome bonus for existing user");
+          console.log(`🎉 Awarded ${startingCredits} starting credits to user ${userId}`);
+          
+          // Get updated credits
+          credits = await storage.getUserCredits(userId);
+        }
+      }
+      
       res.json(credits || { balance: 0, totalEarned: 0 });
     } catch (error) {
       console.error("Get user credits error:", error);
@@ -2441,9 +2465,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let userCredits = await storage.getUserCredits(userId);
       if (!userCredits) {
-        // Create initial credits account with opening balance
-        const openingCredits = await storage.getRewardSetting('opening_credits');
-        const initialBalance = parseInt(openingCredits?.settingValue || '100');
+        // Create initial credits account with starting balance  
+        const startingCredits = await storage.getRewardSetting('starting_credits');
+        const initialBalance = parseInt(startingCredits?.settingValue || '100');
         
         userCredits = await storage.createUserCredits({
           userId,
