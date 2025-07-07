@@ -484,7 +484,12 @@ export default function NotificationsPage() {
                           </div>
                         </div>
 
-                        {!notification.isRead && (
+                        {extensionData.paymentId ? (
+                          <div className="w-full bg-gray-100 text-gray-700 border border-gray-300 rounded px-4 py-2 text-center">
+                            <CheckCircle className="w-4 h-4 mr-2 inline text-green-600" />
+                            Payment Already Done
+                          </div>
+                        ) : !notification.isRead ? (
                           <Button
                             onClick={() => handleExtensionPayment(notification)}
                             disabled={isProcessing}
@@ -497,6 +502,11 @@ export default function NotificationsPage() {
                             )}
                             Pay Now - ₹{extensionData.totalAmount}
                           </Button>
+                        ) : (
+                          <div className="w-full bg-gray-100 text-gray-700 border border-gray-300 rounded px-4 py-2 text-center">
+                            <Clock className="w-4 h-4 mr-2 inline text-gray-500" />
+                            Payment Pending
+                          </div>
                         )}
                       </div>
                     )}

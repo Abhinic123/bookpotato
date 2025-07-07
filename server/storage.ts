@@ -1185,6 +1185,18 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async updateExtensionRequest(requestId: number, updates: Partial<ExtensionRequest>): Promise<void> {
+    try {
+      await db
+        .update(extensionRequests)
+        .set(updates)
+        .where(eq(extensionRequests.id, requestId));
+    } catch (error) {
+      console.error('Error updating extension request:', error);
+      throw error;
+    }
+  }
+
   async createRentalExtension(extensionData: InsertRentalExtension): Promise<RentalExtension> {
     try {
       const [extension] = await db
@@ -1525,12 +1537,15 @@ export class DatabaseStorage implements IStorage {
         .where(eq(userCredits.userId, userId));
 
       if (existingCredits) {
-        // Update existing record
+        // Update existing record with safe parsing
+        const currentBalance = existingCredits.currentBalance ? parseFloat(existingCredits.currentBalance.toString()) : 0;
+        const totalEarned = existingCredits.totalEarned ? parseFloat(existingCredits.totalEarned.toString()) : 0;
+        
         await db
           .update(userCredits)
           .set({
-            currentBalance: (parseFloat(existingCredits.currentBalance.toString()) + credits).toString(),
-            totalEarned: (parseFloat(existingCredits.totalEarned.toString()) + credits).toString(),
+            currentBalance: (currentBalance + credits).toString(),
+            totalEarned: (totalEarned + credits).toString(),
             updatedAt: new Date()
           })
           .where(eq(userCredits.userId, userId));
@@ -1565,7 +1580,7 @@ export class DatabaseStorage implements IStorage {
         return false; // User has no credits
       }
 
-      const currentBalance = parseFloat(existingCredits.currentBalance.toString());
+      const currentBalance = existingCredits.currentBalance ? parseFloat(existingCredits.currentBalance.toString()) : 0;
       
       if (currentBalance < credits) {
         return false; // Insufficient credits

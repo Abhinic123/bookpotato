@@ -1767,12 +1767,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Award credits to borrower
       if (creditsPerBorrow > 0) {
-        await storage.awardCredits(req.session.userId!, creditsPerBorrow, "Borrowed a book");
+        try {
+          await storage.awardCredits(req.session.userId!, creditsPerBorrow, "Borrowed a book");
+          console.log(`✅ Successfully awarded ${creditsPerBorrow} credits to borrower ${req.session.userId!}`);
+        } catch (error) {
+          console.error(`❌ Failed to award credits to borrower:`, error);
+        }
       }
       
       // Award credits to lender
       if (creditsPerLend > 0) {
-        await storage.awardCredits(book.ownerId, creditsPerLend, "Lent a book");
+        try {
+          await storage.awardCredits(book.ownerId, creditsPerLend, "Lent a book");
+          console.log(`✅ Successfully awarded ${creditsPerLend} credits to lender ${book.ownerId}`);
+        } catch (error) {
+          console.error(`❌ Failed to award credits to lender:`, error);
+        }
       }
       
       // Create notification for lender
@@ -2347,7 +2357,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           rentalId: request.rentalId,
           extensionDays: request.extensionDays,
           newDueDate: newEndDate.toISOString(),
-          paymentId
+          paymentId,
+          paymentRequired: false  // Payment completed
         })
       });
 
@@ -2417,6 +2428,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         paymentStatus: 'completed',
         paymentId,
         newDueDate: request.newDueDate!
+      });
+      
+      // Update the extension request to mark as paid
+      await storage.updateExtensionRequest(requestId, { 
+        paymentId: paymentId 
       });
 
       // Update rental due date
