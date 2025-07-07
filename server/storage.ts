@@ -116,6 +116,11 @@ export interface IStorage {
   // User credits
   getUserCredits(userId: number): Promise<{ balance: number; totalEarned: number } | null>;
   getUserRecentRewards(userId: number): Promise<any[]>;
+  awardCredits(userId: number, credits: number, reason: string): Promise<void>;
+  deductCredits(userId: number, credits: number, reason: string): Promise<boolean>;
+  
+  // Referral methods
+  getUserByReferralCode(referralCode: string): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1434,13 +1439,31 @@ export class DatabaseStorage implements IStorage {
 
   async updateRewardSetting(key: string, value: string): Promise<void> {
     try {
-      await db
-        .update(rewardSettings)
-        .set({ 
-          settingValue: value,
-          updatedAt: new Date()
-        })
+      // First try to update existing setting
+      const existing = await db
+        .select()
+        .from(rewardSettings)
         .where(eq(rewardSettings.settingKey, key));
+      
+      if (existing.length > 0) {
+        await db
+          .update(rewardSettings)
+          .set({ 
+            settingValue: value,
+            updatedAt: new Date()
+          })
+          .where(eq(rewardSettings.settingKey, key));
+      } else {
+        // Insert new setting if it doesn't exist
+        await db
+          .insert(rewardSettings)
+          .values({
+            settingKey: key,
+            settingValue: value,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+      }
     } catch (error) {
       console.error('Error updating reward setting:', error);
       throw error;
@@ -1489,6 +1512,87 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error fetching user recent rewards:', error);
       return [];
+    }
+  }
+
+  async awardCredits(userId: number, credits: number, reason: string): Promise<void> {
+    try {
+      // Get current credits or create new record
+      const [existingCredits] = await db
+        .select()
+        .from(userCredits)
+        .where(eq(userCredits.userId, userId));
+
+      if (existingCredits) {
+        // Update existing record
+        await db
+          .update(userCredits)
+          .set({
+            currentBalance: (parseFloat(existingCredits.currentBalance.toString()) + credits).toString(),
+            totalEarned: (parseFloat(existingCredits.totalEarned.toString()) + credits).toString(),
+            updatedAt: new Date()
+          })
+          .where(eq(userCredits.userId, userId));
+      } else {
+        // Create new record
+        await db
+          .insert(userCredits)
+          .values({
+            userId,
+            currentBalance: credits.toString(),
+            totalEarned: credits.toString(),
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+      }
+
+      console.log(`🎁 Awarded ${credits} Brocks credits to user ${userId} for: ${reason}`);
+    } catch (error) {
+      console.error('Error awarding credits:', error);
+      throw error;
+    }
+  }
+
+  async deductCredits(userId: number, credits: number, reason: string): Promise<boolean> {
+    try {
+      const [existingCredits] = await db
+        .select()
+        .from(userCredits)
+        .where(eq(userCredits.userId, userId));
+
+      if (!existingCredits) {
+        return false; // User has no credits
+      }
+
+      const currentBalance = parseFloat(existingCredits.currentBalance.toString());
+      
+      if (currentBalance < credits) {
+        return false; // Insufficient credits
+      }
+
+      await db
+        .update(userCredits)
+        .set({
+          currentBalance: (currentBalance - credits).toString(),
+          updatedAt: new Date()
+        })
+        .where(eq(userCredits.userId, userId));
+
+      console.log(`💸 Deducted ${credits} Brocks credits from user ${userId} for: ${reason}`);
+      return true;
+    } catch (error) {
+      console.error('Error deducting credits:', error);
+      return false;
+    }
+  }
+
+  async getUserByReferralCode(referralCode: string): Promise<User | undefined> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.referralCode, referralCode));
+      return user || undefined;
+    } catch (error) {
+      console.error('Error finding user by referral code:', error);
+      return undefined;
     }
   }
 }
@@ -2114,6 +2218,26 @@ export class MemStorage implements IStorage {
 
   async getUserRecentRewards(userId: number): Promise<any[]> {
     return [];
+  }
+
+  async awardCredits(userId: number, credits: number, reason: string): Promise<void> {
+    // No-op for memory storage
+    console.log(`🎁 Would award ${credits} Brocks credits to user ${userId} for: ${reason}`);
+  }
+
+  async deductCredits(userId: number, credits: number, reason: string): Promise<boolean> {
+    // No-op for memory storage
+    console.log(`💸 Would deduct ${credits} Brocks credits from user ${userId} for: ${reason}`);
+    return true;
+  }
+
+  async getUserByReferralCode(referralCode: string): Promise<User | undefined> {
+    for (const user of this.users.values()) {
+      if (user.referralCode === referralCode) {
+        return user;
+      }
+    }
+    return undefined;
   }
 }
 

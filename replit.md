@@ -62,11 +62,25 @@ BookShare is a community-driven digital library platform that enables book shari
 - Commission-free periods for new users
 - Earnings tracking for book lenders
 
+### Brocks Credit System
+- Comprehensive reward system with Brocks credits as platform currency
+- Automatic credit awarding for user actions:
+  - Book upload: 1 credit (configurable)
+  - Referral: 5 credits (configurable) 
+  - Borrowing transaction: 5 credits (configurable)
+  - Lending transaction: 5 credits (configurable)
+- Credit conversion options:
+  - 20 credits → commission-free days (configurable ratio)
+  - 20 credits → rupees conversion (configurable ratio)
+- Admin-configurable settings for all reward parameters
+- Real-time credit balance display in navigation and home page
+
 ### Referral Program
 - Unique referral codes for each user
-- Referral reward system
+- Automatic Brocks credit rewards for successful referrals
 - Commission-free lending periods for successful referrals
 - Referral statistics and tracking
+- Integration with Brocks credit system
 
 ## Data Flow
 
@@ -142,8 +156,11 @@ BookShare is a community-driven digital library platform that enables book shari
 - July 7, 2025: Fixed Brocks rewards admin panel form handling and saving functionality
 - July 7, 2025: Replaced earnings display with Brocks credits system in navigation and home page
 - July 7, 2025: Added Brocks credits API endpoints for user credits and recent rewards tracking
-- July 7, 2025: Implemented proper form validation and backend API for Brocks settings
-- July 7, 2025: Enhanced UI to show Brocks credits balance instead of general earnings
+- July 7, 2025: Implemented comprehensive Brocks rewards system with automatic credit awarding
+- July 7, 2025: Added reward logic for book uploads (1 credit), referrals (5 credits), borrowing (5 credits), and lending (5 credits)
+- July 7, 2025: Implemented credit conversion system - 20 credits to commission-free days or rupees conversion
+- July 7, 2025: Enhanced admin panel with comprehensive Brocks settings for all reward parameters
+- July 7, 2025: Added referral code handling in user registration with automatic credit rewards
 - June 22, 2025: Fixed books data handling in enhanced-browse page to prevent array errors
 ```
 

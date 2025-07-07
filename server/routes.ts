@@ -168,6 +168,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.createUser(userData);
       req.session.userId = user.id;
       
+      // Handle referral if provided
+      const { referralCode } = req.body;
+      if (referralCode) {
+        // Find referrer by code
+        const referrer = await storage.getUserByReferralCode(referralCode);
+        if (referrer) {
+          // Award credits to referrer
+          const creditsPerReferralSetting = await storage.getRewardSetting('credits_per_referral');
+          const creditsPerReferral = parseInt(creditsPerReferralSetting?.settingValue || '5');
+          
+          if (creditsPerReferral > 0) {
+            await storage.awardCredits(referrer.id, creditsPerReferral, `Referral: ${user.name} joined`);
+          }
+          
+          // Update referrer's total referrals
+          await storage.updateUser(referrer.id, {
+            totalReferrals: (referrer.totalReferrals || 0) + 1
+          });
+          
+          // Set referred by for new user
+          await storage.updateUser(user.id, {
+            referredBy: referrer.id
+          });
+          
+          console.log(`🎉 Referral success: ${referrer.name} referred ${user.name}, awarded ${creditsPerReferral} credits`);
+        }
+      }
+      
       res.json({ 
         user: { id: user.id, name: user.name, email: user.email, phone: user.phone }
       });
@@ -772,6 +800,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const book = await storage.createBook(bookData);
+      
+      // Award Brocks credits for book upload
+      const creditsPerUploadSetting = await storage.getRewardSetting('credits_per_book_upload');
+      const creditsPerUpload = parseInt(creditsPerUploadSetting?.settingValue || '1');
+      
+      if (creditsPerUpload > 0) {
+        await storage.awardCredits(req.session.userId!, creditsPerUpload, "Book upload");
+      }
+      
       res.json(book);
     } catch (error) {
       console.error("Create book error:", error);
@@ -1210,6 +1247,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { 
+        // New comprehensive reward settings
+        credits_per_book_upload,
+        credits_per_referral,
+        credits_per_borrow,
+        credits_per_lend,
+        credits_for_commission_free_days,
+        commission_free_days_per_conversion,
+        credits_for_rupees_conversion,
+        rupees_per_credit_conversion,
+        
+        // Legacy settings
         opening_credits, 
         silver_referrals, 
         gold_referrals, 
@@ -1222,6 +1270,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update reward settings in the database
       const settingsToUpdate = [
+        // New comprehensive settings
+        { key: 'credits_per_book_upload', value: credits_per_book_upload.toString() },
+        { key: 'credits_per_referral', value: credits_per_referral.toString() },
+        { key: 'credits_per_borrow', value: credits_per_borrow.toString() },
+        { key: 'credits_per_lend', value: credits_per_lend.toString() },
+        { key: 'credits_for_commission_free_days', value: credits_for_commission_free_days.toString() },
+        { key: 'commission_free_days_per_conversion', value: commission_free_days_per_conversion.toString() },
+        { key: 'credits_for_rupees_conversion', value: credits_for_rupees_conversion.toString() },
+        { key: 'rupees_per_credit_conversion', value: rupees_per_credit_conversion.toString() },
+        
+        // Legacy settings
         { key: 'opening_credits', value: opening_credits.toString() },
         { key: 'silver_referrals', value: silver_referrals.toString() },
         { key: 'gold_referrals', value: gold_referrals.toString() },
@@ -1264,6 +1323,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get user recent rewards error:", error);
       res.status(500).json({ message: "Failed to fetch user recent rewards" });
+    }
+  });
+
+  // Convert Brocks credits to commission-free days
+  app.post("/api/user/convert-credits-to-commission-free", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      // Get conversion rates from settings
+      const creditsRequiredSetting = await storage.getRewardSetting('credits_for_commission_free_days');
+      const daysPerConversionSetting = await storage.getRewardSetting('commission_free_days_per_conversion');
+      
+      const creditsRequired = parseInt(creditsRequiredSetting?.settingValue || '20');
+      const daysPerConversion = parseInt(daysPerConversionSetting?.settingValue || '7');
+      
+      // Check if user has enough credits
+      const userCredits = await storage.getUserCredits(userId);
+      if (!userCredits || userCredits.balance < creditsRequired) {
+        return res.status(400).json({ message: "Insufficient credits for conversion" });
+      }
+      
+      // Deduct credits
+      const success = await storage.deductCredits(userId, creditsRequired, "Converted to commission-free days");
+      if (!success) {
+        return res.status(400).json({ message: "Failed to deduct credits" });
+      }
+      
+      // Add commission-free period
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + daysPerConversion);
+      
+      await storage.createCommissionFreePeriod({
+        userId,
+        startDate: new Date(),
+        endDate,
+        daysRemaining: daysPerConversion,
+        isActive: true,
+        reason: `Converted ${creditsRequired} Brocks credits`
+      });
+      
+      res.json({ 
+        message: "Successfully converted credits to commission-free days",
+        creditsDeducted: creditsRequired,
+        daysAdded: daysPerConversion
+      });
+    } catch (error) {
+      console.error("Convert credits to commission-free error:", error);
+      res.status(500).json({ message: "Failed to convert credits" });
+    }
+  });
+
+  // Convert Brocks credits to rupees
+  app.post("/api/user/convert-credits-to-rupees", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      // Get conversion rates from settings
+      const creditsRequiredSetting = await storage.getRewardSetting('credits_for_rupees_conversion');
+      const rupeesPerCreditSetting = await storage.getRewardSetting('rupees_per_credit_conversion');
+      
+      const creditsRequired = parseInt(creditsRequiredSetting?.settingValue || '20');
+      const rupeesPerCredit = parseFloat(rupeesPerCreditSetting?.settingValue || '1');
+      
+      // Check if user has enough credits
+      const userCredits = await storage.getUserCredits(userId);
+      if (!userCredits || userCredits.balance < creditsRequired) {
+        return res.status(400).json({ message: "Insufficient credits for conversion" });
+      }
+      
+      // Deduct credits
+      const success = await storage.deductCredits(userId, creditsRequired, "Converted to rupees");
+      if (!success) {
+        return res.status(400).json({ message: "Failed to deduct credits" });
+      }
+      
+      const rupeesEarned = creditsRequired * rupeesPerCredit;
+      
+      // Update user earnings (add to total earnings)
+      const user = await storage.getUser(userId);
+      if (user) {
+        const currentEarnings = parseFloat(user.totalEarnings || '0');
+        await storage.updateUser(userId, {
+          totalEarnings: (currentEarnings + rupeesEarned).toString()
+        });
+      }
+      
+      res.json({ 
+        message: "Successfully converted credits to rupees",
+        creditsDeducted: creditsRequired,
+        rupeesEarned: rupeesEarned
+      });
+    } catch (error) {
+      console.error("Convert credits to rupees error:", error);
+      res.status(500).json({ message: "Failed to convert credits" });
     }
   });
 
@@ -1580,6 +1733,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Mark book as unavailable
       await storage.updateBook(bookId, { isAvailable: false });
+      
+      // Award Brocks credits for borrow and lend transactions
+      const creditsPerBorrowSetting = await storage.getRewardSetting('credits_per_borrow');
+      const creditsPerLendSetting = await storage.getRewardSetting('credits_per_lend');
+      
+      const creditsPerBorrow = parseInt(creditsPerBorrowSetting?.settingValue || '5');
+      const creditsPerLend = parseInt(creditsPerLendSetting?.settingValue || '5');
+      
+      // Award credits to borrower
+      if (creditsPerBorrow > 0) {
+        await storage.awardCredits(req.session.userId!, creditsPerBorrow, "Borrowed a book");
+      }
+      
+      // Award credits to lender
+      if (creditsPerLend > 0) {
+        await storage.awardCredits(book.ownerId, creditsPerLend, "Lent a book");
+      }
       
       // Create notification for lender
       await storage.createNotification({

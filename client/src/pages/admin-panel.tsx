@@ -21,6 +21,19 @@ const settingsSchema = z.object({
 });
 
 const brocksSchema = z.object({
+  // New comprehensive reward settings
+  credits_per_book_upload: z.number().min(0, "Credits per book upload must be non-negative"),
+  credits_per_referral: z.number().min(0, "Credits per referral must be non-negative"),
+  credits_per_borrow: z.number().min(0, "Credits per borrow transaction must be non-negative"),
+  credits_per_lend: z.number().min(0, "Credits per lend transaction must be non-negative"),
+  
+  // Conversion settings
+  credits_for_commission_free_days: z.number().min(1, "Credits for commission free days must be at least 1"),
+  commission_free_days_per_conversion: z.number().min(1, "Commission free days per conversion must be at least 1"),
+  credits_for_rupees_conversion: z.number().min(1, "Credits for rupees conversion must be at least 1"),
+  rupees_per_credit_conversion: z.number().min(0, "Rupees per credit conversion must be non-negative"),
+  
+  // Legacy settings (keeping for compatibility)
   opening_credits: z.number().min(0),
   silver_referrals: z.number().min(1),
   gold_referrals: z.number().min(1),
@@ -95,6 +108,19 @@ export default function AdminPanel() {
   const brocksForm = useForm<BrocksForm>({
     resolver: zodResolver(brocksSchema),
     defaultValues: {
+      // New reward settings
+      credits_per_book_upload: 1,
+      credits_per_referral: 5,
+      credits_per_borrow: 5,
+      credits_per_lend: 5,
+      
+      // Conversion settings  
+      credits_for_commission_free_days: 20,
+      commission_free_days_per_conversion: 7,
+      credits_for_rupees_conversion: 20,
+      rupees_per_credit_conversion: 1,
+      
+      // Legacy settings
       opening_credits: 100,
       silver_referrals: 5,
       gold_referrals: 10,
@@ -472,47 +498,176 @@ export default function AdminPanel() {
             </CardHeader>
             <CardContent>
               <form onSubmit={brocksForm.handleSubmit(onSubmitBrocks)} className="space-y-6">
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="opening_credits">Opening Credits (Brocks)</Label>
-                    <Input
-                      id="opening_credits"
-                      type="number"
-                      min="0"
-                      {...brocksForm.register("opening_credits", { valueAsNumber: true })}
-                    />
-                    <p className="text-xs text-gray-500">Credits given to new users</p>
-                    {brocksForm.formState.errors.opening_credits && (
-                      <p className="text-xs text-red-500">{brocksForm.formState.errors.opening_credits.message}</p>
-                    )}
-                  </div>
+                {/* Earning Credits Section */}
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-green-800 mb-4">How Users Earn Brocks Credits</h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="credits_per_book_upload">Credits per Book Upload</Label>
+                      <Input
+                        id="credits_per_book_upload"
+                        type="number"
+                        min="0"
+                        {...brocksForm.register("credits_per_book_upload", { valueAsNumber: true })}
+                      />
+                      <p className="text-xs text-gray-600">Credits earned when user uploads a book</p>
+                      {brocksForm.formState.errors.credits_per_book_upload && (
+                        <p className="text-xs text-red-500">{brocksForm.formState.errors.credits_per_book_upload.message}</p>
+                      )}
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="silver_referrals">Silver Badge (Referrals)</Label>
-                    <Input
-                      id="silver_referrals"
-                      type="number"
-                      min="1"
-                      {...brocksForm.register("silver_referrals", { valueAsNumber: true })}
-                    />
-                    <p className="text-xs text-gray-500">Referrals for silver badge</p>
-                    {brocksForm.formState.errors.silver_referrals && (
-                      <p className="text-xs text-red-500">{brocksForm.formState.errors.silver_referrals.message}</p>
-                    )}
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="credits_per_referral">Credits per Referral</Label>
+                      <Input
+                        id="credits_per_referral"
+                        type="number"
+                        min="0"
+                        {...brocksForm.register("credits_per_referral", { valueAsNumber: true })}
+                      />
+                      <p className="text-xs text-gray-600">Credits earned when user refers someone</p>
+                      {brocksForm.formState.errors.credits_per_referral && (
+                        <p className="text-xs text-red-500">{brocksForm.formState.errors.credits_per_referral.message}</p>
+                      )}
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="gold_referrals">Gold Badge (Referrals)</Label>
-                    <Input
-                      id="gold_referrals"
-                      type="number"
-                      min="1"
-                      {...brocksForm.register("gold_referrals", { valueAsNumber: true })}
-                    />
-                    <p className="text-xs text-gray-500">Referrals for gold badge</p>
-                    {brocksForm.formState.errors.gold_referrals && (
-                      <p className="text-xs text-red-500">{brocksForm.formState.errors.gold_referrals.message}</p>
-                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="credits_per_borrow">Credits per Borrow Transaction</Label>
+                      <Input
+                        id="credits_per_borrow"
+                        type="number"
+                        min="0"
+                        {...brocksForm.register("credits_per_borrow", { valueAsNumber: true })}
+                      />
+                      <p className="text-xs text-gray-600">Credits earned when user borrows a book</p>
+                      {brocksForm.formState.errors.credits_per_borrow && (
+                        <p className="text-xs text-red-500">{brocksForm.formState.errors.credits_per_borrow.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="credits_per_lend">Credits per Lend Transaction</Label>
+                      <Input
+                        id="credits_per_lend"
+                        type="number"
+                        min="0"
+                        {...brocksForm.register("credits_per_lend", { valueAsNumber: true })}
+                      />
+                      <p className="text-xs text-gray-600">Credits earned when user lends a book</p>
+                      {brocksForm.formState.errors.credits_per_lend && (
+                        <p className="text-xs text-red-500">{brocksForm.formState.errors.credits_per_lend.message}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Conversion Options Section */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-blue-800 mb-4">How Users Convert Brocks Credits</h3>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="credits_for_commission_free_days">Credits Required for Commission-Free Days</Label>
+                      <Input
+                        id="credits_for_commission_free_days"
+                        type="number"
+                        min="1"
+                        {...brocksForm.register("credits_for_commission_free_days", { valueAsNumber: true })}
+                      />
+                      <p className="text-xs text-gray-600">How many credits needed for commission-free conversion</p>
+                      {brocksForm.formState.errors.credits_for_commission_free_days && (
+                        <p className="text-xs text-red-500">{brocksForm.formState.errors.credits_for_commission_free_days.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="commission_free_days_per_conversion">Commission-Free Days per Conversion</Label>
+                      <Input
+                        id="commission_free_days_per_conversion"
+                        type="number"
+                        min="1"
+                        {...brocksForm.register("commission_free_days_per_conversion", { valueAsNumber: true })}
+                      />
+                      <p className="text-xs text-gray-600">How many commission-free days user gets</p>
+                      {brocksForm.formState.errors.commission_free_days_per_conversion && (
+                        <p className="text-xs text-red-500">{brocksForm.formState.errors.commission_free_days_per_conversion.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="credits_for_rupees_conversion">Credits Required for Rupees Conversion</Label>
+                      <Input
+                        id="credits_for_rupees_conversion"
+                        type="number"
+                        min="1"
+                        {...brocksForm.register("credits_for_rupees_conversion", { valueAsNumber: true })}
+                      />
+                      <p className="text-xs text-gray-600">How many credits needed for rupees conversion</p>
+                      {brocksForm.formState.errors.credits_for_rupees_conversion && (
+                        <p className="text-xs text-red-500">{brocksForm.formState.errors.credits_for_rupees_conversion.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="rupees_per_credit_conversion">Rupees per Credit Conversion</Label>
+                      <Input
+                        id="rupees_per_credit_conversion"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        {...brocksForm.register("rupees_per_credit_conversion", { valueAsNumber: true })}
+                      />
+                      <p className="text-xs text-gray-600">How many rupees user gets per credit</p>
+                      {brocksForm.formState.errors.rupees_per_credit_conversion && (
+                        <p className="text-xs text-red-500">{brocksForm.formState.errors.rupees_per_credit_conversion.message}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Legacy Settings */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-800 mb-4">Legacy Settings</h3>
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="opening_credits">Opening Credits (Brocks)</Label>
+                      <Input
+                        id="opening_credits"
+                        type="number"
+                        min="0"
+                        {...brocksForm.register("opening_credits", { valueAsNumber: true })}
+                      />
+                      <p className="text-xs text-gray-500">Credits given to new users</p>
+                      {brocksForm.formState.errors.opening_credits && (
+                        <p className="text-xs text-red-500">{brocksForm.formState.errors.opening_credits.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="silver_referrals">Silver Badge (Referrals)</Label>
+                      <Input
+                        id="silver_referrals"
+                        type="number"
+                        min="1"
+                        {...brocksForm.register("silver_referrals", { valueAsNumber: true })}
+                      />
+                      <p className="text-xs text-gray-500">Referrals for silver badge</p>
+                      {brocksForm.formState.errors.silver_referrals && (
+                        <p className="text-xs text-red-500">{brocksForm.formState.errors.silver_referrals.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="gold_referrals">Gold Badge (Referrals)</Label>
+                      <Input
+                        id="gold_referrals"
+                        type="number"
+                        min="1"
+                        {...brocksForm.register("gold_referrals", { valueAsNumber: true })}
+                      />
+                      <p className="text-xs text-gray-500">Referrals for gold badge</p>
+                      {brocksForm.formState.errors.gold_referrals && (
+                        <p className="text-xs text-red-500">{brocksForm.formState.errors.gold_referrals.message}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
