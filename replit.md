@@ -161,6 +161,10 @@ BookShare is a community-driven digital library platform that enables book shari
 - July 7, 2025: Implemented credit conversion system - 20 credits to commission-free days or rupees conversion
 - July 7, 2025: Enhanced admin panel with comprehensive Brocks settings for all reward parameters
 - July 7, 2025: Added referral code handling in user registration with automatic credit rewards
+- July 7, 2025: Fixed starting credits display issue - users now properly receive 100 starting credits
+- July 7, 2025: Integrated badges system into Brocks rewards display on home page
+- July 7, 2025: Updated credit awarding logic to ensure new users get proper starting balance
+- July 7, 2025: Added user badges API endpoint for displaying achievement badges
 - June 22, 2025: Fixed books data handling in enhanced-browse page to prevent array errors
 ```
 

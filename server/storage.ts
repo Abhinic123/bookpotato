@@ -1506,9 +1506,11 @@ export class DatabaseStorage implements IStorage {
         return { balance: 0, totalEarned: 0 };
       }
       
-      // Safe parsing with null checks
-      const balance = result.currentBalance ? parseFloat(result.currentBalance.toString()) : 0;
-      const totalEarned = result.totalEarned ? parseFloat(result.totalEarned.toString()) : 0;
+      // Parse balance and totalEarned correctly
+      const balance = result.balance ? parseInt(result.balance.toString()) : 0;
+      const totalEarned = result.totalEarned ? parseInt(result.totalEarned.toString()) : 0;
+      
+      console.log(`📊 getUserCredits for user ${userId}: balance=${balance}, totalEarned=${totalEarned}`);
       
       return { balance, totalEarned };
     } catch (error) {

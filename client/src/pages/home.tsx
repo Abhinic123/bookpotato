@@ -46,6 +46,10 @@ export default function Home() {
     queryKey: ["/api/user/recent-rewards"],
   });
 
+  const { data: userBadges } = useQuery({
+    queryKey: ["/api/user/badges"],
+  });
+
   // Filter recent books (limit to 3 most recent)
   const recentBooksLimited = (recentBooks as any[])?.slice(0, 3) || [];
 
@@ -128,6 +132,20 @@ export default function Home() {
               </div>
             </div>
             <div className="text-sm text-text-secondary">Brocks Credits</div>
+            {(userBadges as any[])?.length > 0 && (
+              <div className="mt-2 flex justify-center space-x-1">
+                {(userBadges as any[]).slice(0, 3).map((badge: any, index: number) => (
+                  <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
+                    {badge.badgeType}
+                  </Badge>
+                ))}
+                {(userBadges as any[]).length > 3 && (
+                  <Badge variant="outline" className="text-xs px-2 py-1">
+                    +{(userBadges as any[]).length - 3}
+                  </Badge>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

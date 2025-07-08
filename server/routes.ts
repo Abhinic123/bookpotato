@@ -234,13 +234,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Initialize starting credits for existing users if they don't have any
       try {
         const existingCredits = await storage.getUserCredits(user.id);
-        if (!existingCredits) {
-          const settings = await getPlatformSettings();
-          const startingCredits = parseInt(settings.startingCredits || '100');
-          if (startingCredits > 0) {
-            await storage.awardCredits(user.id, startingCredits, "Starting credits");
-            console.log(`🎁 Awarded ${startingCredits} starting credits to user ${user.id}`);
-          }
+        if (!existingCredits || (existingCredits.balance === 0 && existingCredits.totalEarned < 100)) {
+          await storage.awardCredits(user.id, 100, "Starting credits bonus");
+          console.log(`🎁 Awarded 100 starting credits to user ${user.id}`);
         }
       } catch (error) {
         console.error("Error initializing starting credits:", error);
@@ -1373,6 +1369,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Initialize credits error:", error);
       res.status(500).json({ message: "Failed to initialize credits" });
+    }
+  });
+
+  // Get user badges
+  app.get("/api/user/badges", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const badges = await storage.getUserBadges(userId);
+      res.json(badges || []);
+    } catch (error) {
+      console.error("Get user badges error:", error);
+      res.status(500).json({ message: "Failed to fetch user badges" });
     }
   });
 
