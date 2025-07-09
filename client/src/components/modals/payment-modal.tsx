@@ -31,6 +31,11 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch user credits
+  const { data: userCredits } = useQuery({
+    queryKey: ["/api/user/credits"],
+  });
+
   // Fetch platform settings
   const { data: platformSettings } = useQuery({
     queryKey: ["/api/platform/settings"],
@@ -175,7 +180,7 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
                     <div>
                       <p className="font-medium text-sm">Use Brocks Credits</p>
                       <p className="text-xs text-amber-700">
-                        Convert to rupees or get commission-free days
+                        {userCredits?.balance ? `You have ${userCredits.balance} Brocks • ` : ''}Convert to rupees or get commission-free days
                       </p>
                     </div>
                   </div>
