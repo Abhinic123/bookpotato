@@ -866,6 +866,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/books/:id", requireAuth, async (req, res) => {
+    try {
+      const bookId = parseInt(req.params.id);
+      const book = await storage.getBook(bookId);
+      
+      if (!book) {
+        return res.status(404).json({ message: "Book not found" });
+      }
+
+      if (book.ownerId !== req.session.userId!) {
+        return res.status(403).json({ message: "You can only delete your own books" });
+      }
+
+      // Check if book is currently borrowed
+      if (!book.isAvailable) {
+        return res.status(400).json({ message: "Cannot delete a book that is currently borrowed" });
+      }
+
+      await storage.deleteBook(bookId);
+      res.json({ message: "Book deleted successfully" });
+    } catch (error) {
+      console.error("Delete book error:", error);
+      res.status(400).json({ message: "Failed to delete book" });
+    }
+  });
+
   // Rental routes
   app.get("/api/rentals/borrowed", requireAuth, async (req, res) => {
     try {

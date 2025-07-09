@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Calendar, User, MapPin, IndianRupee, BookOpen, Edit } from "lucide-react";
+import { Calendar, User, MapPin, IndianRupee, BookOpen, Edit, Trash2 } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -19,11 +20,14 @@ interface BookDetailsModalProps {
   book: any;
   user: any;
   onEdit?: (book: any) => void;
+  onDelete?: (bookId: number) => void;
 }
 
-export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit }: BookDetailsModalProps) {
+export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit, onDelete }: BookDetailsModalProps) {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   if (!book) return null;
 
@@ -37,6 +41,38 @@ export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit }
   const handleEdit = () => {
     onEdit?.(book);
     onClose();
+  };
+
+  const deleteBookMutation = useMutation({
+    mutationFn: async (bookId: number) => {
+      const response = await apiRequest("DELETE", `/api/books/${bookId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Book Deleted",
+        description: "Your book has been successfully removed from the library.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+      onDelete?.(book.id);
+      onClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete book. It may be currently borrowed.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDelete = () => {
+    if (showDeleteConfirm) {
+      deleteBookMutation.mutate(book.id);
+      setShowDeleteConfirm(false);
+    } else {
+      setShowDeleteConfirm(true);
+    }
   };
 
   return (
@@ -114,33 +150,63 @@ export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit }
             </Card>
 
             {/* Actions */}
-            <div className="flex space-x-3">
-              <Button 
-                variant="outline" 
-                onClick={onClose}
-                className="flex-1"
-              >
-                Close
-              </Button>
-              
-              {isOwner && (
+            <div className="flex flex-col space-y-3">
+              {/* Primary actions row */}
+              <div className="flex space-x-3">
                 <Button 
                   variant="outline" 
-                  onClick={handleEdit}
+                  onClick={onClose}
                   className="flex-1"
                 >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
+                  Close
                 </Button>
-              )}
-              
-              {canBorrow && (
-                <Button 
-                  onClick={handleBorrow}
-                  className="flex-1"
-                >
-                  Borrow Book
-                </Button>
+                
+                {isOwner && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleEdit}
+                    className="flex-1"
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                )}
+                
+                {canBorrow && (
+                  <Button 
+                    onClick={handleBorrow}
+                    className="flex-1"
+                  >
+                    Borrow Book
+                  </Button>
+                )}
+              </div>
+
+              {/* Delete button for owner */}
+              {isOwner && (
+                <div className="flex space-x-3">
+                  <Button 
+                    variant={showDeleteConfirm ? "destructive" : "outline"}
+                    onClick={handleDelete}
+                    disabled={deleteBookMutation.isPending}
+                    className="flex-1"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {showDeleteConfirm 
+                      ? (deleteBookMutation.isPending ? "Deleting..." : "Confirm Delete") 
+                      : "Delete Book"
+                    }
+                  </Button>
+                  {showDeleteConfirm && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
           </div>

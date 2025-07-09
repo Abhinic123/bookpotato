@@ -397,6 +397,17 @@ export class DatabaseStorage implements IStorage {
     return book || undefined;
   }
 
+  async deleteBook(id: number): Promise<boolean> {
+    try {
+      await db.delete(books).where(eq(books.id, id));
+      console.log(`📚 Book ${id} deleted successfully`);
+      return true;
+    } catch (error) {
+      console.error("Error deleting book:", error);
+      return false;
+    }
+  }
+
   async getRental(id: number): Promise<RentalWithDetails | undefined> {
     try {
       const result = await db

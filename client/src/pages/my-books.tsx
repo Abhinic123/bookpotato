@@ -432,6 +432,11 @@ export default function MyBooks() {
         book={selectedBook}
         user={user}
         onEdit={handleEditBook}
+        onDelete={(bookId) => {
+          // Refresh the books list after deletion
+          queryClient.invalidateQueries({ queryKey: ["/api/books/my"] });
+          setShowBookDetails(false);
+        }}
       />
 
       {/* Add/Edit Book Modal */}
