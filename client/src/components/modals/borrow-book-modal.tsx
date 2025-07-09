@@ -267,6 +267,7 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                       </div>
                     </div>
                     <Button 
+                      type="button"
                       variant="outline" 
                       size="sm"
                       onClick={() => setShowBrocksModal(true)}
@@ -295,6 +296,7 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                       </div>
                     </div>
                     <Button 
+                      type="button"
                       variant="outline" 
                       size="sm"
                       onClick={() => setAppliedBrocks(null)}

@@ -87,7 +87,7 @@ const borrowBookSchema = z.object({
     offerType: z.enum(['rupees', 'commission-free']),
     brocksUsed: z.number(),
     discountAmount: z.number(),
-  }).optional(),
+  }).nullable().optional(),
 });
 
 const joinSocietySchema = z.object({
@@ -1884,7 +1884,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalAmount = Math.max(0, totalAmount - appliedBrocks.discountAmount);
           console.log(`💰 Applied ${appliedBrocks.brocksUsed} Brocks for ₹${appliedBrocks.discountAmount} discount. New total: ₹${totalAmount}`);
         } else if (appliedBrocks.offerType === 'commission-free') {
-          console.log(`🎁 Applied ${appliedBrocks.brocksUsed} Brocks for commission-free benefits`);
+          // For commission-free, we eliminate the platform fee
+          totalAmount = totalRentalFee + securityDeposit; // Remove platform fee
+          lenderAmount = totalRentalFee; // Lender gets full rental amount
+          platformFee = 0; // No platform fee
+          console.log(`🎁 Applied ${appliedBrocks.brocksUsed} Brocks for commission-free benefits. Platform fee waived: ₹${platformFeeRate * totalRentalFee}`);
         }
       }
 

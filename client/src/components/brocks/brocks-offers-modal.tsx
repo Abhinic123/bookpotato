@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Coins, Gift, Zap } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
@@ -21,6 +23,7 @@ export function BrocksOffersModal({
   onApplyOffer 
 }: BrocksOffersModalProps) {
   const [selectedOffer, setSelectedOffer] = useState<'rupees' | 'commission-free' | null>(null);
+  const [customBrocksAmount, setCustomBrocksAmount] = useState<number>(0);
 
   const { data: userCredits } = useQuery({
     queryKey: ["/api/user/credits"],
@@ -34,21 +37,27 @@ export function BrocksOffersModal({
   const rupeesConversionRate = parseInt(brocksSettings?.creditsToRupeesRate || '20');
   const commissionFreeConversionRate = parseInt(brocksSettings?.creditsToCommissionFreeRate || '20');
 
-  // Calculate how many rupees user can get
+  // Calculate available conversions based on user input or maximum
   const maxRupeesFromBrocks = Math.floor(userBalance / rupeesConversionRate);
-  const maxRupeesDiscount = Math.min(maxRupeesFromBrocks, currentAmount);
-  const brocksForRupeesDiscount = maxRupeesDiscount * rupeesConversionRate;
-
-  // Calculate commission-free days equivalent
-  const brocksForCommissionFree = Math.min(userBalance, commissionFreeConversionRate);
-  const commissionFreeDays = Math.floor(brocksForCommissionFree / commissionFreeConversionRate);
+  const maxCommissionFreeDays = Math.floor(userBalance / commissionFreeConversionRate);
+  
+  // Use custom amount if set, otherwise use maximum available
+  const brocksToUse = customBrocksAmount > 0 ? Math.min(customBrocksAmount, userBalance) : userBalance;
+  
+  // Calculate conversions based on selected amount
+  const rupeesFromSelectedBrocks = Math.floor(brocksToUse / rupeesConversionRate);
+  const rupeesDiscount = Math.min(rupeesFromSelectedBrocks, currentAmount);
+  const brocksForRupeesDiscount = rupeesDiscount * rupeesConversionRate;
+  
+  const commissionFreeDaysFromSelected = Math.floor(brocksToUse / commissionFreeConversionRate);
+  const brocksForCommissionFree = commissionFreeDaysFromSelected * commissionFreeConversionRate;
 
   const handleApplyOffer = () => {
     if (!selectedOffer) return;
 
-    if (selectedOffer === 'rupees' && maxRupeesDiscount > 0) {
-      onApplyOffer('rupees', brocksForRupeesDiscount, maxRupeesDiscount);
-    } else if (selectedOffer === 'commission-free' && commissionFreeDays > 0) {
+    if (selectedOffer === 'rupees' && rupeesDiscount > 0) {
+      onApplyOffer('rupees', brocksForRupeesDiscount, rupeesDiscount);
+    } else if (selectedOffer === 'commission-free' && commissionFreeDaysFromSelected > 0) {
       onApplyOffer('commission-free', brocksForCommissionFree, 0);
     }
     
@@ -57,7 +66,17 @@ export function BrocksOffersModal({
 
   const resetSelection = () => {
     setSelectedOffer(null);
+    setCustomBrocksAmount(0);
   };
+
+  // Set default custom amount when offer is selected
+  useEffect(() => {
+    if (selectedOffer === 'rupees') {
+      setCustomBrocksAmount(Math.min(userBalance, rupeesConversionRate));
+    } else if (selectedOffer === 'commission-free') {
+      setCustomBrocksAmount(Math.min(userBalance, commissionFreeConversionRate));
+    }
+  }, [selectedOffer, userBalance, rupeesConversionRate, commissionFreeConversionRate]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -90,7 +109,7 @@ export function BrocksOffersModal({
           {/* Offer Options */}
           <div className="space-y-3">
             {/* Rupees Conversion Option */}
-            {maxRupeesDiscount > 0 && (
+            {maxRupeesFromBrocks > 0 && (
               <Card 
                 className={`cursor-pointer transition-all ${
                   selectedOffer === 'rupees' 
@@ -106,7 +125,7 @@ export function BrocksOffersModal({
                       <div>
                         <div className="font-medium">Convert to Rupees</div>
                         <div className="text-sm text-muted-foreground">
-                          Use {brocksForRupeesDiscount} Brocks → Save ₹{maxRupeesDiscount}
+                          Up to ₹{maxRupeesFromBrocks} available
                         </div>
                       </div>
                     </div>
@@ -121,7 +140,7 @@ export function BrocksOffersModal({
             )}
 
             {/* Commission-Free Days Option */}
-            {commissionFreeDays > 0 && (
+            {maxCommissionFreeDays > 0 && (
               <Card 
                 className={`cursor-pointer transition-all ${
                   selectedOffer === 'commission-free' 
@@ -137,7 +156,7 @@ export function BrocksOffersModal({
                       <div>
                         <div className="font-medium">Commission-Free Days</div>
                         <div className="text-sm text-muted-foreground">
-                          Use {brocksForCommissionFree} Brocks → {commissionFreeDays} days commission-free
+                          Up to {maxCommissionFreeDays} days available
                         </div>
                       </div>
                     </div>
@@ -150,10 +169,43 @@ export function BrocksOffersModal({
                 </CardContent>
               </Card>
             )}
+
+            {/* Custom Amount Input */}
+            {selectedOffer && (
+              <Card className="border-primary/20 bg-primary/5">
+                <CardContent className="pt-4">
+                  <div className="space-y-3">
+                    <Label htmlFor="brocks-amount" className="text-sm font-medium">
+                      How many Brocks do you want to use? (Maximum: {userBalance})
+                    </Label>
+                    <Input
+                      id="brocks-amount"
+                      type="number"
+                      min="0"
+                      max={userBalance}
+                      value={customBrocksAmount}
+                      onChange={(e) => setCustomBrocksAmount(Math.min(parseInt(e.target.value) || 0, userBalance))}
+                      placeholder="Enter amount..."
+                      className="w-full"
+                    />
+                    {selectedOffer === 'rupees' && customBrocksAmount > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        {customBrocksAmount} Brocks = ₹{Math.floor(customBrocksAmount / rupeesConversionRate)} discount
+                      </div>
+                    )}
+                    {selectedOffer === 'commission-free' && customBrocksAmount > 0 && (
+                      <div className="text-sm text-muted-foreground">
+                        {customBrocksAmount} Brocks = {Math.floor(customBrocksAmount / commissionFreeConversionRate)} commission-free days
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* No Offers Available */}
-          {maxRupeesDiscount === 0 && commissionFreeDays === 0 && (
+          {maxRupeesFromBrocks === 0 && maxCommissionFreeDays === 0 && (
             <Card className="bg-muted/50">
               <CardContent className="pt-4">
                 <div className="text-center space-y-3">
@@ -189,7 +241,7 @@ export function BrocksOffersModal({
             </Button>
             <Button 
               onClick={handleApplyOffer}
-              disabled={!selectedOffer}
+              disabled={!selectedOffer || customBrocksAmount <= 0}
               className="flex-1"
             >
               Apply Offer
