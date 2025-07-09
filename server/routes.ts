@@ -83,6 +83,11 @@ const borrowBookSchema = z.object({
   bookId: z.number(),
   duration: z.number().min(1),
   paymentMethod: z.string(),
+  appliedBrocks: z.object({
+    offerType: z.enum(['rupees', 'commission-free']),
+    brocksUsed: z.number(),
+    discountAmount: z.number(),
+  }).optional(),
 });
 
 const joinSocietySchema = z.object({
@@ -1384,6 +1389,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get Brocks conversion rates for offers
+  app.get("/api/admin/brocks-conversion-rates", requireAuth, async (req, res) => {
+    try {
+      const creditsToRupeesRate = await storage.getRewardSetting('credits_to_rupees_rate');
+      const creditsToCommissionFreeRate = await storage.getRewardSetting('credits_to_commission_free_rate');
+
+      res.json({
+        creditsToRupeesRate: creditsToRupeesRate?.settingValue || '20',
+        creditsToCommissionFreeRate: creditsToCommissionFreeRate?.settingValue || '20'
+      });
+    } catch (error) {
+      console.error("Get Brocks conversion rates error:", error);
+      res.status(500).json({ message: "Failed to fetch conversion rates" });
+    }
+  });
+
+  // Apply Brocks to payment calculation
+  app.post("/api/payments/apply-brocks", requireAuth, async (req, res) => {
+    try {
+      const { offerType, brocksUsed, originalAmount } = req.body;
+      const userId = req.session.userId!;
+
+      const result = await storage.applyBrocksToPayment(userId, offerType, brocksUsed, originalAmount);
+      
+      res.json({
+        originalAmount,
+        newAmount: result.newAmount,
+        brocksSpent: result.brocksSpent,
+        discount: originalAmount - result.newAmount
+      });
+    } catch (error) {
+      console.error("Apply Brocks to payment error:", error);
+      res.status(500).json({ message: error.message || "Failed to apply Brocks to payment" });
+    }
+  });
+
   // Manual award credits (temporary endpoint for fixing existing users)
   app.post("/api/user/manual-award-credits", requireAuth, async (req, res) => {
     try {
@@ -1776,7 +1817,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/rentals/borrow", requireAuth, async (req, res) => {
     try {
-      const { bookId, duration, paymentMethod } = borrowBookSchema.parse(req.body);
+      const { bookId, duration, paymentMethod, appliedBrocks } = borrowBookSchema.parse(req.body);
       
       const book = await storage.getBook(bookId);
       if (!book) {
@@ -1801,7 +1842,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const platformFee = totalRentalFee * platformFeeRate;
       const lenderAmount = totalRentalFee - platformFee;
       const securityDeposit = settings.securityDeposit;
-      const totalAmount = totalRentalFee + securityDeposit;
+      let totalAmount = totalRentalFee + securityDeposit;
+
+      // Apply Brocks discount if provided
+      if (appliedBrocks && appliedBrocks.offerType === 'rupees') {
+        totalAmount = Math.max(0, totalAmount - appliedBrocks.discountAmount);
+        console.log(`💰 Applied ${appliedBrocks.brocksUsed} Brocks for ₹${appliedBrocks.discountAmount} discount. New total: ₹${totalAmount}`);
+      } else if (appliedBrocks && appliedBrocks.offerType === 'commission-free') {
+        console.log(`🎁 Applied ${appliedBrocks.brocksUsed} Brocks for commission-free benefits`);
+      }
 
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + duration);

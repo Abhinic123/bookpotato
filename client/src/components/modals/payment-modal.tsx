@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { CreditCard, Clock, Shield, IndianRupee } from "lucide-react";
+import { CreditCard, Clock, Shield, IndianRupee, Gift } from "lucide-react";
+import { BrocksOffersModal } from "@/components/brocks/brocks-offers-modal";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,12 @@ interface PaymentModalProps {
 
 export default function PaymentModal({ isOpen, onClose, book, onSuccess }: PaymentModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showBrocksModal, setShowBrocksModal] = useState(false);
+  const [appliedBrocks, setAppliedBrocks] = useState<{
+    offerType: 'rupees' | 'commission-free';
+    brocksUsed: number;
+    discountAmount: number;
+  } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -37,7 +44,10 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
   const commissionRate = (platformSettings as any)?.commissionRate ? (platformSettings as any).commissionRate / 100 : 0.05;
   const platformFee = rentalFee * commissionRate;
   const securityDeposit = (platformSettings as any)?.securityDeposit || 100;
-  const totalAmount = rentalFee + securityDeposit;
+  const originalAmount = rentalFee + securityDeposit;
+  
+  // Apply Brocks discount if available
+  const finalAmount = appliedBrocks ? originalAmount - appliedBrocks.discountAmount : originalAmount;
 
   const borrowMutation = useMutation({
     mutationFn: async () => {
@@ -49,7 +59,8 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
         body: JSON.stringify({ 
           bookId: book.id, 
           duration: duration,
-          paymentMethod: "mock" // Simulated payment
+          paymentMethod: "mock", // Simulated payment
+          appliedBrocks: appliedBrocks
         })
       });
       if (!response.ok) {
@@ -140,13 +151,76 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
                   <span>₹{securityDeposit}</span>
                 </div>
                 <hr />
+                {appliedBrocks && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Brocks Discount</span>
+                    <span>-₹{appliedBrocks.discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-semibold">
                   <span>Total Amount</span>
-                  <span>₹{totalAmount.toFixed(2)}</span>
+                  <span>₹{finalAmount.toFixed(2)}</span>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          {/* Brocks Offers */}
+          {!appliedBrocks && (
+            <Card className="border-amber-200 bg-amber-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Gift className="h-5 w-5 text-amber-600" />
+                    <div>
+                      <p className="font-medium text-sm">Use Brocks Credits</p>
+                      <p className="text-xs text-amber-700">
+                        Convert to rupees or get commission-free days
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowBrocksModal(true)}
+                    className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                  >
+                    View Offers
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Applied Brocks Info */}
+          {appliedBrocks && (
+            <Card className="border-green-200 bg-green-50/50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Gift className="h-5 w-5 text-green-600" />
+                    <div>
+                      <p className="font-medium text-sm">Brocks Applied</p>
+                      <p className="text-xs text-green-700">
+                        {appliedBrocks.offerType === 'rupees' 
+                          ? `${appliedBrocks.brocksUsed} Brocks → ₹${appliedBrocks.discountAmount} discount`
+                          : `${appliedBrocks.brocksUsed} Brocks → Commission-free days`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setAppliedBrocks(null)}
+                    className="text-green-700 hover:bg-green-100"
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Payment Method */}
           <Card>
@@ -186,7 +260,7 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
               ) : (
                 <div className="flex items-center space-x-2">
                   <IndianRupee className="h-4 w-4" />
-                  <span>Pay ₹{totalAmount.toFixed(2)}</span>
+                  <span>Pay ₹{finalAmount.toFixed(2)}</span>
                 </div>
               )}
             </Button>
@@ -197,6 +271,25 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
           </p>
         </div>
       </DialogContent>
+
+      {/* Brocks Offers Modal */}
+      <BrocksOffersModal
+        isOpen={showBrocksModal}
+        onClose={() => setShowBrocksModal(false)}
+        currentAmount={originalAmount}
+        onApplyOffer={(offerType, brocksUsed, discountAmount) => {
+          setAppliedBrocks({
+            offerType,
+            brocksUsed,
+            discountAmount
+          });
+          setShowBrocksModal(false);
+          toast({
+            title: "Brocks Applied!",
+            description: `${brocksUsed} Brocks ${offerType === 'rupees' ? `converted to ₹${discountAmount} discount` : 'converted to commission-free days'}`,
+          });
+        }}
+      />
     </Dialog>
   );
 }

@@ -1579,24 +1579,31 @@ export class DatabaseStorage implements IStorage {
         .where(eq(userCredits.userId, userId));
 
       if (!existingCredits) {
+        console.log(`❌ No credits record found for user ${userId}`);
         return false; // User has no credits
       }
 
-      const currentBalance = existingCredits.currentBalance ? parseFloat(existingCredits.currentBalance.toString()) : 0;
+      // Use the correct column name 'balance' instead of 'currentBalance'
+      const currentBalance = existingCredits.balance ? parseInt(existingCredits.balance.toString()) : 0;
+      
+      console.log(`💰 Current balance: ${currentBalance}, trying to deduct: ${credits}`);
       
       if (currentBalance < credits) {
+        console.log(`❌ Insufficient credits for user ${userId}: has ${currentBalance}, needs ${credits}`);
         return false; // Insufficient credits
       }
 
+      // Update using the correct column name
       await db
         .update(userCredits)
         .set({
-          currentBalance: (currentBalance - credits).toString(),
+          balance: currentBalance - credits,
+          totalSpent: sql`${userCredits.totalSpent} + ${credits}`,
           updatedAt: new Date()
         })
         .where(eq(userCredits.userId, userId));
 
-      console.log(`💸 Deducted ${credits} Brocks credits from user ${userId} for: ${reason}`);
+      console.log(`💸 Successfully deducted ${credits} Brocks credits from user ${userId} for: ${reason}`);
       return true;
     } catch (error) {
       console.error('Error deducting credits:', error);
@@ -1611,6 +1618,57 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error finding user by referral code:', error);
       return undefined;
+    }
+  }
+
+  async applyBrocksToPayment(userId: number, offerType: 'rupees' | 'commission-free', brocksUsed: number, originalAmount: number): Promise<{ newAmount: number; brocksSpent: number }> {
+    try {
+      // Get current user credits
+      const userCredits = await this.getUserCredits(userId);
+      if (!userCredits || userCredits.balance < brocksUsed) {
+        throw new Error('Insufficient Brocks credits');
+      }
+
+      let newAmount = originalAmount;
+      let brocksSpent = 0;
+
+      if (offerType === 'rupees') {
+        // Get conversion rate
+        const conversionRateSetting = await this.getRewardSetting('credits_to_rupees_rate');
+        const conversionRate = parseInt(conversionRateSetting?.settingValue || '20');
+        
+        // Calculate rupees discount
+        const rupeesDiscount = Math.floor(brocksUsed / conversionRate);
+        newAmount = Math.max(0, originalAmount - rupeesDiscount);
+        brocksSpent = rupeesDiscount * conversionRate; // Only spend exact amount needed
+        
+        // Spend the credits using deductCredits
+        const success = await this.deductCredits(userId, brocksSpent, `Converted ${brocksSpent} Brocks to ₹${rupeesDiscount} discount`);
+        if (!success) {
+          throw new Error('Failed to deduct Brocks credits');
+        }
+      } else if (offerType === 'commission-free') {
+        // For commission-free, we don't reduce payment amount but give future benefits
+        const conversionRateSetting = await this.getRewardSetting('credits_to_commission_free_rate');
+        const conversionRate = parseInt(conversionRateSetting?.settingValue || '20');
+        
+        const commissionFreeDays = Math.floor(brocksUsed / conversionRate);
+        brocksSpent = commissionFreeDays * conversionRate;
+        
+        // Spend the credits using deductCredits
+        const success = await this.deductCredits(userId, brocksSpent, `Converted ${brocksSpent} Brocks to ${commissionFreeDays} commission-free days`);
+        if (!success) {
+          throw new Error('Failed to deduct Brocks credits');
+        }
+        
+        // TODO: Implement commission-free days tracking in user profile
+        newAmount = originalAmount; // Payment amount doesn't change for commission-free
+      }
+
+      return { newAmount, brocksSpent };
+    } catch (error) {
+      console.error('Error applying Brocks to payment:', error);
+      throw error;
     }
   }
 }
