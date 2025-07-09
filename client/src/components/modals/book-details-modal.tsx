@@ -29,6 +29,30 @@ export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit, 
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Always call hooks first, before any early returns
+  const deleteBookMutation = useMutation({
+    mutationFn: async (bookId: number) => {
+      const response = await apiRequest("DELETE", `/api/books/${bookId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Book Deleted",
+        description: "Your book has been successfully removed from the library.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+      onDelete?.(book?.id);
+      onClose();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete book. It may be currently borrowed.",
+        variant: "destructive",
+      });
+    },
+  });
+
   if (!book) return null;
 
   const isOwner = book.ownerId === user?.id;
@@ -42,29 +66,6 @@ export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit, 
     onEdit?.(book);
     onClose();
   };
-
-  const deleteBookMutation = useMutation({
-    mutationFn: async (bookId: number) => {
-      const response = await apiRequest("DELETE", `/api/books/${bookId}`);
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Book Deleted",
-        description: "Your book has been successfully removed from the library.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/books"] });
-      onDelete?.(book.id);
-      onClose();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Delete Failed",
-        description: error.message || "Failed to delete book. It may be currently borrowed.",
-        variant: "destructive",
-      });
-    },
-  });
 
   const handleDelete = () => {
     if (showDeleteConfirm) {
