@@ -236,12 +236,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       req.session.userId = user.id;
       
-      // Initialize starting credits for existing users if they don't have any
+      // Initialize starting credits for existing users if they don't have any credits record
       try {
         const existingCredits = await storage.getUserCredits(user.id);
-        if (!existingCredits || (existingCredits.balance === 0 && existingCredits.totalEarned < 100)) {
+        if (!existingCredits) {
+          // User has no credits record at all, award starting credits
           await storage.awardCredits(user.id, 100, "Starting credits bonus");
-          console.log(`🎁 Awarded 100 starting credits to user ${user.id}`);
+          console.log(`🎁 Awarded 100 starting credits to user ${user.id} (first time)`);
         }
       } catch (error) {
         console.error("Error initializing starting credits:", error);
@@ -1870,12 +1871,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const securityDeposit = settings.securityDeposit;
       let totalAmount = totalRentalFee + securityDeposit;
 
-      // Apply Brocks discount if provided
-      if (appliedBrocks && appliedBrocks.offerType === 'rupees') {
-        totalAmount = Math.max(0, totalAmount - appliedBrocks.discountAmount);
-        console.log(`💰 Applied ${appliedBrocks.brocksUsed} Brocks for ₹${appliedBrocks.discountAmount} discount. New total: ₹${totalAmount}`);
-      } else if (appliedBrocks && appliedBrocks.offerType === 'commission-free') {
-        console.log(`🎁 Applied ${appliedBrocks.brocksUsed} Brocks for commission-free benefits`);
+      // Apply Brocks discount if provided and deduct credits
+      if (appliedBrocks && appliedBrocks.brocksUsed > 0) {
+        // First, deduct the Brocks credits from user's balance
+        const deductionSuccess = await storage.deductCredits(req.session.userId!, appliedBrocks.brocksUsed, `Used for rental discount - ${book.title}`);
+        
+        if (!deductionSuccess) {
+          return res.status(400).json({ message: "Insufficient Brocks credits for the applied discount" });
+        }
+        
+        if (appliedBrocks.offerType === 'rupees') {
+          totalAmount = Math.max(0, totalAmount - appliedBrocks.discountAmount);
+          console.log(`💰 Applied ${appliedBrocks.brocksUsed} Brocks for ₹${appliedBrocks.discountAmount} discount. New total: ₹${totalAmount}`);
+        } else if (appliedBrocks.offerType === 'commission-free') {
+          console.log(`🎁 Applied ${appliedBrocks.brocksUsed} Brocks for commission-free benefits`);
+        }
       }
 
       const endDate = new Date();

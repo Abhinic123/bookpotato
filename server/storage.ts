@@ -1556,14 +1556,14 @@ export class DatabaseStorage implements IStorage {
         .where(eq(userCredits.userId, userId));
 
       if (existingCredits) {
-        // Update existing record with safe parsing
-        const currentBalance = existingCredits.currentBalance ? parseFloat(existingCredits.currentBalance.toString()) : 0;
+        // Update existing record with correct column names
+        const currentBalance = existingCredits.balance ? parseFloat(existingCredits.balance.toString()) : 0;
         const totalEarned = existingCredits.totalEarned ? parseFloat(existingCredits.totalEarned.toString()) : 0;
         
         await db
           .update(userCredits)
           .set({
-            currentBalance: (currentBalance + credits).toString(),
+            balance: (currentBalance + credits).toString(),
             totalEarned: (totalEarned + credits).toString(),
             updatedAt: new Date()
           })
@@ -1574,7 +1574,7 @@ export class DatabaseStorage implements IStorage {
           .insert(userCredits)
           .values({
             userId,
-            currentBalance: credits.toString(),
+            balance: credits.toString(),
             totalEarned: credits.toString(),
             createdAt: new Date(),
             updatedAt: new Date()
