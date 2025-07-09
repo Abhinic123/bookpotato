@@ -11,7 +11,7 @@ import {
   type RewardSetting, type InsertRewardSetting
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, not, inArray, ilike, desc, count, sum, sql } from "drizzle-orm";
+import { eq, and, or, not, ne, inArray, ilike, desc, count, sum, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -548,7 +548,10 @@ export class DatabaseStorage implements IStorage {
         .from(bookRentals)
         .innerJoin(books, eq(bookRentals.bookId, books.id))
         .innerJoin(users, eq(bookRentals.lenderId, users.id))
-        .where(eq(bookRentals.borrowerId, borrowerId))
+        .where(and(
+          eq(bookRentals.borrowerId, borrowerId),
+          ne(bookRentals.status, 'returned')
+        ))
         .orderBy(desc(bookRentals.createdAt));
       
       console.log('📚 DatabaseStorage: Found borrowed books after join:', results.length);
@@ -638,7 +641,10 @@ export class DatabaseStorage implements IStorage {
         .from(bookRentals)
         .innerJoin(books, eq(bookRentals.bookId, books.id))
         .innerJoin(users, eq(bookRentals.borrowerId, users.id))
-        .where(eq(bookRentals.lenderId, lenderId))
+        .where(and(
+          eq(bookRentals.lenderId, lenderId),
+          ne(bookRentals.status, 'returned')
+        ))
         .orderBy(desc(bookRentals.createdAt));
       
       console.log('📚 Found lent books:', results.length);
