@@ -170,7 +170,7 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
             </CardContent>
           </Card>
 
-          {/* Brocks Offers */}
+          {/* Brocks Offers - Always show this section */}
           {!appliedBrocks && (
             <Card className="border-amber-200 bg-amber-50/50">
               <CardContent className="p-4">
@@ -180,7 +180,10 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
                     <div>
                       <p className="font-medium text-sm">Use Brocks Credits</p>
                       <p className="text-xs text-amber-700">
-                        {userCredits?.balance ? `You have ${userCredits.balance} Brocks • ` : ''}Convert to rupees or get commission-free days
+                        {userCredits?.balance > 0 
+                          ? `You have ${userCredits.balance} Brocks • Convert to rupees or get commission-free days`
+                          : 'Earn Brocks through book uploads, referrals, and transactions'
+                        }
                       </p>
                     </div>
                   </div>
@@ -190,7 +193,7 @@ export default function PaymentModal({ isOpen, onClose, book, onSuccess }: Payme
                     onClick={() => setShowBrocksModal(true)}
                     className="border-amber-300 text-amber-700 hover:bg-amber-100"
                   >
-                    View Offers
+                    {userCredits?.balance > 0 ? 'View Offers' : 'Learn More'}
                   </Button>
                 </div>
               </CardContent>

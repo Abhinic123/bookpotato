@@ -155,9 +155,24 @@ export function BrocksOffersModal({
           {/* No Offers Available */}
           {maxRupeesDiscount === 0 && commissionFreeDays === 0 && (
             <Card className="bg-muted/50">
-              <CardContent className="pt-4 text-center">
-                <div className="text-muted-foreground">
-                  You need at least {rupeesConversionRate} Brocks to use conversion options.
+              <CardContent className="pt-4">
+                <div className="text-center space-y-3">
+                  <div className="text-muted-foreground">
+                    {userBalance === 0 ? (
+                      <>
+                        <p className="font-medium">Start earning Brocks credits!</p>
+                        <p className="text-sm">You can earn Brocks by:</p>
+                        <ul className="text-sm space-y-1 mt-2">
+                          <li>• Uploading books (1 credit per book)</li>
+                          <li>• Referring friends (5 credits per referral)</li>
+                          <li>• Borrowing books (5 credits per transaction)</li>
+                          <li>• Lending books (5 credits per transaction)</li>
+                        </ul>
+                      </>
+                    ) : (
+                      `You need at least ${rupeesConversionRate} Brocks to use conversion options.`
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
