@@ -3,7 +3,8 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { X, CreditCard, Smartphone } from "lucide-react";
+import { X, CreditCard, Smartphone, Gift } from "lucide-react";
+import { BrocksOffersModal } from "@/components/brocks/brocks-offers-modal";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency, calculateRentalCost } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
 import type { BookWithOwner } from "@shared/schema";
 
 const borrowSchema = z.object({
@@ -56,6 +58,17 @@ const durationOptions = [
 export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBookModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [showBrocksModal, setShowBrocksModal] = useState(false);
+  const [appliedBrocks, setAppliedBrocks] = useState<{
+    offerType: 'rupees' | 'commission-free';
+    brocksUsed: number;
+    discountAmount: number;
+  } | null>(null);
+
+  // Fetch user credits
+  const { data: userCredits } = useQuery({
+    queryKey: ["/api/user/credits"],
+  });
 
   // Fetch platform settings
   const { data: platformSettings } = useQuery({
@@ -82,6 +95,12 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
       )
     : null;
 
+  // Apply Brocks discount if available
+  const finalRentalCost = rentalCost && appliedBrocks ? {
+    ...rentalCost,
+    totalAmount: rentalCost.totalAmount - appliedBrocks.discountAmount
+  } : rentalCost;
+
   const borrowMutation = useMutation({
     mutationFn: async (data: BorrowFormData) => {
       if (!book) throw new Error("No book selected");
@@ -90,6 +109,7 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
         bookId: book.id,
         duration: parseInt(data.duration),
         paymentMethod: data.paymentMethod,
+        appliedBrocks: appliedBrocks,
       });
       return response.json();
     },
@@ -212,14 +232,76 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                       <span className="text-text-secondary">Security deposit</span>
                       <span>{formatCurrency(rentalCost.securityDeposit)}</span>
                     </div>
+                    {appliedBrocks && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Brocks Discount</span>
+                        <span>-{formatCurrency(appliedBrocks.discountAmount)}</span>
+                      </div>
+                    )}
                     <hr className="my-2" />
                     <div className="flex justify-between font-semibold">
                       <span>Total</span>
-                      <span>{formatCurrency(rentalCost.totalAmount)}</span>
+                      <span>{formatCurrency(finalRentalCost ? finalRentalCost.totalAmount : rentalCost.totalAmount)}</span>
                     </div>
                     <p className="text-xs text-text-secondary mt-2">
                       *Security deposit will be refunded upon return
                     </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Brocks Offers - Always show this section */}
+              {!appliedBrocks && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Gift className="h-5 w-5 text-amber-600" />
+                      <div>
+                        <p className="font-medium text-sm">Use Brocks Credits</p>
+                        <p className="text-xs text-amber-700">
+                          {userCredits?.balance > 0 
+                            ? `You have ${userCredits.balance} Brocks • Convert to rupees or get commission-free days`
+                            : 'Earn Brocks through book uploads, referrals, and transactions'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowBrocksModal(true)}
+                      className="border-amber-300 text-amber-700 hover:bg-amber-100"
+                    >
+                      {userCredits?.balance > 0 ? 'View Offers' : 'Learn More'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Applied Brocks Info */}
+              {appliedBrocks && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Gift className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="font-medium text-sm">Brocks Applied</p>
+                        <p className="text-xs text-green-700">
+                          {appliedBrocks.offerType === 'rupees' 
+                            ? `${appliedBrocks.brocksUsed} Brocks → ${formatCurrency(appliedBrocks.discountAmount)} discount`
+                            : `${appliedBrocks.brocksUsed} Brocks → Commission-free days`
+                          }
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setAppliedBrocks(null)}
+                      className="text-green-700 hover:bg-green-100"
+                    >
+                      Remove
+                    </Button>
                   </div>
                 </div>
               )}
@@ -264,13 +346,32 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
               >
                 {borrowMutation.isPending 
                   ? "Processing..." 
-                  : `Proceed to Payment ${rentalCost ? `- ${formatCurrency(rentalCost.totalAmount)}` : ""}`
+                  : `Proceed to Payment ${finalRentalCost ? `- ${formatCurrency(finalRentalCost.totalAmount)}` : ""}`
                 }
               </Button>
             </form>
           </Form>
         </div>
       </DialogContent>
+
+      {/* Brocks Offers Modal */}
+      <BrocksOffersModal
+        isOpen={showBrocksModal}
+        onClose={() => setShowBrocksModal(false)}
+        currentAmount={rentalCost ? rentalCost.totalAmount : 0}
+        onApplyOffer={(offerType, brocksUsed, discountAmount) => {
+          setAppliedBrocks({
+            offerType,
+            brocksUsed,
+            discountAmount
+          });
+          setShowBrocksModal(false);
+          toast({
+            title: "Brocks Applied!",
+            description: `${brocksUsed} Brocks ${offerType === 'rupees' ? `converted to ${formatCurrency(discountAmount)} discount` : 'converted to commission-free days'}`,
+          });
+        }}
+      />
     </Dialog>
   );
 }
