@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wallet, TrendingUp, TrendingDown, Calendar } from "lucide-react";
+import { Wallet, TrendingUp, TrendingDown, Calendar, Gift, Coins } from "lucide-react";
 import { formatCurrency, formatDateRelative } from "@/lib/utils";
+import { Link } from "wouter";
 
 interface EarningsData {
   totalEarned: number;
@@ -83,9 +85,20 @@ export default function EarningsPage() {
   return (
     <div className="p-4 space-y-6">
       {/* Header */}
-      <div className="flex items-center space-x-3">
-        <Wallet className="w-8 h-8 text-blue-600" />
-        <h1 className="text-3xl font-bold text-gray-900">Earnings & Spending</h1>
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <Wallet className="w-8 h-8 text-blue-600" />
+            <h1 className="text-3xl font-bold text-gray-900">Earnings & Spending</h1>
+          </div>
+          <Link href="/rewards">
+            <Button variant="outline" size="sm" className="flex items-center space-x-2">
+              <Gift className="h-4 w-4" />
+              <span>Rewards Center</span>
+            </Button>
+          </Link>
+        </div>
+        <p className="text-gray-600">Track your book lending earnings and borrowing expenses</p>
       </div>
 
       {/* Summary Cards */}

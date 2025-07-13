@@ -70,7 +70,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { name: "Home", icon: Home, path: "/" },
     { name: "Browse", icon: Search, path: "/browse" },
     { name: "My Books", icon: Bookmark, path: "/my-books" },
-    { name: "Rewards", icon: Wallet, path: "/rewards" },
+    { name: "Earnings", icon: Wallet, path: "/earnings" },
     { name: "Societies", icon: Users, path: "/societies" },
   ];
 
@@ -90,7 +90,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <h1 className="text-lg font-semibold text-text-primary">BookShare</h1>
           </div>
           <div className="flex items-center space-x-3">
-            <Link href="/rewards">
+            <Link href="/earnings">
               <Button variant="ghost" size="sm" className="flex items-center space-x-1 px-2">
                 <Coins className="h-4 w-4 text-amber-600" />
                 <span className="text-sm font-medium text-amber-600">
