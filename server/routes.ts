@@ -2090,6 +2090,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Brocks leaderboard endpoint
+  app.get("/api/brocks/leaderboard", requireAuth, async (req, res) => {
+    try {
+      const leaderboard = await storage.getBrocksLeaderboard();
+      res.json(leaderboard);
+    } catch (error) {
+      console.error("Brocks leaderboard error:", error);
+      res.status(500).json({ message: "Failed to fetch leaderboard" });
+    }
+  });
+
   // Messaging endpoints
   app.get("/api/messages/conversations", requireAuth, async (req, res) => {
     try {

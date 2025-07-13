@@ -120,6 +120,7 @@ export interface IStorage {
   getUserRecentRewards(userId: number): Promise<any[]>;
   awardCredits(userId: number, credits: number, reason: string): Promise<void>;
   deductCredits(userId: number, credits: number, reason: string): Promise<boolean>;
+  getBrocksLeaderboard(limit?: number): Promise<Array<{rank: number, userId: number, name: string, credits: number, totalEarned: number}>>;
   
   // Referral methods
   getUserByReferralCode(referralCode: string): Promise<User | undefined>;
@@ -1651,6 +1652,37 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getBrocksLeaderboard(limit: number = 50): Promise<Array<{rank: number, userId: number, name: string, credits: number, totalEarned: number}>> {
+    try {
+      const leaderboardData = await db
+        .select({
+          userId: userCredits.userId,
+          name: users.name,
+          credits: userCredits.balance,
+          totalEarned: userCredits.totalEarned,
+        })
+        .from(userCredits)
+        .innerJoin(users, eq(userCredits.userId, users.id))
+        .orderBy(desc(userCredits.balance))
+        .limit(limit);
+
+      // Add ranking
+      const leaderboard = leaderboardData.map((entry, index) => ({
+        rank: index + 1,
+        userId: entry.userId,
+        name: entry.name || 'Unknown User',
+        credits: parseInt(entry.credits?.toString() || '0'),
+        totalEarned: parseInt(entry.totalEarned?.toString() || '0'),
+      }));
+
+      console.log(`🏆 Brocks leaderboard fetched: ${leaderboard.length} users`);
+      return leaderboard;
+    } catch (error) {
+      console.error('Error fetching Brocks leaderboard:', error);
+      return [];
+    }
+  }
+
   async getUserByReferralCode(referralCode: string): Promise<User | undefined> {
     try {
       const [user] = await db.select().from(users).where(eq(users.referralCode, referralCode));
@@ -2345,6 +2377,11 @@ export class MemStorage implements IStorage {
     // No-op for memory storage
     console.log(`💸 Would deduct ${credits} Brocks credits from user ${userId} for: ${reason}`);
     return true;
+  }
+
+  async getBrocksLeaderboard(limit: number = 50): Promise<Array<{rank: number, userId: number, name: string, credits: number, totalEarned: number}>> {
+    // Return empty leaderboard for memory storage
+    return [];
   }
 
   async getUserByReferralCode(referralCode: string): Promise<User | undefined> {

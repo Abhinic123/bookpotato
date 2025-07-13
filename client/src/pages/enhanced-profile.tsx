@@ -12,7 +12,7 @@ import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { User, Shield, Key, MapPin, Phone, Mail, Crown, Camera, Upload } from "lucide-react";
+import { User, Shield, Key, MapPin, Phone, Mail, Crown, Camera, Upload, Trophy, Medal, Target } from "lucide-react";
 import UserBadge from "@/components/profile/user-badge";
 
 const INDIAN_CITIES = [
@@ -64,6 +64,10 @@ export default function EnhancedProfile() {
 
   const { data: borrowedRentals } = useQuery({
     queryKey: ["/api/rentals/borrowed"],
+  });
+
+  const { data: brocksLeaderboard } = useQuery({
+    queryKey: ["/api/brocks/leaderboard"],
   });
 
   const profileForm = useForm<ProfileData>({
@@ -330,8 +334,9 @@ export default function EnhancedProfile() {
 
       {/* Settings Tabs */}
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile">Profile Information</TabsTrigger>
+          <TabsTrigger value="leaderboard">Brocks Leaderboard</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="admin" disabled={!(user as any)?.isAdmin}>Admin Controls</TabsTrigger>
         </TabsList>
@@ -426,6 +431,73 @@ export default function EnhancedProfile() {
                   {updateProfileMutation.isPending ? "Updating..." : "Update Profile"}
                 </Button>
               </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="leaderboard" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Trophy className="w-5 h-5 text-amber-600" />
+                <span>Brocks Credits Leaderboard</span>
+              </CardTitle>
+              <CardDescription>
+                See who has the most Brocks credits in the community
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {brocksLeaderboard && (brocksLeaderboard as any[]).length > 0 ? (
+                <div className="space-y-3">
+                  {(brocksLeaderboard as any[]).map((entry: any, index: number) => {
+                    const isCurrentUser = entry.userId === ((user as any)?.user?.id || (user as any)?.id);
+                    return (
+                      <div
+                        key={entry.userId}
+                        className={`flex items-center justify-between p-4 rounded-lg border ${
+                          isCurrentUser 
+                            ? 'bg-blue-50 border-blue-200 shadow-md' 
+                            : 'bg-gray-50 border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white font-bold">
+                            {entry.rank <= 3 ? (
+                              entry.rank === 1 ? <Crown className="w-5 h-5" /> :
+                              entry.rank === 2 ? <Medal className="w-5 h-5" /> :
+                              <Target className="w-5 h-5" />
+                            ) : (
+                              `#${entry.rank}`
+                            )}
+                          </div>
+                          <div>
+                            <h4 className={`font-semibold ${isCurrentUser ? 'text-blue-900' : 'text-gray-900'}`}>
+                              {entry.name} {isCurrentUser && <span className="text-blue-600 text-sm">(You)</span>}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              Total Earned: {entry.totalEarned} credits
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold text-amber-600">
+                            {entry.credits}
+                          </div>
+                          <div className="text-xs text-gray-500">Brocks</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Trophy className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Leaderboard Data</h3>
+                  <p className="text-gray-600">
+                    Start earning Brocks credits to appear on the leaderboard!
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
