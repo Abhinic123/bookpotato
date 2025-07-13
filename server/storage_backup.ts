@@ -1878,7 +1878,677 @@ export class MemStorage implements IStorage {
   }
 }
 
+export class MemStorage implements IStorage {
+  private users: Map<number, User> = new Map();
+  private societies: Map<number, Society> = new Map();
+  private books: Map<number, Book> = new Map();
+  private bookRentals: Map<number, BookRental> = new Map();
+  private societyMembers: Map<number, SocietyMember> = new Map();
+  private notifications: Map<number, Notification> = new Map();
+  
+  private currentUserId = 1;
+  private currentSocietyId = 1;
+  private currentBookId = 1;
+  private currentRentalId = 1;
+  private currentMemberId = 1;
+  private currentNotificationId = 1;
+
+  constructor() {
+    this.seedData();
+  }
+
+  private seedData() {
+    // Seed your user
+    const testUser: User = {
+      id: 1,
+      name: "Jia Maheshwari",
+      email: "jia.a.maheshwari@gmail.com",
+      phone: "+1234567890",
+      password: "bossbaby@12",
+      address: null,
+      userNumber: null,
+      referredBy: null,
+      isAdmin: false,
+      referralCode: "REF1",
+      totalReferrals: 0,
+      referralEarnings: "0",
+      totalEarnings: "0",
+      rank: "Bronze",
+      commissionFreeUntil: null,
+      booksUploaded: 0,
+      profilePicture: null,
+      resetToken: null,
+      resetTokenExpiry: null,
+      createdAt: new Date(),
+    };
+    this.users.set(1, testUser);
+
+    // Add your admin account
+    const adminUser: User = {
+      id: 2,
+      name: "Abhinic",
+      email: "abhinic@gmail.com",
+      phone: "+1234567891",
+      password: "admin123",
+      address: null,
+      userNumber: null,
+      referredBy: null,
+      isAdmin: true,
+      referralCode: "ADMIN1",
+      totalReferrals: 0,
+      referralEarnings: "0",
+      totalEarnings: "0",
+      rank: "Bronze",
+      commissionFreeUntil: null,
+      booksUploaded: 0,
+      profilePicture: null,
+      resetToken: null,
+      resetTokenExpiry: null,
+      createdAt: new Date(),
+    };
+    this.users.set(2, adminUser);
+    this.currentUserId = 3;
+
+    // Seed a test society
+    const testSociety: Society = {
+      id: 1,
+      name: "Greenwood Apartments",
+      description: "A community of book lovers",
+      code: "GWA2024",
+      city: "Mumbai",
+      apartmentCount: 120,
+      location: "Bandra West",
+      status: "active",
+      createdBy: 1,
+      memberCount: 1,
+      bookCount: 0,
+      createdAt: new Date(),
+    };
+    this.societies.set(1, testSociety);
+    this.currentSocietyId = 2;
+
+    // Add test user as member of test society
+    const testMember: SocietyMember = {
+      id: 1,
+      societyId: 1,
+      userId: 1,
+      isActive: true,
+      joinedAt: new Date(),
+    };
+    this.societyMembers.set(1, testMember);
+
+    // Add admin user as member of test society
+    const adminMember: SocietyMember = {
+      id: 2,
+      societyId: 1,
+      userId: 2,
+      isActive: true,
+      joinedAt: new Date(),
+    };
+    this.societyMembers.set(2, adminMember);
+    this.currentMemberId = 3;
+  }
+
+  // Users
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.email === email);
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.currentUserId++;
+    const user: User = {
+      ...insertUser,
+      id,
+      address: insertUser.address || null,
+      userNumber: null,
+      referredBy: insertUser.referredBy || null,
+      isAdmin: false,
+      referralCode: insertUser.referralCode || null,
+      totalReferrals: 0,
+      referralEarnings: "0",
+      totalEarnings: "0",
+      rank: "Bronze",
+      commissionFreeUntil: null,
+      booksUploaded: 0,
+      profilePicture: null,
+      resetToken: null,
+      resetTokenExpiry: null,
+      createdAt: new Date(),
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (!user) {
+      return undefined;
+    }
+    
+    const updatedUser = { ...user, ...updates };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  // Societies
+  async getSociety(id: number): Promise<Society | undefined> {
+    return this.societies.get(id);
+  }
+
+  async getSocietyByCode(code: string): Promise<Society | undefined> {
+    return Array.from(this.societies.values()).find(society => society.code === code);
+  }
+
+  async getSocietiesByUser(userId: number): Promise<SocietyWithStats[]> {
+    const userMemberships = Array.from(this.societyMembers.values())
+      .filter(member => member.userId === userId && member.isActive);
+    
+    return Promise.all(userMemberships.map(async (membership) => {
+      const society = this.societies.get(membership.societyId);
+      if (!society) throw new Error("Society not found");
+      return { ...society, isJoined: true };
+    }));
+  }
+
+  async getAvailableSocieties(userId: number): Promise<SocietyWithStats[]> {
+    const userSocietyIds = Array.from(this.societyMembers.values())
+      .filter(member => member.userId === userId && member.isActive)
+      .map(member => member.societyId);
+
+    return Array.from(this.societies.values())
+      .filter(society => !userSocietyIds.includes(society.id))
+      .map(society => ({ ...society, isJoined: false }));
+  }
+
+  async createSociety(insertSociety: InsertSociety): Promise<Society> {
+    const id = this.currentSocietyId++;
+    const code = `${insertSociety.name.substring(0, 3).toUpperCase()}${Date.now().toString().slice(-4)}`;
+    const society: Society = {
+      id,
+      name: insertSociety.name,
+      description: insertSociety.description || null,
+      code,
+      city: insertSociety.city,
+      apartmentCount: insertSociety.apartmentCount,
+      location: insertSociety.location || null,
+      status: "active",
+      createdBy: 1, // Default to first user for MemStorage
+      memberCount: 1,
+      bookCount: 0,
+      createdAt: new Date(),
+    };
+    this.societies.set(id, society);
+
+    // Add creator as member
+    await this.joinSociety(id, 1); // Default to first user for MemStorage
+    
+    return society;
+  }
+
+  async joinSociety(societyId: number, userId: number): Promise<SocietyMember> {
+    const id = this.currentMemberId++;
+    const member: SocietyMember = {
+      id,
+      societyId,
+      userId,
+      isActive: true,
+      joinedAt: new Date(),
+    };
+    this.societyMembers.set(id, member);
+
+    // Update society member count
+    const society = this.societies.get(societyId);
+    if (society) {
+      society.memberCount += 1;
+      this.societies.set(societyId, society);
+    }
+
+    return member;
+  }
+
+  async isMemberOfSociety(societyId: number, userId: number): Promise<boolean> {
+    return Array.from(this.societyMembers.values())
+      .some(member => member.societyId === societyId && member.userId === userId && member.isActive);
+  }
+
+  // Books
+  async getBook(id: number): Promise<BookWithOwner | undefined> {
+    const book = this.books.get(id);
+    if (!book) return undefined;
+
+    const owner = this.users.get(book.ownerId);
+    if (!owner) return undefined;
+
+    return {
+      ...book,
+      owner: { id: owner.id, name: owner.name }
+    };
+  }
+
+  async getBooksBySociety(societyId: number): Promise<BookWithOwner[]> {
+    const societyBooks = Array.from(this.books.values())
+      .filter(book => book.societyId === societyId);
+
+    const booksWithOwners: BookWithOwner[] = [];
+    for (const book of societyBooks) {
+      const owner = this.users.get(book.ownerId);
+      if (owner) {
+        booksWithOwners.push({
+          ...book,
+          owner: { id: owner.id, name: owner.name }
+        });
+      }
+    }
+
+    return booksWithOwners;
+  }
+
+  async getBooksByOwner(ownerId: number): Promise<Book[]> {
+    return Array.from(this.books.values())
+      .filter(book => book.ownerId === ownerId);
+  }
+
+  async searchBooks(societyId: number, query?: string, genre?: string): Promise<BookWithOwner[]> {
+    let books = Array.from(this.books.values())
+      .filter(book => book.societyId === societyId);
+
+    if (query) {
+      const lowerQuery = query.toLowerCase();
+      books = books.filter(book => 
+        book.title.toLowerCase().includes(lowerQuery) ||
+        book.author.toLowerCase().includes(lowerQuery)
+      );
+    }
+
+    if (genre && genre !== 'All') {
+      books = books.filter(book => book.genre === genre);
+    }
+
+    const booksWithOwners: BookWithOwner[] = [];
+    for (const book of books) {
+      const owner = this.users.get(book.ownerId);
+      if (owner) {
+        booksWithOwners.push({
+          ...book,
+          owner: { id: owner.id, name: owner.name }
+        });
+      }
+    }
+
+    return booksWithOwners;
+  }
+
+  async createBook(insertBook: InsertBook): Promise<Book> {
+    const id = this.currentBookId++;
+    const book: Book = {
+      id,
+      title: insertBook.title,
+      author: insertBook.author,
+      isbn: insertBook.isbn || null,
+      genre: insertBook.genre,
+      description: insertBook.description || null,
+      imageUrl: insertBook.imageUrl || null,
+      coverImageUrl: insertBook.coverImageUrl || null,
+      condition: insertBook.condition,
+      dailyFee: insertBook.dailyFee,
+      ownerId: insertBook.ownerId,
+      societyId: insertBook.societyId,
+      isAvailable: true,
+      createdAt: new Date(),
+    };
+    this.books.set(id, book);
+
+    // Update society book count
+    const society = this.societies.get(insertBook.societyId);
+    if (society) {
+      society.bookCount += 1;
+      this.societies.set(insertBook.societyId, society);
+    }
+
+    return book;
+  }
+
+  async updateBook(id: number, updates: Partial<Book>): Promise<Book | undefined> {
+    const book = this.books.get(id);
+    if (!book) return undefined;
+
+    const updatedBook = { ...book, ...updates };
+    this.books.set(id, updatedBook);
+    return updatedBook;
+  }
+
+  // Rentals
+  async getRental(id: number): Promise<RentalWithDetails | undefined> {
+    const rental = this.bookRentals.get(id);
+    if (!rental) return undefined;
+
+    const book = this.books.get(rental.bookId);
+    const borrower = this.users.get(rental.borrowerId);
+    const lender = this.users.get(rental.lenderId);
+
+    if (!book || !borrower || !lender) return undefined;
+
+    return {
+      ...rental,
+      book,
+      borrower: { id: borrower.id, name: borrower.name },
+      lender: { id: lender.id, name: lender.name }
+    };
+  }
+
+  async getRentalsByBorrower(borrowerId: number): Promise<RentalWithDetails[]> {
+    const borrowerRentals = Array.from(this.bookRentals.values())
+      .filter(rental => rental.borrowerId === borrowerId);
+
+    const rentalsWithDetails: RentalWithDetails[] = [];
+    for (const rental of borrowerRentals) {
+      const book = this.books.get(rental.bookId);
+      const borrower = this.users.get(rental.borrowerId);
+      const lender = this.users.get(rental.lenderId);
+
+      if (book && borrower && lender) {
+        rentalsWithDetails.push({
+          ...rental,
+          book,
+          borrower: { id: borrower.id, name: borrower.name },
+          lender: { id: lender.id, name: lender.name }
+        });
+      }
+    }
+
+    return rentalsWithDetails;
+  }
+
+  async getRentalsByLender(lenderId: number): Promise<RentalWithDetails[]> {
+    const lenderRentals = Array.from(this.bookRentals.values())
+      .filter(rental => rental.lenderId === lenderId);
+
+    const rentalsWithDetails: RentalWithDetails[] = [];
+    for (const rental of lenderRentals) {
+      const book = this.books.get(rental.bookId);
+      const borrower = this.users.get(rental.borrowerId);
+      const lender = this.users.get(rental.lenderId);
+
+      if (book && borrower && lender) {
+        rentalsWithDetails.push({
+          ...rental,
+          book,
+          borrower: { id: borrower.id, name: borrower.name },
+          lender: { id: lender.id, name: lender.name }
+        });
+      }
+    }
+
+    return rentalsWithDetails;
+  }
+
+  async getActiveRentals(userId: number): Promise<RentalWithDetails[]> {
+    const activeRentals = Array.from(this.bookRentals.values())
+      .filter(rental => 
+        (rental.borrowerId === userId || rental.lenderId === userId) && 
+        rental.status === 'active'
+      );
+
+    const rentalsWithDetails: RentalWithDetails[] = [];
+    for (const rental of activeRentals) {
+      const book = this.books.get(rental.bookId);
+      const borrower = this.users.get(rental.borrowerId);
+      const lender = this.users.get(rental.lenderId);
+
+      if (book && borrower && lender) {
+        rentalsWithDetails.push({
+          ...rental,
+          book,
+          borrower: { id: borrower.id, name: borrower.name },
+          lender: { id: lender.id, name: lender.name }
+        });
+      }
+    }
+
+    return rentalsWithDetails;
+  }
+
+  async createRental(insertRental: InsertBookRental): Promise<BookRental> {
+    const id = this.currentRentalId++;
+    const rental: BookRental = {
+      id,
+      bookId: insertRental.bookId,
+      borrowerId: insertRental.borrowerId,
+      lenderId: insertRental.lenderId,
+      societyId: insertRental.societyId,
+      startDate: new Date(),
+      endDate: insertRental.endDate,
+      actualReturnDate: null,
+      totalAmount: insertRental.totalAmount,
+      platformFee: insertRental.platformFee,
+      lenderAmount: insertRental.lenderAmount,
+      securityDeposit: insertRental.securityDeposit,
+      status: insertRental.status,
+      paymentStatus: insertRental.paymentStatus,
+      paymentId: null,
+      createdAt: new Date(),
+    };
+    this.bookRentals.set(id, rental);
+
+    // Mark book as unavailable
+    const book = this.books.get(insertRental.bookId);
+    if (book) {
+      book.isAvailable = false;
+      this.books.set(insertRental.bookId, book);
+    }
+
+    return rental;
+  }
+
+  async updateRental(id: number, updates: Partial<BookRental>): Promise<BookRental | undefined> {
+    const rental = this.bookRentals.get(id);
+    if (!rental) return undefined;
+
+    const updatedRental = { ...rental, ...updates };
+    this.bookRentals.set(id, updatedRental);
+
+    // If returned, mark book as available
+    if (updates.status === 'returned') {
+      const book = this.books.get(rental.bookId);
+      if (book) {
+        book.isAvailable = true;
+        this.books.set(rental.bookId, book);
+      }
+    }
+
+    return updatedRental;
+  }
+
+  // Notifications
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async createNotification(insertNotification: InsertNotification): Promise<Notification> {
+    const id = this.currentNotificationId++;
+    const notification: Notification = {
+      ...insertNotification,
+      id,
+      isRead: false,
+      createdAt: new Date(),
+    };
+    this.notifications.set(id, notification);
+    return notification;
+  }
+
+  async markNotificationAsRead(id: number): Promise<boolean> {
+    const notification = this.notifications.get(id);
+    if (!notification) return false;
+
+    notification.isRead = true;
+    this.notifications.set(id, notification);
+    return true;
+  }
+
+  // Statistics
+  async getSocietyStats(societyId: number): Promise<{ memberCount: number; bookCount: number; activeRentals: number }> {
+    const society = this.societies.get(societyId);
+    const activeRentals = Array.from(this.bookRentals.values())
+      .filter(rental => rental.societyId === societyId && rental.status === 'active').length;
+
+    return {
+      memberCount: society?.memberCount || 0,
+      bookCount: society?.bookCount || 0,
+      activeRentals
+    };
+  }
+
+  async getUserStats(userId: number): Promise<{ borrowedBooks: number; lentBooks: number; totalEarnings: number }> {
+    const borrowedBooks = Array.from(this.bookRentals.values())
+      .filter(rental => rental.borrowerId === userId && rental.status === 'active').length;
+
+    const lentBooks = Array.from(this.bookRentals.values())
+      .filter(rental => rental.lenderId === userId && rental.status === 'active').length;
+
+    const totalEarnings = Array.from(this.bookRentals.values())
+      .filter(rental => rental.lenderId === userId && rental.status === 'returned')
+      .reduce((sum, rental) => sum + parseFloat(rental.lenderAmount), 0);
+
+    return { borrowedBooks, lentBooks, totalEarnings };
+  }
+
+  // Extension Request methods (not implemented in memory storage)
+  async createExtensionRequest(requestData: InsertExtensionRequest): Promise<ExtensionRequest> {
+    throw new Error('Extension requests not supported in memory storage');
+  }
+
+  async getExtensionRequestsByOwner(ownerId: number): Promise<ExtensionRequest[]> {
+    return [];
+  }
+
+  async getExtensionRequest(requestId: number): Promise<ExtensionRequest | undefined> {
+    return undefined;
+  }
+
+  async approveExtensionRequest(requestId: number): Promise<ExtensionRequest> {
+    throw new Error('Extension requests not supported in memory storage');
+  }
+
+  async denyExtensionRequest(requestId: number, reason: string): Promise<ExtensionRequest> {
+    throw new Error('Extension requests not supported in memory storage');
+  }
+
+  // Extension methods (not implemented in memory storage)
+  async createRentalExtension(extensionData: InsertRentalExtension): Promise<RentalExtension> {
+    throw new Error('Extensions not supported in memory storage');
+  }
+
+  async getRentalExtensions(rentalId: number): Promise<RentalExtension[]> {
+    return [];
+  }
+
+  async updateRentalExtensionPayment(extensionId: number, paymentId: string, status: string): Promise<void> {
+    // No-op for memory storage
+  }
+
+  // Rewards and badge methods (not implemented in memory storage)
+  async createUserBadge(badge: InsertUserBadge): Promise<UserBadge> {
+    throw new Error('User badges not supported in memory storage');
+  }
+
+  async getUserBadges(userId: number): Promise<UserBadge[]> {
+    return [];
+  }
+
+  async createUserReferral(referral: InsertUserReferral): Promise<UserReferral> {
+    throw new Error('User referrals not supported in memory storage');
+  }
+
+  async getUserReferrals(userId: number): Promise<UserReferral[]> {
+    return [];
+  }
+
+  async createCommissionFreePeriod(period: InsertCommissionFreePeriod): Promise<CommissionFreePeriod> {
+    throw new Error('Commission-free periods not supported in memory storage');
+  }
+
+  async getActiveCommissionFreePeriods(userId: number): Promise<CommissionFreePeriod[]> {
+    return [];
+  }
+
+  async updateCommissionFreePeriod(periodId: number, daysRemaining: number): Promise<void> {
+    // No-op for memory storage
+  }
+
+  async getRewardSetting(key: string): Promise<RewardSetting | undefined> {
+    return undefined;
+  }
+
+  async updateRewardSetting(key: string, value: string): Promise<void> {
+    // No-op for memory storage
+  }
+
+  async getAllRewardSettings(): Promise<RewardSetting[]> {
+    return [];
+  }
+
+  async getUserCredits(userId: number): Promise<{ balance: number; totalEarned: number } | null> {
+    return { balance: 0, totalEarned: 0 };
+  }
+
+  async getUserRecentRewards(userId: number): Promise<any[]> {
+    return [];
+  }
+
+  async awardCredits(userId: number, credits: number, reason: string): Promise<void> {
+    // No-op for memory storage
+    console.log(`🎁 Would award ${credits} Brocks credits to user ${userId} for: ${reason}`);
+  }
+
+  async deductCredits(userId: number, credits: number, reason: string): Promise<boolean> {
+    // No-op for memory storage
+    console.log(`💸 Would deduct ${credits} Brocks credits from user ${userId} for: ${reason}`);
+    return true;
+  }
+
+  async getBrocksLeaderboard(limit: number = 50): Promise<Array<{rank: number, userId: number, name: string, credits: number, totalEarned: number}>> {
+    // Return empty leaderboard for memory storage
+    return [];
+  }
+
+  async getUserByReferralCode(referralCode: string): Promise<User | undefined> {
+    for (const user of this.users.values()) {
+      if (user.referralCode === referralCode) {
+        return user;
+      }
+    }
+    return undefined;
+  }
+
+  // Brocks Packages Management (not supported in memory storage)
+  async getAllBrocksPackages(): Promise<BrocksPackage[]> {
+    return [];
+  }
+
+  async createBrocksPackage(packageData: InsertBrocksPackage): Promise<BrocksPackage | null> {
+    return null;
+  }
+
+  async updateBrocksPackage(id: number, packageData: Partial<InsertBrocksPackage>): Promise<BrocksPackage | null> {
+    return null;
+  }
+
+  async deleteBrocksPackage(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async setPackagePopular(id: number, popular: boolean): Promise<boolean> {
+    return false;
+  }
+}
+
 export const storage = new DatabaseStorage();
-console.log("🗄️ Using DatabaseStorage for data operations");
+console.log('🗄️ Using DatabaseStorage for data operations');
 // Expose db for direct queries when needed
 (storage as any).db = db;
