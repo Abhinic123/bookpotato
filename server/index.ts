@@ -50,6 +50,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Serve marketing website BEFORE other routes to avoid conflicts
+  app.get('/marketing', (req, res) => {
+    const path = require('path');
+    res.sendFile(path.join(__dirname, '..', 'marketing-website.html'));
+  });
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
