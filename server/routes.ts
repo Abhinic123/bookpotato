@@ -1888,9 +1888,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle Brocks payment method
       if (paymentMethod === 'brocks') {
+        // Get Brocks conversion rates from admin settings
+        const conversionRates = await storage.getBrocksConversionRates();
+        const creditsToRupeesRate = parseFloat(conversionRates.creditsToRupeesRate || '10'); // Default 10 Brocks = 1 Rupee
+        
         // Check if user has sufficient Brocks balance
         const userCredits = await storage.getUserCredits(req.session.userId!);
-        const brocksRequired = Math.round(totalAmount * 100) / 100; // Convert to Brocks (1:1 ratio)
+        const brocksRequired = Math.round(totalAmount * creditsToRupeesRate); // Convert rupees to Brocks using admin rate
         
         if (userCredits.balance < brocksRequired) {
           return res.status(400).json({ message: "Insufficient Brocks balance for this transaction" });
@@ -1903,11 +1907,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Failed to process Brocks payment" });
         }
         
-        // Award Brocks to lender (minus platform commission)
-        const lenderBrocksAmount = Math.round(lenderAmount * 100) / 100;
+        // Award Brocks to lender (minus platform commission) - convert lender amount to Brocks
+        const lenderBrocksAmount = Math.round(lenderAmount * creditsToRupeesRate);
         await storage.awardCredits(book.ownerId, lenderBrocksAmount, `Book rental earnings - ${book.title}`);
         
-        console.log(`💎 Brocks payment processed: ${brocksRequired} Brocks deducted from borrower, ${lenderBrocksAmount} Brocks awarded to lender`);
+        console.log(`💎 Brocks payment processed: ${brocksRequired} Brocks deducted from borrower, ${lenderBrocksAmount} Brocks awarded to lender (rate: ${creditsToRupeesRate} Brocks per Rupee)`);
       }
 
       // Apply Brocks discount if provided and deduct credits (for non-Brocks payments)

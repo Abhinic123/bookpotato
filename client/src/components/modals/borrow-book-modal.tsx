@@ -87,6 +87,12 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
 
   const watchedDuration = form.watch("duration");
   const watchedPaymentMethod = form.watch("paymentMethod");
+
+  // Fetch Brocks conversion rates
+  const { data: conversionRates } = useQuery({
+    queryKey: ["/api/admin/brocks-conversion-rates"],
+    enabled: watchedPaymentMethod === "brocks",
+  });
   
   const rentalCost = book && watchedDuration 
     ? calculateRentalCost(
@@ -96,12 +102,12 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
       )
     : null;
 
-  // Calculate Brocks cost (1 Brocks = ₹1 equivalent)
-  const brocksCost = rentalCost ? {
-    rentalFee: Math.round(parseFloat(rentalCost.rentalFee) * 100) / 100, // Convert to Brocks (same value)
-    platformFee: Math.round(parseFloat(rentalCost.platformFee) * 100) / 100,
-    securityDeposit: Math.round(parseFloat(rentalCost.securityDeposit) * 100) / 100,
-    totalAmount: Math.round(parseFloat(rentalCost.totalAmount) * 100) / 100,
+  // Calculate Brocks cost using admin-configured conversion rate
+  const brocksCost = rentalCost && conversionRates ? {
+    rentalFee: Math.round(parseFloat(rentalCost.rentalFee) * parseFloat(conversionRates.creditsToRupeesRate || '10')),
+    platformFee: Math.round(parseFloat(rentalCost.platformFee) * parseFloat(conversionRates.creditsToRupeesRate || '10')),
+    securityDeposit: Math.round(parseFloat(rentalCost.securityDeposit) * parseFloat(conversionRates.creditsToRupeesRate || '10')),
+    totalAmount: Math.round(parseFloat(rentalCost.totalAmount) * parseFloat(conversionRates.creditsToRupeesRate || '10')),
   } : null;
 
   // Apply Brocks discount if available
