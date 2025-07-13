@@ -24,62 +24,28 @@ export default function BookCard({
 
   if (variant === "grid") {
     return (
-      <Card className="book-card h-full flex flex-col">
-        <CardContent className="p-4 flex flex-col h-full">
-          {/* Placeholder for book cover */}
-          <div className="w-full h-40 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg mb-4 flex items-center justify-center">
-            <span className="text-sm text-blue-600 font-medium text-center px-3 leading-tight">
+      <Card className="book-card h-full flex flex-col cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105">
+        <CardContent className="p-0 flex flex-col h-full">
+          {/* Main book display area */}
+          <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-t-lg flex flex-col items-center justify-center p-4 relative">
+            {/* Book title */}
+            <h3 className="text-lg font-bold text-blue-800 text-center mb-2 line-clamp-3">
               {book.title}
-            </span>
-          </div>
-          
-          <div className="flex-1 flex flex-col">
-            <h4 className="font-semibold text-text-primary text-base mb-2 line-clamp-2 min-h-[3rem]">
-              {book.title}
-            </h4>
-            <p className="text-sm text-text-secondary mb-3">{book.author}</p>
+            </h3>
             
-            {showOwner && book.owner && (
-              <p className="text-xs text-text-secondary mb-3">
-                Owner: {book.owner.name}
-              </p>
-            )}
-            
-            <div className="flex items-center justify-between mb-4 mt-auto">
-              <Badge className={`text-xs ${statusColor}`}>
-                {statusText}
-              </Badge>
-              <span className="text-sm text-primary font-semibold">
+            {/* Price */}
+            <div className="absolute bottom-3 right-3 bg-white rounded-full px-3 py-1 shadow-md">
+              <span className="text-sm font-semibold text-primary">
                 {formatCurrency(book.dailyFee)}/day
               </span>
             </div>
             
-            {book.isAvailable && onBorrow ? (
-              <Button 
-                onClick={() => onBorrow(book)}
-                className="w-full py-2"
-                size="sm"
-              >
-                Borrow
-              </Button>
-            ) : onEdit ? (
-              <Button 
-                onClick={() => onEdit(book)}
-                variant="outline"
-                className="w-full py-2"
-                size="sm"
-              >
-                Edit
-              </Button>
-            ) : (
-              <Button 
-                disabled
-                className="w-full py-2"
-                size="sm"
-              >
-                Unavailable
-              </Button>
-            )}
+            {/* Status badge */}
+            <div className="absolute top-3 left-3">
+              <Badge className={`text-xs ${statusColor}`}>
+                {statusText}
+              </Badge>
+            </div>
           </div>
         </CardContent>
       </Card>

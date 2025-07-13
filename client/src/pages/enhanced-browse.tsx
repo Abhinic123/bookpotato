@@ -26,6 +26,7 @@ import {
   X
 } from "lucide-react";
 import BookCard from "@/components/book-card";
+import BookDetailsModal from "@/components/book-details-modal";
 import BorrowBookModal from "@/components/modals/borrow-book-modal";
 import type { BookWithOwner } from "@shared/schema";
 
@@ -70,6 +71,7 @@ export default function EnhancedBrowse() {
 
   const [showFilters, setShowFilters] = useState(false);
   const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showBorrowModal, setShowBorrowModal] = useState(false);
 
   // Fetch books with advanced filtering
@@ -403,22 +405,39 @@ export default function EnhancedBrowse() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {books.map((book: BookWithOwner) => (
-              <BookCard
+              <div
                 key={book.id}
-                book={book}
-                onBorrow={(book) => {
-                  console.log("Borrow button clicked for book:", book);
+                onClick={() => {
                   setSelectedBook(book);
-                  setShowBorrowModal(true);
-                  console.log("Modal state set to true");
+                  setShowDetailsModal(true);
                 }}
-                showOwner={true}
-                variant="grid"
-              />
+              >
+                <BookCard
+                  book={book}
+                  showOwner={true}
+                  variant="grid"
+                />
+              </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Book Details Modal */}
+      <BookDetailsModal
+        book={selectedBook}
+        open={showDetailsModal}
+        onOpenChange={(open) => {
+          setShowDetailsModal(open);
+          if (!open) {
+            setSelectedBook(null);
+          }
+        }}
+        onBorrow={(book) => {
+          setShowDetailsModal(false);
+          setShowBorrowModal(true);
+        }}
+      />
 
       {/* Borrow Book Modal */}
       <BorrowBookModal
