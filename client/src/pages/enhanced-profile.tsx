@@ -289,7 +289,7 @@ export default function EnhancedProfile() {
 
             <div className="ml-auto">
               <UserBadge 
-                referralCount={(user as any)?.totalReferrals || 0} 
+                referralCount={(user as any)?.user?.totalReferrals || (user as any)?.totalReferrals || 0} 
                 className="text-center"
               />
             </div>
@@ -315,7 +315,7 @@ export default function EnhancedProfile() {
         
         <Card>
           <CardContent className="p-4 text-center">
-            <h3 className="text-2xl font-bold text-purple-600">{(user as any)?.totalReferrals || 0}</h3>
+            <h3 className="text-2xl font-bold text-purple-600">{(user as any)?.user?.totalReferrals || (user as any)?.totalReferrals || 0}</h3>
             <p className="text-sm text-gray-600">People Helped</p>
           </CardContent>
         </Card>
