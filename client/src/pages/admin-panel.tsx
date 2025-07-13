@@ -999,10 +999,22 @@ function BrocksPackagesManager() {
   const updatePackageMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
       console.log('Mutation executing with:', { id, data });
-      const response = await apiRequest("PUT", `/api/admin/brocks-packages/${id}`, data);
+      const response = await fetch(`/api/admin/brocks-packages/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      
+      console.log('Response status:', response.status, response.ok);
+      
       if (!response.ok) {
-        throw new Error(`Failed to update package: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to update package: ${response.status}`);
       }
+      
       const result = await response.json();
       console.log('API response success:', result);
       return result;
