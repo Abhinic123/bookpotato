@@ -80,6 +80,11 @@ export default function AdminPanel() {
     queryKey: ["/api/admin/society-requests"],
   });
 
+  // Fetch Brocks settings
+  const { data: brocksSettings } = useQuery({
+    queryKey: ["/api/admin/rewards/settings"],
+  });
+
   // Form for settings
   const form = useForm<SettingsForm>({
     resolver: zodResolver(settingsSchema),
@@ -144,6 +149,41 @@ export default function AdminPanel() {
       });
     }
   }, [settings]);
+
+  // Update Brocks form when settings load
+  useEffect(() => {
+    if (brocksSettings && Array.isArray(brocksSettings)) {
+      // Create a lookup map from the settings array
+      const settingsMap = brocksSettings.reduce((acc, setting) => {
+        acc[setting.settingKey] = setting.settingValue;
+        return acc;
+      }, {} as Record<string, string>);
+
+      brocksForm.reset({
+        // New reward settings
+        credits_per_book_upload: parseInt(settingsMap['credits_per_book_upload'] || '1'),
+        credits_per_referral: parseInt(settingsMap['credits_per_referral'] || '5'),
+        credits_per_borrow: parseInt(settingsMap['credits_per_borrow'] || '5'),
+        credits_per_lend: parseInt(settingsMap['credits_per_lend'] || '5'),
+        
+        // Conversion settings  
+        credits_for_commission_free_days: parseInt(settingsMap['credits_for_commission_free_days'] || '20'),
+        commission_free_days_per_conversion: parseInt(settingsMap['commission_free_days_per_conversion'] || '7'),
+        credits_for_rupees_conversion: parseInt(settingsMap['credits_for_rupees_conversion'] || '20'),
+        rupees_per_credit_conversion: parseFloat(settingsMap['rupees_per_credit_conversion'] || '1'),
+        
+        // Legacy settings
+        opening_credits: parseInt(settingsMap['starting_credits'] || '100'),
+        silver_referrals: parseInt(settingsMap['silver_referrals'] || '5'),
+        gold_referrals: parseInt(settingsMap['gold_referrals'] || '10'),
+        platinum_referrals: parseInt(settingsMap['platinum_referrals'] || '15'),
+        upload_10_reward: parseInt(settingsMap['upload_10_reward'] || '10'),
+        upload_20_reward: parseInt(settingsMap['upload_20_reward'] || '20'),
+        upload_30_reward: parseInt(settingsMap['upload_30_reward'] || '60'),
+        credit_value_rupees: parseFloat(settingsMap['credit_value_rupees'] || '1.00'),
+      });
+    }
+  }, [brocksSettings]);
 
   // Mutation to update settings
   const updateSettingsMutation = useMutation({
@@ -307,7 +347,12 @@ export default function AdminPanel() {
         title: "Brocks Settings Updated",
         description: "Brocks credit and rewards settings have been successfully updated.",
       });
+      // Invalidate all relevant queries to ensure settings are updated everywhere
       queryClient.invalidateQueries({ queryKey: ["/api/admin/brocks-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/brocks-conversion-rates"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/rewards/settings"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/rewards"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/credits"] });
     },
     onError: () => {
       toast({
