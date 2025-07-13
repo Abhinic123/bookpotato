@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema, users, rentalExtensions } from "@shared/schema";
+import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema, users, rentalExtensions, societyRequests } from "@shared/schema";
 import { z } from "zod";
 import { db, pool } from "./db";
 import { sql, eq, and } from "drizzle-orm";
@@ -1770,9 +1770,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Admin Panel: Reviewing society request', { requestId, approved, reason, userEmail: user?.email, isAdmin: user?.isAdmin });
       
       if (approved) {
-        // Get the request details to create the society
-        const requests = await storage.getSocietyRequests();
-        const request = requests.find(r => r.id === requestId);
+        // Get the specific request details to create the society
+        const allRequests = await db.select().from(societyRequests).where(eq(societyRequests.id, requestId));
+        const request = allRequests[0];
         
         if (request && request.status === 'pending') {
           // Auto-generate a simple code from the society name
@@ -1817,9 +1817,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Just update request status for rejection
         await storage.reviewSocietyRequest(requestId, false, reason);
         
-        // Notify the requester about rejection
-        const requests = await storage.getSocietyRequests();
-        const request = requests.find(r => r.id === requestId);
+        // Get the specific request for notification
+        const allRequests = await db.select().from(societyRequests).where(eq(societyRequests.id, requestId));
+        const request = allRequests[0];
         
         if (request) {
           await storage.createNotification({

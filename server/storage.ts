@@ -896,7 +896,11 @@ export class DatabaseStorage implements IStorage {
 
   async getSocietyRequests(): Promise<any[]> {
     try {
-      const requests = await db.select().from(societyRequests).orderBy(desc(societyRequests.createdAt));
+      // Only return pending requests for admin panel
+      const requests = await db.select()
+        .from(societyRequests)
+        .where(eq(societyRequests.status, 'pending'))
+        .orderBy(desc(societyRequests.createdAt));
       return requests;
     } catch (error) {
       console.error('Error fetching society requests:', error);
