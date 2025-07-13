@@ -3,7 +3,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { X, CreditCard, Smartphone, Gift } from "lucide-react";
+import { X, CreditCard, Smartphone, Gift, Coins } from "lucide-react";
 import { BrocksOffersModal } from "@/components/brocks/brocks-offers-modal";
 import {
   Dialog,
@@ -86,6 +86,7 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
   });
 
   const watchedDuration = form.watch("duration");
+  const watchedPaymentMethod = form.watch("paymentMethod");
   
   const rentalCost = book && watchedDuration 
     ? calculateRentalCost(
@@ -94,6 +95,14 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
         platformSettings as { commissionRate: number; securityDeposit: number } | undefined
       )
     : null;
+
+  // Calculate Brocks cost (1 Brocks = ₹1 equivalent)
+  const brocksCost = rentalCost ? {
+    rentalFee: Math.round(parseFloat(rentalCost.rentalFee) * 100) / 100, // Convert to Brocks (same value)
+    platformFee: Math.round(parseFloat(rentalCost.platformFee) * 100) / 100,
+    securityDeposit: Math.round(parseFloat(rentalCost.securityDeposit) * 100) / 100,
+    totalAmount: Math.round(parseFloat(rentalCost.totalAmount) * 100) / 100,
+  } : null;
 
   // Apply Brocks discount if available
   const finalRentalCost = rentalCost && appliedBrocks ? {
@@ -216,23 +225,54 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
               {/* Cost Breakdown */}
               {rentalCost && (
                 <div className="bg-surface rounded-xl p-4">
-                  <h4 className="font-medium text-text-primary mb-3">Cost Breakdown</h4>
+                  <h4 className="font-medium text-text-primary mb-3">
+                    Cost Breakdown {watchedPaymentMethod === 'brocks' && (
+                      <span className="text-amber-600 text-sm font-normal">(in Brocks)</span>
+                    )}
+                  </h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-text-secondary">
                         Rental fee ({watchedDuration} days)
                       </span>
-                      <span>{formatCurrency(rentalCost.rentalFee)}</span>
+                      <span className="flex items-center">
+                        {watchedPaymentMethod === 'brocks' ? (
+                          <>
+                            <Coins className="w-4 h-4 text-amber-600 mr-1" />
+                            {brocksCost?.rentalFee}
+                          </>
+                        ) : (
+                          formatCurrency(rentalCost.rentalFee)
+                        )}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-text-secondary">Platform fee (5%)</span>
-                      <span>{formatCurrency(rentalCost.platformFee)}</span>
+                      <span className="flex items-center">
+                        {watchedPaymentMethod === 'brocks' ? (
+                          <>
+                            <Coins className="w-4 h-4 text-amber-600 mr-1" />
+                            {brocksCost?.platformFee}
+                          </>
+                        ) : (
+                          formatCurrency(rentalCost.platformFee)
+                        )}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-text-secondary">Security deposit</span>
-                      <span>{formatCurrency(rentalCost.securityDeposit)}</span>
+                      <span className="flex items-center">
+                        {watchedPaymentMethod === 'brocks' ? (
+                          <>
+                            <Coins className="w-4 h-4 text-amber-600 mr-1" />
+                            {brocksCost?.securityDeposit}
+                          </>
+                        ) : (
+                          formatCurrency(rentalCost.securityDeposit)
+                        )}
+                      </span>
                     </div>
-                    {appliedBrocks && (
+                    {appliedBrocks && watchedPaymentMethod !== 'brocks' && (
                       <div className="flex justify-between text-green-600">
                         <span>Brocks Discount</span>
                         <span>-{formatCurrency(appliedBrocks.discountAmount)}</span>
@@ -241,17 +281,32 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                     <hr className="my-2" />
                     <div className="flex justify-between font-semibold">
                       <span>Total</span>
-                      <span>{formatCurrency(finalRentalCost ? finalRentalCost.totalAmount : rentalCost.totalAmount)}</span>
+                      <span className="flex items-center">
+                        {watchedPaymentMethod === 'brocks' ? (
+                          <>
+                            <Coins className="w-4 h-4 text-amber-600 mr-1" />
+                            {brocksCost?.totalAmount}
+                          </>
+                        ) : (
+                          formatCurrency(finalRentalCost ? finalRentalCost.totalAmount : rentalCost.totalAmount)
+                        )}
+                      </span>
                     </div>
                     <p className="text-xs text-text-secondary mt-2">
                       *Security deposit will be refunded upon return
+                      {watchedPaymentMethod === 'brocks' && (
+                        <>
+                          <br />
+                          *Lender receives payment in Brocks (minus platform commission)
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Brocks Offers - Always show this section */}
-              {!appliedBrocks && (
+              {/* Brocks Offers - Show only when not using Brocks payment */}
+              {!appliedBrocks && watchedPaymentMethod !== 'brocks' && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -279,8 +334,8 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                 </div>
               )}
 
-              {/* Applied Brocks Info */}
-              {appliedBrocks && (
+              {/* Applied Brocks Info - Show only when not using Brocks payment */}
+              {appliedBrocks && watchedPaymentMethod !== 'brocks' && (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -334,6 +389,29 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                             UPI
                           </Label>
                         </div>
+                        <div className={`flex items-center space-x-3 p-3 border rounded-xl ${
+                          (userCredits?.balance || 0) >= (brocksCost?.totalAmount || 0)
+                            ? 'border-amber-300 bg-amber-50' 
+                            : 'border-gray-300 bg-gray-50 opacity-50'
+                        }`}>
+                          <RadioGroupItem 
+                            value="brocks" 
+                            id="brocks" 
+                            disabled={(userCredits?.balance || 0) < (brocksCost?.totalAmount || 0)}
+                          />
+                          <Coins className="h-5 w-5 text-amber-600" />
+                          <Label htmlFor="brocks" className="flex-1">
+                            <div>
+                              <span>Pay with Brocks</span>
+                              <div className="text-xs text-gray-600">
+                                Balance: {userCredits?.balance || 0} Brocks
+                                {(userCredits?.balance || 0) < (brocksCost?.totalAmount || 0) && (
+                                  <span className="text-red-600 ml-1">(Insufficient)</span>
+                                )}
+                              </div>
+                            </div>
+                          </Label>
+                        </div>
                       </RadioGroup>
                     </FormControl>
                     <FormMessage />
@@ -344,11 +422,12 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
               <Button 
                 type="submit" 
                 className="w-full"
-                disabled={borrowMutation.isPending || !rentalCost}
+                disabled={borrowMutation.isPending || !rentalCost || (watchedPaymentMethod === 'brocks' && (userCredits?.balance || 0) < (brocksCost?.totalAmount || 0))}
               >
-                {borrowMutation.isPending 
-                  ? "Processing..." 
-                  : `Proceed to Payment ${finalRentalCost ? `- ${formatCurrency(finalRentalCost.totalAmount)}` : ""}`
+                {borrowMutation.isPending ? "Processing..." : 
+                  watchedPaymentMethod === 'brocks' 
+                    ? `Pay with Brocks ${brocksCost ? `- ${brocksCost.totalAmount} Brocks` : ""}`
+                    : `Proceed to Payment ${finalRentalCost ? `- ${formatCurrency(finalRentalCost.totalAmount)}` : ""}`
                 }
               </Button>
             </form>

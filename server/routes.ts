@@ -1886,8 +1886,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const securityDeposit = settings.securityDeposit;
       let totalAmount = rentalFee + platformFee + securityDeposit; // Borrower pays rental + commission + deposit
 
-      // Apply Brocks discount if provided and deduct credits
-      if (appliedBrocks && appliedBrocks.brocksUsed > 0) {
+      // Handle Brocks payment method
+      if (paymentMethod === 'brocks') {
+        // Check if user has sufficient Brocks balance
+        const userCredits = await storage.getUserCredits(req.session.userId!);
+        const brocksRequired = Math.round(totalAmount * 100) / 100; // Convert to Brocks (1:1 ratio)
+        
+        if (userCredits.balance < brocksRequired) {
+          return res.status(400).json({ message: "Insufficient Brocks balance for this transaction" });
+        }
+        
+        // Deduct Brocks from borrower
+        const deductionSuccess = await storage.deductCredits(req.session.userId!, brocksRequired, `Book rental payment - ${book.title}`);
+        
+        if (!deductionSuccess) {
+          return res.status(400).json({ message: "Failed to process Brocks payment" });
+        }
+        
+        // Award Brocks to lender (minus platform commission)
+        const lenderBrocksAmount = Math.round(lenderAmount * 100) / 100;
+        await storage.awardCredits(book.ownerId, lenderBrocksAmount, `Book rental earnings - ${book.title}`);
+        
+        console.log(`💎 Brocks payment processed: ${brocksRequired} Brocks deducted from borrower, ${lenderBrocksAmount} Brocks awarded to lender`);
+      }
+
+      // Apply Brocks discount if provided and deduct credits (for non-Brocks payments)
+      if (appliedBrocks && appliedBrocks.brocksUsed > 0 && paymentMethod !== 'brocks') {
         // First, deduct the Brocks credits from user's balance
         const deductionSuccess = await storage.deductCredits(req.session.userId!, appliedBrocks.brocksUsed, `Used for rental discount - ${book.title}`);
         
