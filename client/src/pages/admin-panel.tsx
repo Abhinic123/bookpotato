@@ -1040,9 +1040,14 @@ function BrocksPackagesManager() {
   });
 
   const onSubmitPackage = (data: any) => {
+    console.log('Form submission data:', data);
+    console.log('Form errors:', packageForm.formState.errors);
+    
     if (editingPackage) {
+      console.log('Updating package:', editingPackage.id);
       updatePackageMutation.mutate({ id: editingPackage.id, data });
     } else {
+      console.log('Creating new package');
       createPackageMutation.mutate(data);
     }
   };
@@ -1102,6 +1107,9 @@ function BrocksPackagesManager() {
                     id="name"
                     {...packageForm.register("name", { required: "Name is required" })}
                   />
+                  {packageForm.formState.errors.name && (
+                    <p className="text-red-500 text-sm">{packageForm.formState.errors.name.message}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -1156,6 +1164,12 @@ function BrocksPackagesManager() {
                 <Button 
                   type="submit" 
                   disabled={createPackageMutation.isPending || updatePackageMutation.isPending}
+                  onClick={() => {
+                    console.log('Button clicked!');
+                    console.log('Form valid:', packageForm.formState.isValid);
+                    console.log('Form errors:', packageForm.formState.errors);
+                    console.log('Form values:', packageForm.getValues());
+                  }}
                 >
                   {createPackageMutation.isPending || updatePackageMutation.isPending ? (
                     <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
