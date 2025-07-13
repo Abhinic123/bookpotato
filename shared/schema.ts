@@ -243,6 +243,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   userNumber: true,
   isAdmin: true,
+  referredBy: true,
   createdAt: true,
 });
 
