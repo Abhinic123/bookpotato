@@ -9,7 +9,7 @@ export const users = pgTable("users", {
   phone: text("phone").notNull(),
   password: text("password").notNull(),
   address: text("address"),
-  userNumber: integer("user_number").unique(),
+  userNumber: integer("user_number").unique().notNull(),
   referredBy: integer("referred_by"),
   isAdmin: boolean("is_admin").default(false).notNull(),
   referralCode: text("referral_code"),

@@ -18,6 +18,8 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  generateUniqueUserNumber(): Promise<number>;
+  updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
   
   // Societies
   getSociety(id: number): Promise<Society | undefined>;
@@ -140,9 +142,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    // Auto-assign user number
-    const userCount = await db.select({ count: count() }).from(users);
-    const userNumber = (userCount[0]?.count || 0) + 1;
+    // Generate unique user number
+    const userNumber = await this.generateUniqueUserNumber();
     
     const [user] = await db
       .insert(users)
@@ -151,6 +152,24 @@ export class DatabaseStorage implements IStorage {
         userNumber,
         isAdmin: insertUser.email === 'abhay.maheshwari0812@gmail.com'
       })
+      .returning();
+    return user;
+  }
+
+  async generateUniqueUserNumber(): Promise<number> {
+    // Get the highest user number and add 1
+    const [result] = await db
+      .select({ maxNumber: sql<number>`COALESCE(MAX(${users.userNumber}), 0)` })
+      .from(users);
+    
+    return (result?.maxNumber || 0) + 1;
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set(updates)
+      .where(eq(users.id, id))
       .returning();
     return user;
   }

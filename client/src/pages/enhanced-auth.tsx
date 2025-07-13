@@ -97,7 +97,10 @@ export default function EnhancedAuth() {
   });
 
   const registerMutation = useMutation({
-    mutationFn: (data: RegisterData) => apiRequest("/api/auth/register", { method: "POST", body: data }),
+    mutationFn: async (data: RegisterData) => {
+      const response = await apiRequest("POST", "/api/auth/register", data);
+      return response.json();
+    },
     onSuccess: () => {
       toast({ title: "Success", description: "Account created successfully!" });
       setActiveTab("login");
@@ -112,7 +115,10 @@ export default function EnhancedAuth() {
   });
 
   const forgotPasswordMutation = useMutation({
-    mutationFn: (data: ForgotPasswordData) => apiRequest("/api/auth/forgot-password", { method: "POST", body: data }),
+    mutationFn: async (data: ForgotPasswordData) => {
+      const response = await apiRequest("POST", "/api/auth/forgot-password", data);
+      return response.json();
+    },
     onSuccess: () => {
       toast({ 
         title: "Success", 
