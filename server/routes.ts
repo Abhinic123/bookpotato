@@ -2046,6 +2046,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Brocks purchase endpoint
+  app.post("/api/brocks/purchase", requireAuth, async (req, res) => {
+    try {
+      const { packageId, paymentMethod } = req.body;
+      
+      // Define available packages
+      const packages = {
+        starter: { brocks: 50, price: 99, bonus: 0 },
+        value: { brocks: 100, price: 179, bonus: 10 },
+        premium: { brocks: 250, price: 399, bonus: 50 },
+        mega: { brocks: 500, price: 749, bonus: 150 },
+      };
+      
+      const selectedPackage = packages[packageId as keyof typeof packages];
+      if (!selectedPackage) {
+        return res.status(400).json({ message: "Invalid package selected" });
+      }
+      
+      const totalBrocks = selectedPackage.brocks + selectedPackage.bonus;
+      
+      // Simulate payment processing (in real app, integrate with payment gateway)
+      console.log(`💳 Processing payment: ₹${selectedPackage.price} for ${totalBrocks} Brocks via ${paymentMethod}`);
+      
+      // Award Brocks credits to user
+      await storage.awardCredits(
+        req.session.userId!, 
+        totalBrocks, 
+        `Purchased ${selectedPackage.brocks} + ${selectedPackage.bonus} bonus Brocks`
+      );
+      
+      console.log(`🎁 Awarded ${totalBrocks} Brocks to user ${req.session.userId!} via purchase`);
+      
+      res.json({
+        success: true,
+        brocksAwarded: totalBrocks,
+        transactionId: `txn_${Date.now()}`,
+        message: "Payment processed successfully"
+      });
+    } catch (error) {
+      console.error("Brocks purchase error:", error);
+      res.status(500).json({ message: "Failed to process purchase" });
+    }
+  });
+
   // Messaging endpoints
   app.get("/api/messages/conversations", requireAuth, async (req, res) => {
     try {

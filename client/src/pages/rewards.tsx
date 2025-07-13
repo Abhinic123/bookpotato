@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
+import { Link } from "wouter";
 import { 
   Coins, 
   Star, 
@@ -112,9 +113,17 @@ export default function RewardsPage() {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Rewards Center</h1>
-        <p className="text-gray-600">Earn Brocks credits and unlock exclusive benefits</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Rewards Center</h1>
+          <p className="text-gray-600">Earn Brocks credits and unlock exclusive benefits</p>
+        </div>
+        <Link href="/buy-brocks">
+          <Button className="flex items-center space-x-2">
+            <Coins className="h-4 w-4" />
+            <span>Buy Brocks</span>
+          </Button>
+        </Link>
       </div>
 
       {/* Current Status */}

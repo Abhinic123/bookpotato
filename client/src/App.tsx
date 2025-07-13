@@ -21,6 +21,7 @@ import AdminPanel from "@/pages/admin-panel";
 import NotificationsPage from "@/pages/notifications";
 import EarningsPage from "@/pages/earnings";
 import RewardsPage from "@/pages/rewards";
+import BuyBrocksPage from "@/pages/buy-brocks";
 import AppLayout from "@/components/layout/app-layout";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -33,6 +34,7 @@ function AuthenticatedApp() {
         <Route path="/my-books" component={MyBooks} />
         <Route path="/earnings" component={EarningsPage} />
         <Route path="/rewards" component={RewardsPage} />
+        <Route path="/buy-brocks" component={BuyBrocksPage} />
         <Route path="/societies" component={Societies} />
         <Route path="/referrals" component={Referrals} />
         <Route path="/notifications" component={NotificationsPage} />

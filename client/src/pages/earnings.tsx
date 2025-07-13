@@ -91,12 +91,20 @@ export default function EarningsPage() {
             <Wallet className="w-8 h-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">Earnings & Spending</h1>
           </div>
-          <Link href="/rewards">
-            <Button variant="outline" size="sm" className="flex items-center space-x-2">
-              <Gift className="h-4 w-4" />
-              <span>Rewards Center</span>
-            </Button>
-          </Link>
+          <div className="flex space-x-2">
+            <Link href="/buy-brocks">
+              <Button size="sm" className="flex items-center space-x-2">
+                <Coins className="h-4 w-4" />
+                <span>Buy Brocks</span>
+              </Button>
+            </Link>
+            <Link href="/rewards">
+              <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                <Gift className="h-4 w-4" />
+                <span>Rewards Center</span>
+              </Button>
+            </Link>
+          </div>
         </div>
         <p className="text-gray-600">Track your book lending earnings and borrowing expenses</p>
       </div>
