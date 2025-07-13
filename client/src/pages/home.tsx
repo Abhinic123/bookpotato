@@ -34,6 +34,10 @@ export default function Home() {
     queryKey: ["/api/books/all"],
   });
 
+  const { data: brocksLeaderboard } = useQuery({
+    queryKey: ["/api/brocks/leaderboard"],
+  });
+
   const { data: activeRentals } = useQuery({
     queryKey: ["/api/rentals/active"],
   });
@@ -50,8 +54,10 @@ export default function Home() {
     queryKey: ["/api/user/badges"],
   });
 
-  // Filter recent books (limit to 3 most recent)
-  const recentBooksLimited = (recentBooks as any[])?.slice(0, 3) || [];
+  // Filter recent books (sort by most recent and limit to 3)
+  const recentBooksLimited = (recentBooks as any[])
+    ?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    ?.slice(0, 3) || [];
 
   // Find due soon rentals
   const dueSoonRentals = (activeRentals as any[])?.filter((rental: RentalWithDetails) => {
@@ -230,9 +236,9 @@ export default function Home() {
           </Button>
         </div>
 
-        {(recentBooks as any[])?.length > 0 ? (
+        {recentBooksLimited?.length > 0 ? (
           <div className="space-y-3">
-            {(recentBooks as any[]).slice(0, 3).map((book: any) => (
+            {recentBooksLimited.map((book: any) => (
               <Card key={book.id} className="p-3">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded flex items-center justify-center">
@@ -269,6 +275,65 @@ export default function Home() {
                   {formatCurrency((userStats as any).totalEarnings)}
                 </div>
                 <div className="text-sm opacity-90">Total Earnings</div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Brocks Credits Leaderboard */}
+      {brocksLeaderboard && (brocksLeaderboard as any[]).length > 0 && (
+        <div className="p-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-text-primary flex items-center space-x-2">
+                  <Coins className="h-5 w-5 text-amber-600" />
+                  <span>Brocks Leaderboard</span>
+                </h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate('/profile')}
+                  className="text-primary"
+                >
+                  View Full <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {(brocksLeaderboard as any[]).slice(0, 5).map((entry: any, index: number) => (
+                  <div
+                    key={entry.userId}
+                    className={`flex items-center justify-between p-3 rounded-lg ${
+                      index < 3 
+                        ? 'bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200' 
+                        : 'bg-gray-50'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`flex items-center justify-center w-8 h-8 rounded-full text-white font-bold text-sm ${
+                        index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
+                        index === 1 ? 'bg-gradient-to-br from-gray-400 to-gray-600' :
+                        index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
+                        'bg-gray-400'
+                      }`}>
+                        {entry.rank <= 3 ? (
+                          index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'
+                        ) : (
+                          entry.rank
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm text-text-primary">{entry.name}</div>
+                        <div className="text-xs text-text-secondary">Rank #{entry.rank}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Coins className="h-4 w-4 text-amber-600" />
+                      <span className="text-sm font-semibold text-amber-600">{entry.credits}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
