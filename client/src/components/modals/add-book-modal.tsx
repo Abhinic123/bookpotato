@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Camera, X } from "lucide-react";
+import { Camera, X, Loader2 } from "lucide-react";
 import SimpleISBNScanner from "@/components/simple-isbn-scanner";
 import {
   Dialog,
@@ -79,6 +79,7 @@ interface AddBookModalProps {
 
 export default function AddBookModal({ open, onOpenChange, editBook }: AddBookModalProps) {
   const [scanMode, setScanMode] = useState(false);
+  const [isLookingUpISBN, setIsLookingUpISBN] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -132,6 +133,90 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
       });
     },
   });
+
+  // Function to fetch book information from ISBN
+  const fetchBookInfo = async (isbn: string) => {
+    if (!isbn || isbn.length < 10) return null;
+    
+    setIsLookingUpISBN(true);
+    try {
+      // Try Google Books API first
+      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+      const data = await response.json();
+      
+      if (data.items && data.items.length > 0) {
+        const book = data.items[0].volumeInfo;
+        return {
+          title: book.title || '',
+          author: book.authors ? book.authors.join(', ') : '',
+          description: book.description || '',
+          categories: book.categories || []
+        };
+      }
+      
+      // Fallback to Open Library API
+      const openLibResponse = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+      const openLibData = await openLibResponse.json();
+      
+      const bookKey = `ISBN:${isbn}`;
+      if (openLibData[bookKey]) {
+        const book = openLibData[bookKey];
+        return {
+          title: book.title || '',
+          author: book.authors ? book.authors.map((a: any) => a.name).join(', ') : '',
+          description: book.notes || ''
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Failed to fetch book info:', error);
+      return null;
+    } finally {
+      setIsLookingUpISBN(false);
+    }
+  };
+
+  // Handle ISBN field changes with automatic lookup
+  const handleISBNChange = async (isbn: string) => {
+    form.setValue("isbn", isbn);
+    
+    // Only lookup if ISBN is complete (10 or 13 digits)
+    const cleanISBN = isbn.replace(/[^\d]/g, '');
+    if (cleanISBN.length === 10 || cleanISBN.length === 13) {
+      const bookData = await fetchBookInfo(cleanISBN);
+      
+      if (bookData) {
+        // Auto-fill form fields if they're empty
+        if (bookData.title && !form.getValues("title")) {
+          form.setValue("title", bookData.title);
+        }
+        if (bookData.author && !form.getValues("author")) {
+          form.setValue("author", bookData.author);
+        }
+        if (bookData.description && !form.getValues("description")) {
+          form.setValue("description", bookData.description);
+        }
+        
+        // Map categories to our available genres
+        if (bookData.categories && bookData.categories.length > 0 && !form.getValues("genre")) {
+          const category = bookData.categories[0];
+          const mappedGenre = genres.find(g => 
+            category.toLowerCase().includes(g.toLowerCase()) ||
+            g.toLowerCase().includes(category.toLowerCase())
+          );
+          if (mappedGenre) {
+            form.setValue("genre", mappedGenre);
+          }
+        }
+        
+        toast({
+          title: "Book Details Found!",
+          description: `Auto-filled details for "${bookData.title}"`,
+        });
+      }
+    }
+  };
 
   const onSubmit = (data: BookFormData) => {
     addBookMutation.mutate(data);
@@ -268,11 +353,24 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
                   name="isbn"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>ISBN</FormLabel>
+                      <FormLabel className="flex items-center gap-2">
+                        ISBN
+                        {isLookingUpISBN && <Loader2 className="h-4 w-4 animate-spin" />}
+                      </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter ISBN (e.g., 9780123456789)" {...field} />
+                        <Input 
+                          placeholder="Enter ISBN (e.g., 9780123456789)" 
+                          {...field}
+                          onChange={(e) => handleISBNChange(e.target.value)}
+                          disabled={isLookingUpISBN}
+                        />
                       </FormControl>
                       <FormMessage />
+                      {isLookingUpISBN && (
+                        <p className="text-sm text-muted-foreground">
+                          Looking up book details...
+                        </p>
+                      )}
                     </FormItem>
                   )}
                 />
