@@ -162,7 +162,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication routes
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const userData = insertUserSchema.parse(req.body);
+      // Separate referral code from user data for processing
+      const { referralCode, ...restUserData } = req.body;
+      const userData = insertUserSchema.parse(restUserData);
       
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(userData.email);
@@ -183,30 +185,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Handle referral if provided
-      const { referralCode } = req.body;
-      if (referralCode) {
-        // Find referrer by code
-        const referrer = await storage.getUserByReferralCode(referralCode);
-        if (referrer) {
-          // Award credits to referrer
-          const creditsPerReferralSetting = await storage.getRewardSetting('credits_per_referral');
-          const creditsPerReferral = parseInt(creditsPerReferralSetting?.settingValue || '5');
-          
-          if (creditsPerReferral > 0) {
-            await storage.awardCredits(referrer.id, creditsPerReferral, `Referral: ${user.name} joined`);
+      if (referralCode && referralCode.trim()) {
+        // Convert referral code to user number and find referrer
+        const referrerUserNumber = parseInt(referralCode.trim());
+        if (!isNaN(referrerUserNumber)) {
+          const [referrer] = await db.select().from(users).where(eq(users.userNumber, referrerUserNumber));
+          if (referrer) {
+            // Award credits to referrer
+            const creditsPerReferralSetting = await storage.getRewardSetting('credits_per_referral');
+            const creditsPerReferral = parseInt(creditsPerReferralSetting?.settingValue || '5');
+            
+            if (creditsPerReferral > 0) {
+              await storage.awardCredits(referrer.id, creditsPerReferral, `Referral: ${user.name} joined`);
+            }
+            
+            // Update referrer's total referrals
+            await storage.updateUser(referrer.id, {
+              totalReferrals: (referrer.totalReferrals || 0) + 1
+            });
+            
+            // Set referred by for new user
+            await storage.updateUser(user.id, {
+              referredBy: referrer.id
+            });
+            
+            console.log(`🎉 Referral success: ${referrer.name} referred ${user.name}, awarded ${creditsPerReferral} credits`);
+          } else {
+            console.log(`⚠️ Invalid referral code: User number ${referrerUserNumber} not found`);
           }
-          
-          // Update referrer's total referrals
-          await storage.updateUser(referrer.id, {
-            totalReferrals: (referrer.totalReferrals || 0) + 1
-          });
-          
-          // Set referred by for new user
-          await storage.updateUser(user.id, {
-            referredBy: referrer.id
-          });
-          
-          console.log(`🎉 Referral success: ${referrer.name} referred ${user.name}, awarded ${creditsPerReferral} credits`);
+        } else {
+          console.log(`⚠️ Invalid referral code format: ${referralCode}`);
         }
       }
       
