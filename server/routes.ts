@@ -1879,12 +1879,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Calculate costs using dynamic settings
       const dailyFee = parseFloat(book.dailyFee);
-      const totalRentalFee = dailyFee * duration;
+      const rentalFee = dailyFee * duration; // Amount lender should receive
       const platformFeeRate = settings.commissionRate / 100; // Convert percentage to decimal
-      const platformFee = totalRentalFee * platformFeeRate;
-      const lenderAmount = totalRentalFee - platformFee;
+      const platformFee = rentalFee * platformFeeRate; // Platform commission on top
+      const lenderAmount = rentalFee; // Lender gets full rental amount
       const securityDeposit = settings.securityDeposit;
-      let totalAmount = totalRentalFee + securityDeposit;
+      let totalAmount = rentalFee + platformFee + securityDeposit; // Borrower pays rental + commission + deposit
 
       // Apply Brocks discount if provided and deduct credits
       if (appliedBrocks && appliedBrocks.brocksUsed > 0) {
@@ -1900,10 +1900,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`💰 Applied ${appliedBrocks.brocksUsed} Brocks for ₹${appliedBrocks.discountAmount} discount. New total: ₹${totalAmount}`);
         } else if (appliedBrocks.offerType === 'commission-free') {
           // For commission-free, we eliminate the platform fee
-          totalAmount = totalRentalFee + securityDeposit; // Remove platform fee
-          lenderAmount = totalRentalFee; // Lender gets full rental amount
+          totalAmount = rentalFee + securityDeposit; // Remove platform fee from total
+          lenderAmount = rentalFee; // Lender still gets full rental amount
           platformFee = 0; // No platform fee
-          console.log(`🎁 Applied ${appliedBrocks.brocksUsed} Brocks for commission-free benefits. Platform fee waived: ₹${platformFeeRate * totalRentalFee}`);
+          console.log(`🎁 Applied ${appliedBrocks.brocksUsed} Brocks for commission-free benefits. Platform fee waived: ₹${platformFeeRate * rentalFee}`);
         }
       }
 
@@ -2190,18 +2190,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const extensionFeePerDay = parseFloat(rental.book.dailyFee);
       const commissionRate = parseFloat(settings.commissionRate) / 100;
 
-      const totalExtensionFee = extensionFeePerDay * extensionDays;
-      const platformCommission = totalExtensionFee * commissionRate;
-      const lenderEarnings = totalExtensionFee - platformCommission;
+      const extensionRentalFee = extensionFeePerDay * extensionDays;
+      const platformCommission = extensionRentalFee * commissionRate;
+      const lenderEarnings = extensionRentalFee; // Lender gets full extension amount
+      const totalExtensionFee = extensionRentalFee + platformCommission; // Borrower pays rental + commission
 
       console.log('Extension calculation:', {
         bookTitle: rental.book.title,
         bookDailyFee: rental.book.dailyFee,
         extensionDays,
         extensionFeePerDay,
-        totalExtensionFee,
+        extensionRentalFee,
         platformCommission,
-        lenderEarnings
+        lenderEarnings,
+        totalExtensionFee
       });
 
       res.json({
@@ -2276,9 +2278,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate extension costs using the book's actual daily fee
       const extensionFeePerDay = parseFloat(rental.book.dailyFee);
-      const totalExtensionFee = extensionFeePerDay * extensionDays;
-      const platformCommission = totalExtensionFee * commissionRate;
-      const lenderEarnings = totalExtensionFee - platformCommission;
+      const extensionRentalFee = extensionFeePerDay * extensionDays;
+      const platformCommission = extensionRentalFee * commissionRate;
+      const lenderEarnings = extensionRentalFee; // Lender gets full extension amount
+      const totalExtensionFee = extensionRentalFee + platformCommission; // Borrower pays rental + commission
 
       // Calculate new due date
       let currentDueDate = rental.dueDate ? new Date(rental.dueDate) : new Date(rental.endDate);

@@ -71,18 +71,18 @@ export function calculateRentalCost(
   platformSettings?: { commissionRate: number; securityDeposit: number }
 ) {
   const fee = typeof dailyFee === 'string' ? parseFloat(dailyFee) : dailyFee;
-  const totalRentalFee = fee * duration;
+  const rentalFee = fee * duration; // Amount lender should receive
   
   // Use dynamic settings or fallback to defaults
   const platformFeeRate = platformSettings ? (platformSettings.commissionRate / 100) : 0.05;
   const securityDeposit = platformSettings ? platformSettings.securityDeposit : 100;
   
-  const platformFee = totalRentalFee * platformFeeRate;
-  const lenderAmount = totalRentalFee - platformFee;
-  const totalAmount = totalRentalFee + securityDeposit;
+  const platformFee = rentalFee * platformFeeRate; // Platform commission on top
+  const lenderAmount = rentalFee; // Lender gets full rental amount
+  const totalAmount = rentalFee + platformFee + securityDeposit; // Borrower pays rental + commission + deposit
 
   return {
-    rentalFee: totalRentalFee,
+    rentalFee,
     platformFee,
     lenderAmount,
     securityDeposit,
