@@ -251,6 +251,16 @@ export const brocksPackages = pgTable("brocks_packages", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const pageContent = pgTable("page_content", {
+  id: serial("id").primaryKey(),
+  pageKey: text("page_key").notNull().unique(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  description: text("description"),
+  ctaText: text("cta_text"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -392,6 +402,9 @@ export type RewardSetting = typeof rewardSettings.$inferSelect;
 export type BrocksPackage = typeof brocksPackages.$inferSelect;
 export type InsertBrocksPackage = z.infer<typeof insertBrocksPackageSchema>;
 export type InsertRewardSetting = z.infer<typeof insertRewardSettingSchema>;
+
+export type PageContent = typeof pageContent.$inferSelect;
+export type InsertPageContent = typeof pageContent.$inferInsert;
 
 // Extended types for API responses
 export type BookWithOwner = Book & {

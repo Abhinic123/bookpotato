@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Settings, Users, BookOpen, TrendingUp, Home, Gift, Award, Plus, Trash2, Edit } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 const settingsSchema = z.object({
   commissionRate: z.number().min(0).max(100),
@@ -475,6 +476,7 @@ export default function AdminPanel() {
           <TabsTrigger value="settings">Platform Settings</TabsTrigger>
           <TabsTrigger value="brocks">Brocks Rewards</TabsTrigger>
           <TabsTrigger value="brocks-packages">Brocks Packages</TabsTrigger>
+          <TabsTrigger value="page-content">Page Content</TabsTrigger>
           <TabsTrigger value="societies">Society Requests</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
@@ -948,7 +950,271 @@ export default function AdminPanel() {
         <TabsContent value="brocks-packages">
           <BrocksPackagesManager />
         </TabsContent>
+
+        <TabsContent value="page-content">
+          <PageContentManager />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// Page Content Manager Component
+function PageContentManager() {
+  const { data: pageContent = [], isLoading, refetch } = useQuery({
+    queryKey: ["/api/admin/page-content"],
+  });
+
+  const [editingContent, setEditingContent] = useState<any>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  const contentForm = useForm({
+    defaultValues: {
+      pageKey: "",
+      title: "",
+      subtitle: "",
+      description: "",
+      ctaText: "",
+    },
+  });
+
+  const updateContentMutation = useMutation({
+    mutationFn: async ({ pageKey, data }: { pageKey: string; data: any }) => {
+      const response = await fetch(`/api/admin/page-content/${pageKey}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to update content: ${response.status}`);
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Page content updated successfully",
+      });
+      refetch();
+      setShowAddForm(false);
+      setEditingContent(null);
+      contentForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update content",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveContent = () => {
+    const formData = contentForm.getValues();
+    
+    if (!formData.pageKey || !formData.title) {
+      toast({
+        title: "Error",
+        description: "Page key and title are required",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    updateContentMutation.mutate({ pageKey: formData.pageKey, data: formData });
+  };
+
+  const startEditing = (content: any) => {
+    setEditingContent(content);
+    contentForm.reset({
+      pageKey: content.pageKey,
+      title: content.title || "",
+      subtitle: content.subtitle || "",
+      description: content.description || "",
+      ctaText: content.ctaText || "",
+    });
+    setShowAddForm(true);
+  };
+
+  const startCreating = (pageKey: string, defaultTitle: string) => {
+    setEditingContent(null);
+    contentForm.reset({
+      pageKey,
+      title: defaultTitle,
+      subtitle: "",
+      description: "",
+      ctaText: "",
+    });
+    setShowAddForm(true);
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex justify-center">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Define available page configurations
+  const pageConfigs = [
+    {
+      pageKey: "buy-brocks",
+      defaultTitle: "Buy Brocks Credits",
+      description: "Why buy Brocks credits page",
+    },
+    {
+      pageKey: "welcome-screen",
+      defaultTitle: "Welcome to BookShare",
+      description: "First screen welcome messages",
+    },
+    {
+      pageKey: "onboarding",
+      defaultTitle: "Get Started",
+      description: "Onboarding flow content",
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Page Content Management</h3>
+      </div>
+
+      {/* Page Content Form */}
+      {showAddForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{editingContent ? "Edit Page Content" : "Create Page Content"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Page Key</Label>
+                  <Input
+                    {...contentForm.register("pageKey")}
+                    disabled={!!editingContent}
+                    placeholder="e.g., buy-brocks"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Title</Label>
+                  <Input
+                    {...contentForm.register("title")}
+                    placeholder="Main title"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Subtitle</Label>
+                <Input
+                  {...contentForm.register("subtitle")}
+                  placeholder="Subtitle (optional)"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  {...contentForm.register("description")}
+                  placeholder="Detailed description"
+                  rows={4}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Call-to-Action Text</Label>
+                <Input
+                  {...contentForm.register("ctaText")}
+                  placeholder="Button text (optional)"
+                />
+              </div>
+
+              <div className="flex space-x-2">
+                <Button 
+                  type="button" 
+                  disabled={updateContentMutation.isPending}
+                  onClick={handleSaveContent}
+                >
+                  {updateContentMutation.isPending ? (
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                  ) : null}
+                  {editingContent ? "Update Content" : "Save Content"}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setEditingContent(null);
+                    contentForm.reset();
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Available Pages Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {pageConfigs.map((config) => {
+          const existingContent = pageContent.find((c: any) => c.pageKey === config.pageKey);
+          
+          return (
+            <Card key={config.pageKey} className="relative">
+              <CardHeader>
+                <CardTitle className="text-sm">{config.defaultTitle}</CardTitle>
+                <p className="text-xs text-gray-500">{config.description}</p>
+              </CardHeader>
+              <CardContent>
+                {existingContent ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">{existingContent.title}</p>
+                    {existingContent.subtitle && (
+                      <p className="text-xs text-gray-600">{existingContent.subtitle}</p>
+                    )}
+                    {existingContent.description && (
+                      <p className="text-xs text-gray-500 line-clamp-2">{existingContent.description}</p>
+                    )}
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => startEditing(existingContent)}
+                    >
+                      Edit Content
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-gray-500 mb-2">No content set</p>
+                    <Button 
+                      size="sm"
+                      onClick={() => startCreating(config.pageKey, config.defaultTitle)}
+                    >
+                      Create Content
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -57,6 +57,11 @@ export default function BuyBrocks() {
     queryKey: ["/api/admin/brocks-conversion-rates"],
   });
 
+  // Fetch page content
+  const { data: pageContent } = useQuery({
+    queryKey: ["/api/page-content/buy-brocks"],
+  });
+
   const form = useForm<BuyBrocksFormData>({
     resolver: zodResolver(buyBrocksSchema),
     defaultValues: {
@@ -104,12 +109,18 @@ export default function BuyBrocks() {
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center space-x-2 mb-4">
             <Coins className="h-8 w-8 text-amber-600" />
-            <h1 className="text-3xl font-bold text-text-primary">Buy Brocks Credits</h1>
+            <h1 className="text-3xl font-bold text-text-primary">
+              {pageContent?.title || "Buy Brocks Credits"}
+            </h1>
           </div>
           <p className="text-text-secondary max-w-2xl mx-auto">
-            Purchase Brocks credits to unlock premium benefits, get discounts on rentals,
-            and enjoy commission-free transactions.
+            {pageContent?.description || "Purchase Brocks credits to unlock premium benefits, get discounts on rentals, and enjoy commission-free transactions."}
           </p>
+          {pageContent?.subtitle && (
+            <p className="text-lg text-gray-700 font-medium mt-2">
+              {pageContent.subtitle}
+            </p>
+          )}
         </div>
 
         {/* Current Balance */}

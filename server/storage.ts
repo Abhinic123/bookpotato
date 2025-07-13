@@ -8,7 +8,8 @@ import {
   type ExtensionRequest, type InsertExtensionRequest, type UserCredits, type InsertUserCredits,
   type CreditTransaction, type InsertCreditTransaction, type Referral, type InsertReferral,
   type UserBadge, type InsertUserBadge, type CommissionFreePeriod, type InsertCommissionFreePeriod,
-  type RewardSetting, type InsertRewardSetting, type BrocksPackage, type InsertBrocksPackage
+  type RewardSetting, type InsertRewardSetting, type BrocksPackage, type InsertBrocksPackage,
+  pageContent, type PageContent, type InsertPageContent
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, not, ne, inArray, ilike, desc, count, sum, sql } from "drizzle-orm";
@@ -1875,6 +1876,27 @@ export class MemStorage implements IStorage {
       console.error('Error applying Brocks to payment:', error);
       throw error;
     }
+  }
+  // Page Content Management
+  async getPageContent(pageKey: string): Promise<PageContent | undefined> {
+    const [content] = await db.select().from(pageContent).where(eq(pageContent.pageKey, pageKey));
+    return content || undefined;
+  }
+
+  async updatePageContent(pageKey: string, data: Partial<InsertPageContent>): Promise<PageContent> {
+    const [content] = await db
+      .insert(pageContent)
+      .values({ pageKey, ...data, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: pageContent.pageKey,
+        set: { ...data, updatedAt: new Date() },
+      })
+      .returning();
+    return content;
+  }
+
+  async getAllPageContent(): Promise<PageContent[]> {
+    return await db.select().from(pageContent);
   }
 }
 

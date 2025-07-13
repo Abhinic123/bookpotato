@@ -3024,6 +3024,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Page Content Management Routes
+  app.get("/api/admin/page-content", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const content = await storage.getAllPageContent();
+      res.json(content);
+    } catch (error: any) {
+      console.error("Error fetching page content:", error);
+      res.status(500).json({ message: "Failed to fetch page content" });
+    }
+  });
+
+  app.get("/api/page-content/:pageKey", async (req, res) => {
+    try {
+      const { pageKey } = req.params;
+      const content = await storage.getPageContent(pageKey);
+      res.json(content || {});
+    } catch (error: any) {
+      console.error("Error fetching page content:", error);
+      res.status(500).json({ message: "Failed to fetch page content" });
+    }
+  });
+
+  app.put("/api/admin/page-content/:pageKey", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      const { pageKey } = req.params;
+      const content = await storage.updatePageContent(pageKey, req.body);
+      console.log(`📝 Updated page content for: ${pageKey}`);
+      res.json(content);
+    } catch (error: any) {
+      console.error("Error updating page content:", error);
+      res.status(500).json({ message: "Failed to update page content" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
