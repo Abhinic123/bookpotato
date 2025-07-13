@@ -1000,22 +1000,34 @@ function BrocksPackagesManager() {
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
       console.log('Mutation executing with:', { id, data });
       const response = await apiRequest("PUT", `/api/admin/brocks-packages/${id}`, data);
-      console.log('API response:', response);
-      return response.json();
+      if (!response.ok) {
+        throw new Error(`Failed to update package: ${response.status}`);
+      }
+      const result = await response.json();
+      console.log('API response success:', result);
+      return result;
     },
     onSuccess: (data) => {
-      console.log('Update success:', data);
+      console.log('Update success callback triggered:', data);
       toast({
         title: "Success",
         description: "Brocks package updated successfully",
       });
+      // Force refetch the packages list
       refetch();
+      // Close the form and reset state
       setShowAddForm(false);
       setEditingPackage(null);
-      packageForm.reset();
+      packageForm.reset({
+        name: "",
+        brocks: 0,
+        price: 0,
+        bonus: 0,
+        popular: false,
+      });
     },
     onError: (error: any) => {
-      console.error('Update error:', error);
+      console.error('Update error callback triggered:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update package",
@@ -1217,15 +1229,18 @@ function BrocksPackagesManager() {
                           },
                           body: JSON.stringify(formData),
                         });
-                        console.log('Raw response:', response);
+                        console.log('Raw response status:', response.status, response.ok);
                         const result = await response.json();
                         console.log('Response data:', result);
                         if (response.ok) {
                           toast({
                             title: "Success",
-                            description: "Direct API call worked!",
+                            description: "Package updated successfully!",
                           });
                           refetch();
+                          setShowAddForm(false);
+                          setEditingPackage(null);
+                          packageForm.reset();
                         } else {
                           toast({
                             title: "Error",
