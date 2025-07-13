@@ -150,6 +150,7 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
           title: book.title || '',
           author: book.authors ? book.authors.join(', ') : '',
           description: book.description || '',
+          imageUrl: book.imageLinks?.thumbnail || book.imageLinks?.smallThumbnail || null,
           categories: book.categories || []
         };
       }
@@ -164,7 +165,8 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
         return {
           title: book.title || '',
           author: book.authors ? book.authors.map((a: any) => a.name).join(', ') : '',
-          description: book.notes || ''
+          description: book.notes || book.description || '',
+          imageUrl: book.cover?.medium || book.cover?.large || book.cover?.small || null
         };
       }
       
@@ -197,6 +199,9 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
         if (bookData.description && !form.getValues("description")) {
           form.setValue("description", bookData.description);
         }
+        if (bookData.imageUrl && !form.getValues("imageUrl")) {
+          form.setValue("imageUrl", bookData.imageUrl);
+        }
         
         // Map categories to our available genres
         if (bookData.categories && bookData.categories.length > 0 && !form.getValues("genre")) {
@@ -210,9 +215,15 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
           }
         }
         
+        const filledFields = [];
+        if (bookData.title) filledFields.push("title");
+        if (bookData.author) filledFields.push("author");
+        if (bookData.description) filledFields.push("description");
+        if (bookData.imageUrl) filledFields.push("cover image");
+        
         toast({
           title: "Book Details Found!",
-          description: `Auto-filled details for "${bookData.title}"`,
+          description: `Auto-filled ${filledFields.join(", ")} for "${bookData.title}"`,
         });
       }
     }
