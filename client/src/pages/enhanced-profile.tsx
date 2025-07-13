@@ -334,11 +334,19 @@ export default function EnhancedProfile() {
 
       {/* Settings Tabs */}
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="profile">Profile Information</TabsTrigger>
-          <TabsTrigger value="leaderboard">Brocks Leaderboard</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="admin" disabled={!(user as any)?.isAdmin}>Admin Controls</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 h-auto p-1 gap-1">
+          <TabsTrigger value="profile" className="px-4 py-3 text-sm font-medium whitespace-nowrap">
+            Profile Info
+          </TabsTrigger>
+          <TabsTrigger value="leaderboard" className="px-4 py-3 text-sm font-medium whitespace-nowrap">
+            Leaderboard
+          </TabsTrigger>
+          <TabsTrigger value="security" className="px-4 py-3 text-sm font-medium whitespace-nowrap">
+            Security
+          </TabsTrigger>
+          <TabsTrigger value="admin" disabled={!(user as any)?.isAdmin} className="px-4 py-3 text-sm font-medium whitespace-nowrap">
+            Admin
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="space-y-4">
