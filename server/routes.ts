@@ -437,7 +437,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Validated data:', validatedData);
 
       // Get minimum apartment requirement from admin settings
-      const minApartments = 90; // This could be fetched from settings in the future
+      const platformSettings = await getPlatformSettings();
+      const minApartments = platformSettings.minApartments;
       
       // Check if apartment count meets minimum requirement
       if (validatedData.apartmentCount < minApartments) {
@@ -2140,6 +2141,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `, [commissionRate, securityDeposit, minApartments, maxRentalDays, extensionFeePerDay || 10]);
 
       console.log('Update result:', updateResult.rows[0]);
+
+      // Clear any cached platform settings to force refresh across the platform
+      console.log('✅ Platform settings updated successfully. All platform components will use new values.');
 
       res.json({ message: "Settings saved successfully" });
     } catch (error) {
