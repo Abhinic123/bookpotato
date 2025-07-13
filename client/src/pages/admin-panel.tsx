@@ -998,10 +998,13 @@ function BrocksPackagesManager() {
 
   const updatePackageMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      console.log('Mutation executing with:', { id, data });
       const response = await apiRequest("PUT", `/api/admin/brocks-packages/${id}`, data);
+      console.log('API response:', response);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Update success:', data);
       toast({
         title: "Success",
         description: "Brocks package updated successfully",
@@ -1012,6 +1015,7 @@ function BrocksPackagesManager() {
       packageForm.reset();
     },
     onError: (error: any) => {
+      console.error('Update error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update package",
@@ -1070,6 +1074,7 @@ function BrocksPackagesManager() {
     
     if (editingPackage) {
       console.log('Direct update for package:', editingPackage.id);
+      console.log('Update mutation function:', updatePackageMutation.mutate);
       updatePackageMutation.mutate({ id: editingPackage.id, data: formData });
     } else {
       console.log('Direct create new package');
@@ -1196,6 +1201,51 @@ function BrocksPackagesManager() {
                   ) : null}
                   {editingPackage ? "Update Package" : "Create Package"}
                 </Button>
+                
+                {editingPackage && (
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        console.log('Test API call starting...');
+                        const formData = packageForm.getValues();
+                        const response = await fetch(`/api/admin/brocks-packages/${editingPackage.id}`, {
+                          method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify(formData),
+                        });
+                        console.log('Raw response:', response);
+                        const result = await response.json();
+                        console.log('Response data:', result);
+                        if (response.ok) {
+                          toast({
+                            title: "Success",
+                            description: "Direct API call worked!",
+                          });
+                          refetch();
+                        } else {
+                          toast({
+                            title: "Error",
+                            description: result.message || "Direct API call failed",
+                            variant: "destructive",
+                          });
+                        }
+                      } catch (error) {
+                        console.error('Direct API error:', error);
+                        toast({
+                          title: "Error",
+                          description: "Network error occurred",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
+                    Test Direct API
+                  </Button>
+                )}
                 <Button 
                   type="button" 
                   variant="outline" 
