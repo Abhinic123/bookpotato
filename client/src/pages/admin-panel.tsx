@@ -246,6 +246,45 @@ export default function AdminPanel() {
     },
   });
 
+  // Society review mutation
+  const reviewSocietyMutation = useMutation({
+    mutationFn: async ({ requestId, approved, reason }: { requestId: number; approved: boolean; reason?: string }) => {
+      const response = await fetch("/api/admin/society-requests/review", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ requestId, approved, reason }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to review society request");
+      }
+      
+      return response.json();
+    },
+    onSuccess: (data, { approved }) => {
+      toast({
+        title: approved ? "Society Approved" : "Society Rejected",
+        description: approved ? "Society request has been approved successfully" : "Society request has been rejected",
+      });
+      // Refresh the society requests list
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/society-requests"] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to process society request. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle society approval
+  const handleApproveReject = async (requestId: number, approved: boolean) => {
+    await reviewSocietyMutation.mutateAsync({ requestId, approved });
+  };
+
   // Mutation to update Brocks settings
   const updateBrocksMutation = useMutation({
     mutationFn: async (data: BrocksForm) => {
@@ -786,11 +825,23 @@ export default function AdminPanel() {
                           <p className="text-xs text-gray-500 mt-1">{request.description}</p>
                         </div>
                         <div className="flex space-x-2">
-                          <Button size="sm" variant="outline">
-                            Approve
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-green-600 border-green-600 hover:bg-green-50"
+                            disabled={reviewSocietyMutation.isPending}
+                            onClick={() => handleApproveReject(request.id, true)}
+                          >
+                            {reviewSocietyMutation.isPending ? "Processing..." : "Approve"}
                           </Button>
-                          <Button size="sm" variant="outline">
-                            Reject
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                            disabled={reviewSocietyMutation.isPending}
+                            onClick={() => handleApproveReject(request.id, false)}
+                          >
+                            {reviewSocietyMutation.isPending ? "Processing..." : "Reject"}
                           </Button>
                         </div>
                       </div>
