@@ -2915,6 +2915,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Serve marketing website
+  app.get('/marketing', (req, res) => {
+    const path = require('path');
+    res.sendFile(path.join(__dirname, '..', 'marketing-website.html'));
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
