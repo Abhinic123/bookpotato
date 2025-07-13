@@ -110,7 +110,6 @@ export default function BookDetailsModal({
               <Button 
                 onClick={() => {
                   onBorrow(book);
-                  onOpenChange(false);
                 }}
                 className="flex-1"
               >
