@@ -1434,11 +1434,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get Brocks conversion rates for offers
   app.get("/api/admin/brocks-conversion-rates", requireAuth, async (req, res) => {
     try {
-      const creditsToRupeesRate = await storage.getRewardSetting('credits_to_rupees_rate');
+      // Use the new admin panel settings for accurate conversion
+      const rupeesPerCreditSetting = await storage.getRewardSetting('rupees_per_credit_conversion');
       const creditsToCommissionFreeRate = await storage.getRewardSetting('credits_to_commission_free_rate');
 
+      // Convert rupees per credit to credits per rupee for consistency
+      const rupeesPerCredit = parseFloat(rupeesPerCreditSetting?.settingValue || '0.1'); // 0.1 means 10 Brocks = 1 Rupee
+      const creditsToRupeesRate = (1 / rupeesPerCredit).toString(); // Convert to Brocks per Rupee
+
       res.json({
-        creditsToRupeesRate: creditsToRupeesRate?.settingValue || '20',
+        creditsToRupeesRate: creditsToRupeesRate,
         creditsToCommissionFreeRate: creditsToCommissionFreeRate?.settingValue || '20'
       });
     } catch (error) {
@@ -1888,9 +1893,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle Brocks payment method
       if (paymentMethod === 'brocks') {
-        // Get Brocks conversion rates from admin settings
-        const conversionRates = await storage.getBrocksConversionRates();
-        const creditsToRupeesRate = parseFloat(conversionRates.creditsToRupeesRate || '10'); // Default 10 Brocks = 1 Rupee
+        // Get Brocks conversion rates from admin settings - use new format
+        const rupeesPerCreditSetting = await storage.getRewardSetting('rupees_per_credit_conversion');
+        const rupeesPerCredit = parseFloat(rupeesPerCreditSetting?.settingValue || '0.1'); // 0.1 means 10 Brocks = 1 Rupee
+        const creditsToRupeesRate = 1 / rupeesPerCredit; // Convert to Brocks per Rupee (should be 10)
         
         // Check if user has sufficient Brocks balance
         const userCredits = await storage.getUserCredits(req.session.userId!);
