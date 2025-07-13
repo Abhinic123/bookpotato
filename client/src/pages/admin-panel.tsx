@@ -31,7 +31,7 @@ const brocksSchema = z.object({
   credits_for_commission_free_days: z.number().min(1, "Credits for commission free days must be at least 1"),
   commission_free_days_per_conversion: z.number().min(1, "Commission free days per conversion must be at least 1"),
   credits_for_rupees_conversion: z.number().min(1, "Credits for rupees conversion must be at least 1"),
-  rupees_per_credit_conversion: z.number().min(0, "Rupees per credit conversion must be non-negative"),
+  brocks_per_rupee: z.number().min(1, "Brocks per rupee must be at least 1"),
   
   // Legacy settings (keeping for compatibility)
   opening_credits: z.number().min(0),
@@ -123,7 +123,7 @@ export default function AdminPanel() {
       credits_for_commission_free_days: 20,
       commission_free_days_per_conversion: 7,
       credits_for_rupees_conversion: 20,
-      rupees_per_credit_conversion: 1,
+      brocks_per_rupee: 10, // 1 Rupee = 10 Brocks
       
       // Legacy settings
       opening_credits: 100,
@@ -170,7 +170,7 @@ export default function AdminPanel() {
         credits_for_commission_free_days: parseInt(settingsMap['credits_for_commission_free_days'] || '20'),
         commission_free_days_per_conversion: parseInt(settingsMap['commission_free_days_per_conversion'] || '7'),
         credits_for_rupees_conversion: parseInt(settingsMap['credits_for_rupees_conversion'] || '20'),
-        rupees_per_credit_conversion: parseFloat(settingsMap['rupees_per_credit_conversion'] || '1'),
+        brocks_per_rupee: Math.round(1 / parseFloat(settingsMap['rupees_per_credit_conversion'] || '0.1')), // Convert from rupees per credit to brocks per rupee
         
         // Legacy settings
         opening_credits: parseInt(settingsMap['starting_credits'] || '100'),
@@ -378,7 +378,13 @@ export default function AdminPanel() {
   };
 
   const onSubmitBrocks = (data: BrocksForm) => {
-    updateBrocksMutation.mutate(data);
+    // Convert brocks_per_rupee back to rupees_per_credit_conversion for database storage
+    const { brocks_per_rupee, ...rest } = data;
+    const convertedData = {
+      ...rest,
+      rupees_per_credit_conversion: 1 / brocks_per_rupee, // Convert back to database format
+    };
+    updateBrocksMutation.mutate(convertedData);
   };
 
   if (settingsLoading || statsLoading) {
@@ -691,17 +697,16 @@ export default function AdminPanel() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="rupees_per_credit_conversion">Rupees per Credit Conversion</Label>
+                      <Label htmlFor="brocks_per_rupee">1 Rupee equals how many Brocks</Label>
                       <Input
-                        id="rupees_per_credit_conversion"
+                        id="brocks_per_rupee"
                         type="number"
-                        step="0.01"
-                        min="0"
-                        {...brocksForm.register("rupees_per_credit_conversion", { valueAsNumber: true })}
+                        min="1"
+                        {...brocksForm.register("brocks_per_rupee", { valueAsNumber: true })}
                       />
-                      <p className="text-xs text-gray-600">How many rupees user gets per credit</p>
-                      {brocksForm.formState.errors.rupees_per_credit_conversion && (
-                        <p className="text-xs text-red-500">{brocksForm.formState.errors.rupees_per_credit_conversion.message}</p>
+                      <p className="text-xs text-gray-600">Exchange rate: 1 Rupee = X Brocks (e.g., 10 means 1 Rupee = 10 Brocks)</p>
+                      {brocksForm.formState.errors.brocks_per_rupee && (
+                        <p className="text-xs text-red-500">{brocksForm.formState.errors.brocks_per_rupee.message}</p>
                       )}
                     </div>
                   </div>
