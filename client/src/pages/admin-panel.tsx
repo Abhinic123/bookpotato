@@ -963,6 +963,7 @@ function BrocksPackagesManager() {
   const [showAddForm, setShowAddForm] = useState(false);
 
   const packageForm = useForm({
+    mode: "onChange",
     defaultValues: {
       name: "",
       brocks: 0,
@@ -1006,6 +1007,7 @@ function BrocksPackagesManager() {
         description: "Brocks package updated successfully",
       });
       refetch();
+      setShowAddForm(false);
       setEditingPackage(null);
       packageForm.reset();
     },
@@ -1049,6 +1051,29 @@ function BrocksPackagesManager() {
     } else {
       console.log('Creating new package');
       createPackageMutation.mutate(data);
+    }
+  };
+
+  const handleDirectSubmit = () => {
+    const formData = packageForm.getValues();
+    console.log('Direct submit with data:', formData);
+    
+    // Validate required fields manually
+    if (!formData.name || !formData.brocks || !formData.price) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (editingPackage) {
+      console.log('Direct update for package:', editingPackage.id);
+      updatePackageMutation.mutate({ id: editingPackage.id, data: formData });
+    } else {
+      console.log('Direct create new package');
+      createPackageMutation.mutate(formData);
     }
   };
 
@@ -1162,14 +1187,9 @@ function BrocksPackagesManager() {
 
               <div className="flex space-x-2">
                 <Button 
-                  type="submit" 
+                  type="button" 
                   disabled={createPackageMutation.isPending || updatePackageMutation.isPending}
-                  onClick={() => {
-                    console.log('Button clicked!');
-                    console.log('Form valid:', packageForm.formState.isValid);
-                    console.log('Form errors:', packageForm.formState.errors);
-                    console.log('Form values:', packageForm.getValues());
-                  }}
+                  onClick={handleDirectSubmit}
                 >
                   {createPackageMutation.isPending || updatePackageMutation.isPending ? (
                     <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
