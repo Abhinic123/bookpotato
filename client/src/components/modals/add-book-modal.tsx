@@ -58,7 +58,7 @@ const conditions = [
 const bookSchema = z.object({
   title: z.string().min(1, "Title is required"),
   author: z.string().min(1, "Author is required"),
-  isbn: z.string().optional(),
+  isbn: z.string().min(1, "ISBN is required"),
   genre: z.string().min(1, "Genre is required"),
   description: z.string().optional(),
   condition: z.string().min(1, "Condition is required"),
@@ -256,13 +256,27 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
                 className="mb-4"
               >
                 <Camera className="h-4 w-4 mr-2" />
-                Scan Barcode
+                Scan Barcode (experimental beta stage)
               </Button>
               <p className="text-sm text-text-secondary">or fill manually</p>
             </div>
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="isbn"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ISBN</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter ISBN (e.g., 9780123456789)" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="societyId"
@@ -389,19 +403,7 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="isbn"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ISBN (Optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter ISBN" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
 
                 <FormField
                   control={form.control}
