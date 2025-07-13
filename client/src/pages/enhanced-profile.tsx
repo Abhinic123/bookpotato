@@ -47,6 +47,7 @@ export default function EnhancedProfile() {
 
   const { data: user } = useQuery({
     queryKey: ["/api/auth/me"],
+    staleTime: 0, // Force fresh data
   });
 
   const { data: userStats } = useQuery({
@@ -78,11 +79,13 @@ export default function EnhancedProfile() {
   // Update form values when user data loads
   useEffect(() => {
     if (user) {
+      console.log('Profile page user data:', user);
+      const userData = (user as any)?.user || user;
       profileForm.reset({
-        name: (user as any)?.name || "",
-        email: (user as any)?.email || "",
-        phone: (user as any)?.phone || "",
-        address: (user as any)?.address || "",
+        name: userData?.name || "",
+        email: userData?.email || "",
+        phone: userData?.phone || "",
+        address: userData?.address || "",
       });
     }
   }, [user, profileForm]);
@@ -263,20 +266,20 @@ export default function EnhancedProfile() {
             </div>
             
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold">{(user as any)?.name}</h2>
+              <h2 className="text-2xl font-bold">{(user as any)?.user?.name || (user as any)?.name}</h2>
               <p className="text-gray-600 flex items-center">
                 <Mail className="w-4 h-4 mr-2" />
-                {(user as any)?.email}
+                {(user as any)?.user?.email || (user as any)?.email}
               </p>
               <p className="text-gray-600 flex items-center">
                 <Phone className="w-4 h-4 mr-2" />
-                {(user as any)?.phone}
+                {(user as any)?.user?.phone || (user as any)?.phone}
               </p>
               <p className="text-gray-600 flex items-center">
                 <span className="w-4 h-4 mr-2 text-center font-bold">#</span>
-                User Number: {(user as any)?.userNumber || 'Not assigned'}
+                User Number: {(user as any)?.user?.userNumber || (user as any)?.userNumber || 'Not assigned'}
               </p>
-              {(user as any)?.isAdmin && (
+              {((user as any)?.user?.isAdmin || (user as any)?.isAdmin) && (
                 <div className="flex items-center space-x-2">
                   <Crown className="w-4 h-4 text-yellow-600" />
                   <span className="text-sm font-medium text-yellow-600">Administrator</span>
@@ -391,7 +394,7 @@ export default function EnhancedProfile() {
                     <Label htmlFor="userNumber">User Number</Label>
                     <Input
                       id="userNumber"
-                      value={(user as any)?.userNumber || "Not assigned"}
+                      value={(user as any)?.user?.userNumber || (user as any)?.userNumber || "Not assigned"}
                       disabled
                       className="mt-1 bg-gray-50"
                     />
