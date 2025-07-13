@@ -238,6 +238,19 @@ export const rewardSettings = pgTable("reward_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Brocks packages (admin configurable)
+export const brocksPackages = pgTable("brocks_packages", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  brocks: integer("brocks").notNull(),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  bonus: integer("bonus").default(0).notNull(),
+  popular: boolean("popular").default(false).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -271,6 +284,12 @@ export const insertBookRentalSchema = createInsertSchema(bookRentals).omit({
   actualReturnDate: true,
   paymentId: true,
   createdAt: true,
+});
+
+export const insertBrocksPackageSchema = createInsertSchema(brocksPackages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 export const insertSocietyMemberSchema = createInsertSchema(societyMembers).omit({
@@ -370,6 +389,8 @@ export type CommissionFreePeriod = typeof commissionFreePeriods.$inferSelect;
 export type InsertCommissionFreePeriod = z.infer<typeof insertCommissionFreePeriodSchema>;
 
 export type RewardSetting = typeof rewardSettings.$inferSelect;
+export type BrocksPackage = typeof brocksPackages.$inferSelect;
+export type InsertBrocksPackage = z.infer<typeof insertBrocksPackageSchema>;
 export type InsertRewardSetting = z.infer<typeof insertRewardSettingSchema>;
 
 // Extended types for API responses

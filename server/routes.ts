@@ -668,7 +668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // Get all books from user's societies
+  // Get all books from user's societies (sorted by newest first)
   app.get("/api/books/all", requireAuth, async (req, res) => {
     try {
       // Get all societies the user is a member of
@@ -2916,6 +2916,113 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
+
+  // Brocks Packages API
+  app.get("/api/brocks-packages", requireAuth, async (req, res) => {
+    try {
+      const packages = await storage.getAllBrocksPackages();
+      res.json(packages);
+    } catch (error) {
+      console.error("Get Brocks packages error:", error);
+      res.status(500).json({ message: "Failed to fetch packages" });
+    }
+  });
+
+  app.get("/api/admin/brocks-packages", requireAuth, async (req, res) => {
+    const user = await storage.getUser(req.session.userId!);
+    if (!user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    try {
+      const packages = await storage.getAllBrocksPackages();
+      res.json(packages);
+    } catch (error) {
+      console.error("Get admin Brocks packages error:", error);
+      res.status(500).json({ message: "Failed to fetch packages" });
+    }
+  });
+
+  app.post("/api/admin/brocks-packages", requireAuth, async (req, res) => {
+    const user = await storage.getUser(req.session.userId!);
+    if (!user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    try {
+      const { name, brocks, price, bonus, popular } = req.body;
+      
+      if (!name || !brocks || !price) {
+        return res.status(400).json({ message: "Name, brocks and price are required" });
+      }
+
+      const packageData = {
+        name,
+        brocks: parseInt(brocks),
+        price: parseFloat(price).toString(),
+        bonus: parseInt(bonus) || 0,
+        popular: popular || false,
+        isActive: true
+      };
+
+      const newPackage = await storage.createBrocksPackage(packageData);
+      if (!newPackage) {
+        return res.status(500).json({ message: "Failed to create package" });
+      }
+
+      res.status(201).json(newPackage);
+    } catch (error) {
+      console.error("Create Brocks package error:", error);
+      res.status(500).json({ message: "Failed to create package" });
+    }
+  });
+
+  app.put("/api/admin/brocks-packages/:id", requireAuth, async (req, res) => {
+    const user = await storage.getUser(req.session.userId!);
+    if (!user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    try {
+      const packageId = parseInt(req.params.id);
+      const { name, brocks, price, bonus, popular } = req.body;
+
+      const packageData = {
+        name,
+        brocks: parseInt(brocks),
+        price: parseFloat(price).toString(),
+        bonus: parseInt(bonus) || 0,
+        popular: popular || false
+      };
+
+      const updatedPackage = await storage.updateBrocksPackage(packageId, packageData);
+      if (!updatedPackage) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+
+      res.json(updatedPackage);
+    } catch (error) {
+      console.error("Update Brocks package error:", error);
+      res.status(500).json({ message: "Failed to update package" });
+    }
+  });
+
+  app.delete("/api/admin/brocks-packages/:id", requireAuth, async (req, res) => {
+    const user = await storage.getUser(req.session.userId!);
+    if (!user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    try {
+      const packageId = parseInt(req.params.id);
+      const success = await storage.deleteBrocksPackage(packageId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Package not found" });
+      }
+
+      res.json({ message: "Package deleted successfully" });
+    } catch (error) {
+      console.error("Delete Brocks package error:", error);
+      res.status(500).json({ message: "Failed to delete package" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

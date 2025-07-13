@@ -35,44 +35,15 @@ const buyBrocksSchema = z.object({
 
 type BuyBrocksFormData = z.infer<typeof buyBrocksSchema>;
 
-// Predefined Brocks packages
-const brocksPackages = [
-  {
-    id: "starter",
-    name: "Starter Pack",
-    brocks: 50,
-    price: 99,
-    bonus: 0,
-    popular: false,
-  },
-  {
-    id: "value",
-    name: "Value Pack",
-    brocks: 100,
-    price: 179,
-    bonus: 10,
-    popular: true,
-  },
-  {
-    id: "premium",
-    name: "Premium Pack",
-    brocks: 250,
-    price: 399,
-    bonus: 50,
-    popular: false,
-  },
-  {
-    id: "mega",
-    name: "Mega Pack",
-    brocks: 500,
-    price: 749,
-    bonus: 150,
-    popular: false,
-  },
-];
+// Dynamic Brocks packages from API - we'll fetch these
 
 export default function BuyBrocks() {
   const { toast } = useToast();
+  
+  // Fetch dynamic packages from API
+  const { data: brocksPackages, isLoading: packagesLoading } = useQuery({
+    queryKey: ["/api/brocks-packages"],
+  });
   const queryClient = useQueryClient();
   const [selectedPackage, setSelectedPackage] = useState<string>("");
 
@@ -124,7 +95,7 @@ export default function BuyBrocks() {
     purchaseMutation.mutate(data);
   };
 
-  const selectedPkg = brocksPackages.find(pkg => pkg.id === selectedPackage);
+  const selectedPkg = (brocksPackages as any[])?.find(pkg => pkg.id === selectedPackage);
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl">
@@ -167,8 +138,13 @@ export default function BuyBrocks() {
         {/* Package Selection */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold text-text-primary">Choose Your Package</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {brocksPackages.map((pkg) => (
+          {packagesLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {(brocksPackages as any[])?.map((pkg) => (
               <Card
                 key={pkg.id}
                 className={`relative cursor-pointer transition-all ${
@@ -201,10 +177,10 @@ export default function BuyBrocks() {
                     </div>
                   </div>
                   <div className="text-2xl font-bold text-text-primary">
-                    {formatCurrency(pkg.price)}
+                    ₹{parseFloat(pkg.price)}
                   </div>
                   <div className="text-sm text-text-secondary">
-                    ≈ {formatCurrency(pkg.price / (pkg.brocks + pkg.bonus))} per Brock
+                    ≈ ₹{(parseFloat(pkg.price) / (pkg.brocks + pkg.bonus)).toFixed(2)} per Brock
                   </div>
                   {selectedPackage === pkg.id && (
                     <div className="flex justify-center">
@@ -213,8 +189,9 @@ export default function BuyBrocks() {
                   )}
                 </CardContent>
               </Card>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Payment Form */}

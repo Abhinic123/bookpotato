@@ -1,6 +1,6 @@
 import { 
   users, societies, books, bookRentals, societyMembers, notifications, societyRequests, referralRewards, rentalExtensions, extensionRequests,
-  userCredits, creditTransactions, referrals, userBadges, commissionFreePeriods, rewardSettings,
+  userCredits, creditTransactions, referrals, userBadges, commissionFreePeriods, rewardSettings, brocksPackages,
   type User, type InsertUser, type Society, type InsertSociety, 
   type Book, type InsertBook, type BookRental, type InsertBookRental,
   type SocietyMember, type InsertSocietyMember, type Notification, type InsertNotification,
@@ -8,7 +8,7 @@ import {
   type ExtensionRequest, type InsertExtensionRequest, type UserCredits, type InsertUserCredits,
   type CreditTransaction, type InsertCreditTransaction, type Referral, type InsertReferral,
   type UserBadge, type InsertUserBadge, type CommissionFreePeriod, type InsertCommissionFreePeriod,
-  type RewardSetting, type InsertRewardSetting
+  type RewardSetting, type InsertRewardSetting, type BrocksPackage, type InsertBrocksPackage
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, not, ne, inArray, ilike, desc, count, sum, sql } from "drizzle-orm";
@@ -124,6 +124,13 @@ export interface IStorage {
   
   // Referral methods
   getUserByReferralCode(referralCode: string): Promise<User | undefined>;
+  
+  // Brocks Packages Management
+  getAllBrocksPackages(): Promise<BrocksPackage[]>;
+  createBrocksPackage(packageData: InsertBrocksPackage): Promise<BrocksPackage | null>;
+  updateBrocksPackage(id: number, packageData: Partial<InsertBrocksPackage>): Promise<BrocksPackage | null>;
+  deleteBrocksPackage(id: number): Promise<boolean>;
+  setPackagePopular(id: number, popular: boolean): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1690,6 +1697,71 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error finding user by referral code:', error);
       return undefined;
+    }
+  }
+
+  // Brocks Packages Management
+  async getAllBrocksPackages(): Promise<BrocksPackage[]> {
+    try {
+      const packages = await db.select().from(brocksPackages).where(eq(brocksPackages.isActive, true)).orderBy(brocksPackages.price);
+      console.log(`📦 Fetched ${packages.length} active Brocks packages`);
+      return packages;
+    } catch (error) {
+      console.error('Error fetching Brocks packages:', error);
+      return [];
+    }
+  }
+
+  async createBrocksPackage(packageData: InsertBrocksPackage): Promise<BrocksPackage | null> {
+    try {
+      const [newPackage] = await db.insert(brocksPackages).values(packageData).returning();
+      console.log('✅ Created new Brocks package:', newPackage);
+      return newPackage;
+    } catch (error) {
+      console.error('Error creating Brocks package:', error);
+      return null;
+    }
+  }
+
+  async updateBrocksPackage(id: number, packageData: Partial<InsertBrocksPackage>): Promise<BrocksPackage | null> {
+    try {
+      const [updatedPackage] = await db
+        .update(brocksPackages)
+        .set({ ...packageData, updatedAt: new Date() })
+        .where(eq(brocksPackages.id, id))
+        .returning();
+      console.log('✅ Updated Brocks package:', updatedPackage);
+      return updatedPackage;
+    } catch (error) {
+      console.error('Error updating Brocks package:', error);
+      return null;
+    }
+  }
+
+  async deleteBrocksPackage(id: number): Promise<boolean> {
+    try {
+      await db.update(brocksPackages).set({ isActive: false }).where(eq(brocksPackages.id, id));
+      console.log('✅ Deactivated Brocks package:', id);
+      return true;
+    } catch (error) {
+      console.error('Error deactivating Brocks package:', error);
+      return false;
+    }
+  }
+
+  async setPackagePopular(id: number, popular: boolean): Promise<boolean> {
+    try {
+      // First, unset all packages as not popular if setting this one as popular
+      if (popular) {
+        await db.update(brocksPackages).set({ popular: false });
+      }
+      
+      await db.update(brocksPackages).set({ popular }).where(eq(brocksPackages.id, id));
+      console.log(`✅ Set package ${id} popular status to:`, popular);
+      return true;
+    } catch (error) {
+      console.error('Error setting package popular status:', error);
+      return false;
     }
   }
 

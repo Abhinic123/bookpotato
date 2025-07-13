@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Building2, ChevronRight, Clock, Coins, Gift } from "lucide-react";
+import { Building2, ChevronRight, Clock, Coins, Gift, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -120,38 +120,51 @@ export default function Home() {
       </div>
 
       {/* Quick Stats */}
-      <div className="p-4 grid grid-cols-2 gap-4">
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/browse')}>
-          <CardContent className="pt-6 text-center">
-            <div className="text-2xl font-bold text-primary">
-              {Array.isArray(recentBooks) ? recentBooks.filter((book: any) => book.isAvailable).length : 0}
-            </div>
-            <div className="text-sm text-text-secondary">Available Books</div>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/earnings')}>
-          <CardContent className="pt-6 text-center">
-            <div className="flex items-center justify-center space-x-1 mb-1">
-              <Coins className="h-5 w-5 text-amber-600" />
-              <div className="text-2xl font-bold text-amber-600">
-                {userCredits?.credits?.balance || userCredits?.balance || 0}
+      <div className="p-4 space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/browse')}>
+            <CardContent className="pt-6 text-center">
+              <div className="text-2xl font-bold text-primary">
+                {Array.isArray(recentBooks) ? recentBooks.filter((book: any) => book.isAvailable).length : 0}
               </div>
-            </div>
-            <div className="text-sm text-text-secondary">Brocks Credits</div>
-            {(userBadges as any[])?.length > 0 && (
-              <div className="mt-2 flex justify-center space-x-1">
-                {(userBadges as any[]).slice(0, 3).map((badge: any, index: number) => (
-                  <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
-                    {badge.badgeType}
-                  </Badge>
-                ))}
-                {(userBadges as any[]).length > 3 && (
-                  <Badge variant="outline" className="text-xs px-2 py-1">
-                    +{(userBadges as any[]).length - 3}
-                  </Badge>
-                )}
+              <div className="text-sm text-text-secondary">Available Books</div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/earnings')}>
+            <CardContent className="pt-6 text-center">
+              <div className="flex items-center justify-center space-x-1 mb-1">
+                <Coins className="h-5 w-5 text-amber-600" />
+                <div className="text-2xl font-bold text-amber-600">
+                  {userCredits?.credits?.balance || userCredits?.balance || 0}
+                </div>
               </div>
-            )}
+              <div className="text-sm text-text-secondary">Brocks Credits</div>
+              {(userBadges as any[])?.length > 0 && (
+                <div className="mt-2 flex justify-center space-x-1">
+                  {(userBadges as any[]).slice(0, 3).map((badge: any, index: number) => (
+                    <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
+                      {badge.badgeType}
+                    </Badge>
+                  ))}
+                  {(userBadges as any[]).length > 3 && (
+                    <Badge variant="outline" className="text-xs px-2 py-1">
+                      +{(userBadges as any[]).length - 3}
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Rewards Centre Button */}
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200" onClick={() => navigate('/buy-brocks')}>
+          <CardContent className="pt-6 text-center">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <Award className="h-6 w-6 text-amber-600" />
+              <div className="text-lg font-semibold text-amber-700">Rewards Centre</div>
+            </div>
+            <div className="text-sm text-amber-600">Buy Brocks, Convert Credits & More</div>
           </CardContent>
         </Card>
       </div>
@@ -236,9 +249,9 @@ export default function Home() {
           </Button>
         </div>
 
-        {recentBooksLimited?.length > 0 ? (
+        {Array.isArray(recentBooks) && recentBooks.length > 0 ? (
           <div className="space-y-3">
-            {recentBooksLimited.map((book: any) => (
+            {recentBooks.slice(0, 3).map((book: any) => (
               <Card key={book.id} className="p-3">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded flex items-center justify-center">

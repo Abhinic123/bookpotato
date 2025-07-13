@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Users, BookOpen, TrendingUp, Home, Gift, Award, Plus, Trash2 } from "lucide-react";
+import { Settings, Users, BookOpen, TrendingUp, Home, Gift, Award, Plus, Trash2, Edit } from "lucide-react";
 
 const settingsSchema = z.object({
   commissionRate: z.number().min(0).max(100),
@@ -474,6 +474,7 @@ export default function AdminPanel() {
         <TabsList>
           <TabsTrigger value="settings">Platform Settings</TabsTrigger>
           <TabsTrigger value="brocks">Brocks Rewards</TabsTrigger>
+          <TabsTrigger value="brocks-packages">Brocks Packages</TabsTrigger>
           <TabsTrigger value="societies">Society Requests</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
@@ -943,7 +944,291 @@ export default function AdminPanel() {
             </Card>
           </div>
         </TabsContent>
+
+        <TabsContent value="brocks-packages">
+          <BrocksPackagesManager />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// Brocks Packages Manager Component
+function BrocksPackagesManager() {
+  const { data: packages, isLoading, refetch } = useQuery({
+    queryKey: ["/api/admin/brocks-packages"],
+  });
+
+  const [editingPackage, setEditingPackage] = useState<any>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  const packageForm = useForm({
+    defaultValues: {
+      name: "",
+      brocks: 0,
+      price: 0,
+      bonus: 0,
+      popular: false,
+    },
+  });
+
+  const createPackageMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/admin/brocks-packages", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Brocks package created successfully",
+      });
+      refetch();
+      setShowAddForm(false);
+      packageForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create package",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updatePackageMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      const response = await apiRequest("PUT", `/api/admin/brocks-packages/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Brocks package updated successfully",
+      });
+      refetch();
+      setEditingPackage(null);
+      packageForm.reset();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update package",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deletePackageMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest("DELETE", `/api/admin/brocks-packages/${id}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Brocks package deleted successfully",
+      });
+      refetch();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete package",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmitPackage = (data: any) => {
+    if (editingPackage) {
+      updatePackageMutation.mutate({ id: editingPackage.id, data });
+    } else {
+      createPackageMutation.mutate(data);
+    }
+  };
+
+  const startEditing = (pkg: any) => {
+    setEditingPackage(pkg);
+    packageForm.reset({
+      name: pkg.name,
+      brocks: pkg.brocks,
+      price: parseFloat(pkg.price),
+      bonus: pkg.bonus,
+      popular: pkg.popular,
+    });
+    setShowAddForm(true);
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex justify-center">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Brocks Packages Management</h3>
+        <Button 
+          onClick={() => {
+            setShowAddForm(true);
+            setEditingPackage(null);
+            packageForm.reset();
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Package
+        </Button>
+      </div>
+
+      {/* Add/Edit Form */}
+      {showAddForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{editingPackage ? "Edit Package" : "Add New Package"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={packageForm.handleSubmit(onSubmitPackage)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Package Name</Label>
+                  <Input
+                    id="name"
+                    {...packageForm.register("name", { required: "Name is required" })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="brocks">Brocks Amount</Label>
+                  <Input
+                    id="brocks"
+                    type="number"
+                    min="1"
+                    {...packageForm.register("brocks", { 
+                      required: "Brocks amount is required",
+                      valueAsNumber: true 
+                    })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price (₹)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    {...packageForm.register("price", { 
+                      required: "Price is required",
+                      valueAsNumber: true 
+                    })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="bonus">Bonus Brocks</Label>
+                  <Input
+                    id="bonus"
+                    type="number"
+                    min="0"
+                    {...packageForm.register("bonus", { valueAsNumber: true })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="popular"
+                  {...packageForm.register("popular")}
+                  className="rounded"
+                />
+                <Label htmlFor="popular">Mark as Popular</Label>
+              </div>
+
+              <div className="flex space-x-2">
+                <Button 
+                  type="submit" 
+                  disabled={createPackageMutation.isPending || updatePackageMutation.isPending}
+                >
+                  {createPackageMutation.isPending || updatePackageMutation.isPending ? (
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                  ) : null}
+                  {editingPackage ? "Update Package" : "Create Package"}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setEditingPackage(null);
+                    packageForm.reset();
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Packages List */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {(packages as any[])?.map((pkg: any) => (
+          <Card key={pkg.id} className={`relative ${pkg.popular ? "border-amber-400" : ""}`}>
+            {pkg.popular && (
+              <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-amber-500">
+                Most Popular
+              </Badge>
+            )}
+            <CardContent className="p-4">
+              <div className="text-center space-y-3">
+                <h4 className="font-semibold text-lg">{pkg.name}</h4>
+                <div>
+                  <div className="text-2xl font-bold text-amber-600">
+                    {pkg.brocks + pkg.bonus}
+                  </div>
+                  <div className="text-sm text-text-secondary">
+                    {pkg.brocks} + {pkg.bonus} bonus
+                  </div>
+                </div>
+                <div className="text-xl font-bold">₹{parseFloat(pkg.price)}</div>
+                <div className="text-sm text-text-secondary">
+                  ≈ ₹{(parseFloat(pkg.price) / (pkg.brocks + pkg.bonus)).toFixed(2)} per Brock
+                </div>
+                <div className="flex space-x-2 pt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => startEditing(pkg)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => {
+                      if (confirm("Are you sure you want to delete this package?")) {
+                        deletePackageMutation.mutate(pkg.id);
+                      }
+                    }}
+                    disabled={deletePackageMutation.isPending}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
