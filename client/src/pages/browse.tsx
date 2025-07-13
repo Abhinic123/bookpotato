@@ -101,20 +101,21 @@ export default function Browse() {
       {/* Books Grid */}
       <div className="p-4">
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-3">
-                  <div className="w-full h-32 bg-gray-200 rounded-lg mb-3"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Card key={i} className="animate-pulse h-80">
+                <CardContent className="p-4">
+                  <div className="w-full h-40 bg-gray-200 rounded-lg mb-4"></div>
                   <div className="h-4 bg-gray-200 rounded mb-2"></div>
                   <div className="h-3 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded mb-4"></div>
                   <div className="h-8 bg-gray-200 rounded"></div>
                 </CardContent>
               </Card>
             ))}
           </div>
         ) : books && (books as any[]).length > 0 ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {(books as any[]).map((book: BookWithOwner) => (
               <BookCard
                 key={book.id}
