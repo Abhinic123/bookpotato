@@ -550,6 +550,32 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
                   )}
                 />
 
+                {/* Cover Image Preview */}
+                {(form.watch("coverImageUrl") || form.watch("imageUrl")) && (
+                  <div className="space-y-2">
+                    <FormLabel>Book Cover Preview</FormLabel>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-16 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                        <img 
+                          src={form.watch("coverImageUrl") || form.watch("imageUrl")} 
+                          alt="Book cover preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = 'none';
+                            (e.target as HTMLElement).nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                        <div className="hidden w-full h-full flex items-center justify-center text-xs text-gray-500">
+                          No image
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Cover image will be displayed in book listings
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <Button 
                   type="submit" 
                   className="w-full"
