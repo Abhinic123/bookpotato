@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import BookCard from "@/components/book-card";
 import BorrowBookModal from "@/components/modals/borrow-book-modal";
+import BookDetailsModal from "@/components/modals/book-details-modal";
 import { formatCurrency, formatDateRelative } from "@/lib/utils";
 import type { BookWithOwner, RentalWithDetails } from "@shared/schema";
 
@@ -14,6 +15,7 @@ export default function Home() {
   const [location, navigate] = useLocation();
   const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
   const [showBorrowModal, setShowBorrowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const { data: societies } = useQuery({
     queryKey: ["/api/societies/my"],
@@ -70,6 +72,11 @@ export default function Home() {
   const handleBorrowBook = (book: BookWithOwner) => {
     setSelectedBook(book);
     setShowBorrowModal(true);
+  };
+
+  const handleViewBookDetails = (book: BookWithOwner) => {
+    setSelectedBook(book);
+    setShowDetailsModal(true);
   };
 
   if (!currentSociety) {
@@ -252,16 +259,33 @@ export default function Home() {
         {Array.isArray(recentBooks) && recentBooks.length > 0 ? (
           <div className="space-y-3">
             {recentBooks.slice(0, 3).map((book: any) => (
-              <Card key={book.id} className="p-3">
+              <Card 
+                key={book.id} 
+                className="p-3 cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => handleViewBookDetails(book)}
+              >
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded flex items-center justify-center">
-                    <div className="text-2xl">📚</div>
+                    {book.coverImageUrl || book.imageUrl ? (
+                      <img 
+                        src={book.coverImageUrl || book.imageUrl} 
+                        alt={book.title}
+                        className="w-full h-full object-cover rounded"
+                      />
+                    ) : (
+                      <div className="text-2xl">📚</div>
+                    )}
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-sm">{book.title}</h4>
                     <p className="text-xs text-text-secondary">by {book.author}</p>
                     <p className="text-xs text-text-secondary">Owner: {book.owner?.name}</p>
                     <span className="text-xs font-semibold text-primary">₹{book.dailyFee}/day</span>
+                    {book.isAvailable ? (
+                      <Badge variant="default" className="text-xs ml-2">Available</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-xs ml-2">Borrowed</Badge>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -357,6 +381,19 @@ export default function Home() {
         book={selectedBook}
         open={showBorrowModal}
         onOpenChange={setShowBorrowModal}
+      />
+
+      <BookDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedBook(null);
+        }}
+        book={selectedBook}
+        user={{ id: 1 }} // TODO: Get actual user data
+        onEdit={() => {
+          // TODO: Handle edit functionality
+        }}
       />
     </div>
   );

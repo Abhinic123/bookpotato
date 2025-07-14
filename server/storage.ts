@@ -132,6 +132,11 @@ export interface IStorage {
   updateBrocksPackage(id: number, packageData: Partial<InsertBrocksPackage>): Promise<BrocksPackage | null>;
   deleteBrocksPackage(id: number): Promise<boolean>;
   setPackagePopular(id: number, popular: boolean): Promise<boolean>;
+  
+  // Page Content Management
+  getPageContent(pageKey: string): Promise<PageContent | undefined>;
+  updatePageContent(pageKey: string, data: Partial<InsertPageContent>): Promise<PageContent>;
+  getAllPageContent(): Promise<PageContent[]>;
 }
 
 export class DatabaseStorage implements IStorage {

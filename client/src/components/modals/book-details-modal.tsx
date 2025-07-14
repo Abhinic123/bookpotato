@@ -79,20 +79,20 @@ export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit, 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Book Details</DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             {/* Book Cover and Title */}
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-start space-x-4">
                   <div className="w-16 h-20 bg-gradient-to-br from-primary/20 to-secondary/20 rounded flex items-center justify-center flex-shrink-0">
-                    {book.imageUrl ? (
+                    {book.imageUrl || book.coverImageUrl ? (
                       <img 
-                        src={book.imageUrl} 
+                        src={book.coverImageUrl || book.imageUrl} 
                         alt={book.title}
                         className="w-full h-full object-cover rounded"
                       />
@@ -144,14 +144,16 @@ export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit, 
 
                 {book.description && (
                   <div className="pt-2">
-                    <p className="text-sm text-text-secondary">{book.description}</p>
+                    <h4 className="text-sm font-medium mb-2">Description:</h4>
+                    <p className="text-sm text-text-secondary leading-relaxed">{book.description}</p>
                   </div>
                 )}
               </CardContent>
             </Card>
+          </div>
 
-            {/* Actions */}
-            <div className="flex flex-col space-y-3">
+          {/* Actions - Fixed at bottom */}
+          <div className="flex flex-col space-y-3 border-t pt-4 mt-4">
               {/* Primary actions row */}
               <div className="flex space-x-3">
                 <Button 
@@ -209,7 +211,6 @@ export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit, 
                   )}
                 </div>
               )}
-            </div>
           </div>
         </DialogContent>
       </Dialog>
