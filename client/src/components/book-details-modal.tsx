@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, getBookStatusColor, getBookStatusText } from "@/lib/utils";
-import { Book, User, Calendar, MapPin, Clock, Star } from "lucide-react";
+import { Book, User, Calendar, MapPin, Clock, Star, Expand, X } from "lucide-react";
 import type { BookWithOwner } from "@shared/schema";
 
 interface BookDetailsModalProps {
@@ -21,10 +22,13 @@ export default function BookDetailsModal({
   onBorrow, 
   onEdit 
 }: BookDetailsModalProps) {
+  const [imageExpanded, setImageExpanded] = useState(false);
+  
   if (!book) return null;
 
   const statusColor = getBookStatusColor(book.isAvailable);
   const statusText = getBookStatusText(book.isAvailable);
+  const coverImage = book.coverImageUrl || book.imageUrl;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -38,10 +42,34 @@ export default function BookDetailsModal({
         
         <div className="space-y-4">
           {/* Book Cover */}
-          <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mb-4">
-            <span className="text-lg font-bold text-blue-800 text-center px-4">
-              {book.title}
-            </span>
+          <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden group cursor-pointer"
+               onClick={() => coverImage && setImageExpanded(true)}>
+            {coverImage ? (
+              <>
+                <img 
+                  src={coverImage} 
+                  alt={book.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                    (e.target as HTMLElement).nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+                <div className="hidden w-full h-full flex flex-col items-center justify-center p-4">
+                  <span className="text-lg font-bold text-blue-800 text-center">
+                    {book.title}
+                  </span>
+                </div>
+                {/* Expand icon overlay */}
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
+                  <Expand className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                </div>
+              </>
+            ) : (
+              <span className="text-lg font-bold text-blue-800 text-center px-4">
+                {book.title}
+              </span>
+            )}
           </div>
           
           {/* Title and Author */}
@@ -142,6 +170,38 @@ export default function BookDetailsModal({
           </div>
         </div>
       </DialogContent>
+      
+      {/* Expanded Image Modal */}
+      {imageExpanded && coverImage && (
+        <Dialog open={imageExpanded} onOpenChange={setImageExpanded}>
+          <DialogContent className="max-w-2xl mx-auto p-2">
+            <DialogHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <DialogTitle className="text-sm">{book.title} - Cover Image</DialogTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setImageExpanded(false)}
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </DialogHeader>
+            <div className="flex items-center justify-center">
+              <img 
+                src={coverImage} 
+                alt={`${book.title} cover`}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                onError={(e) => {
+                  console.error('Expanded image failed to load');
+                  setImageExpanded(false);
+                }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Dialog>
   );
 }
