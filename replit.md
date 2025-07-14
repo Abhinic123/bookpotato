@@ -172,6 +172,9 @@ BookShare is a community-driven digital library platform that enables book shari
 - July 13, 2025: Fixed critical storage.ts file corruption with duplicate class declarations preventing app startup
 - July 13, 2025: Verified Brocks package update functionality working correctly via API testing
 - June 22, 2025: Fixed books data handling in enhanced-browse page to prevent array errors
+- July 14, 2025: Simplified book cover display to always show blue background with book title instead of attempting to load external cover images
+- July 14, 2025: Updated book cards and details modal to use consistent fallback display for better reliability
+- July 14, 2025: Removed image expansion functionality to focus on text-based book display
 ```
 
 ## Changelog

@@ -28,20 +28,8 @@ export default function BookCard({
         <CardContent className="p-0 flex flex-col h-full">
           {/* Book cover image area */}
           <div className="w-full h-48 relative overflow-hidden rounded-t-lg">
-            {book.coverImageUrl || book.imageUrl ? (
-              <img 
-                src={book.coverImageUrl || book.imageUrl} 
-                alt={book.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Fallback to gradient if image fails to load
-                  (e.target as HTMLElement).style.display = 'none';
-                  (e.target as HTMLElement).nextElementSibling?.classList.remove('hidden');
-                }}
-              />
-            ) : null}
-            {/* Fallback gradient background */}
-            <div className={`w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex flex-col items-center justify-center p-4 ${book.coverImageUrl || book.imageUrl ? 'hidden' : ''}`}>
+            {/* Always show the fallback with book title as primary display */}
+            <div className="w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex flex-col items-center justify-center p-4">
               <h3 className="text-lg font-bold text-blue-800 text-center mb-2 line-clamp-3">
                 {book.title}
               </h3>
@@ -87,19 +75,8 @@ export default function BookCard({
         <div className="flex items-start space-x-3">
           {/* Book cover image */}
           <div className="w-12 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
-            {book.coverImageUrl || book.imageUrl ? (
-              <img 
-                src={book.coverImageUrl || book.imageUrl} 
-                alt={book.title}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  // Fallback to text if image fails to load
-                  (e.target as HTMLElement).style.display = 'none';
-                  (e.target as HTMLElement).nextElementSibling?.classList.remove('hidden');
-                }}
-              />
-            ) : null}
-            <span className={`text-xs text-blue-600 font-medium text-center px-1 ${book.coverImageUrl || book.imageUrl ? 'hidden' : ''}`}>
+            {/* Always show book title abbreviation */}
+            <span className="text-xs text-blue-600 font-medium text-center px-1">
               {book.title.substring(0, 3)}
             </span>
           </div>
