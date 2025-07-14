@@ -26,12 +26,26 @@ export default function BookCard({
     return (
       <Card className="book-card h-full flex flex-col cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105">
         <CardContent className="p-0 flex flex-col h-full">
-          {/* Main book display area */}
-          <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-t-lg flex flex-col items-center justify-center p-4 relative">
-            {/* Book title */}
-            <h3 className="text-lg font-bold text-blue-800 text-center mb-2 line-clamp-3">
-              {book.title}
-            </h3>
+          {/* Book cover image area */}
+          <div className="w-full h-48 relative overflow-hidden rounded-t-lg">
+            {book.coverImageUrl || book.imageUrl ? (
+              <img 
+                src={book.coverImageUrl || book.imageUrl} 
+                alt={book.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to gradient if image fails to load
+                  (e.target as HTMLElement).style.display = 'none';
+                  (e.target as HTMLElement).nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            {/* Fallback gradient background */}
+            <div className={`w-full h-full bg-gradient-to-br from-blue-100 to-blue-200 flex flex-col items-center justify-center p-4 ${book.coverImageUrl || book.imageUrl ? 'hidden' : ''}`}>
+              <h3 className="text-lg font-bold text-blue-800 text-center mb-2 line-clamp-3">
+                {book.title}
+              </h3>
+            </div>
             
             {/* Price */}
             <div className="absolute bottom-3 right-3 bg-white rounded-full px-3 py-1 shadow-md">
@@ -47,6 +61,21 @@ export default function BookCard({
               </Badge>
             </div>
           </div>
+          
+          {/* Book details below cover */}
+          <div className="p-3 flex-1">
+            <h3 className="font-semibold text-sm mb-1 line-clamp-2">
+              {book.title}
+            </h3>
+            <p className="text-xs text-text-secondary mb-1">
+              by {book.author}
+            </p>
+            {showOwner && (
+              <p className="text-xs text-text-secondary">
+                Owner: {book.owner.name}
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
@@ -56,9 +85,21 @@ export default function BookCard({
     <Card className="book-card">
       <CardContent className="p-4">
         <div className="flex items-start space-x-3">
-          {/* Placeholder for book cover */}
-          <div className="w-12 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded flex items-center justify-center flex-shrink-0">
-            <span className="text-xs text-blue-600 font-medium text-center px-1">
+          {/* Book cover image */}
+          <div className="w-12 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {book.coverImageUrl || book.imageUrl ? (
+              <img 
+                src={book.coverImageUrl || book.imageUrl} 
+                alt={book.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to text if image fails to load
+                  (e.target as HTMLElement).style.display = 'none';
+                  (e.target as HTMLElement).nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+            ) : null}
+            <span className={`text-xs text-blue-600 font-medium text-center px-1 ${book.coverImageUrl || book.imageUrl ? 'hidden' : ''}`}>
               {book.title.substring(0, 3)}
             </span>
           </div>

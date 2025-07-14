@@ -61,6 +61,8 @@ const bookSchema = z.object({
   isbn: z.string().min(1, "ISBN is required"),
   genre: z.string().min(1, "Genre is required"),
   description: z.string().optional(),
+  imageUrl: z.string().optional(),
+  coverImageUrl: z.string().optional(),
   condition: z.string().min(1, "Condition is required"),
   dailyFee: z.string().min(1, "Daily fee is required").refine(
     (val) => !isNaN(Number(val)) && Number(val) > 0,
@@ -95,6 +97,8 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
       isbn: editBook?.isbn || "",
       genre: editBook?.genre || "",
       description: editBook?.description || "",
+      imageUrl: editBook?.imageUrl || "",
+      coverImageUrl: editBook?.coverImageUrl || "",
       condition: editBook?.condition || "",
       dailyFee: editBook?.dailyFee?.toString() || "",
       societyId: editBook?.societyId || (Array.isArray(societies) ? societies[0]?.id : 0) || 0,
@@ -201,6 +205,7 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
         }
         if (bookData.imageUrl && !form.getValues("imageUrl")) {
           form.setValue("imageUrl", bookData.imageUrl);
+          form.setValue("coverImageUrl", bookData.imageUrl);
         }
         
         // Map categories to our available genres
@@ -244,6 +249,12 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
         form.setValue("author", bookData.author || "");
         form.setValue("description", bookData.description || "");
         
+        // Set cover image URLs
+        if (bookData.imageUrl) {
+          form.setValue("imageUrl", bookData.imageUrl);
+          form.setValue("coverImageUrl", bookData.imageUrl);
+        }
+        
         // Map categories to our available genres
         let genre = "Fiction";
         if (bookData.categories && bookData.categories.length > 0) {
@@ -258,9 +269,15 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
         }
         form.setValue("genre", genre);
         
+        const filledFields = [];
+        if (bookData.title) filledFields.push("title");
+        if (bookData.author) filledFields.push("author");
+        if (bookData.description) filledFields.push("description");
+        if (bookData.imageUrl) filledFields.push("cover image");
+        
         toast({
           title: "Book Details Found!",
-          description: `Auto-filled details for "${bookData.title}"`,
+          description: `Auto-filled ${filledFields.join(", ")} for "${bookData.title}"`,
         });
       } else {
         // Just set the ISBN if no data found
