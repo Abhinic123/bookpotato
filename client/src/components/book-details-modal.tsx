@@ -28,15 +28,15 @@ export default function BookDetailsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md mx-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-md mx-auto max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center space-x-2">
             <Book className="h-5 w-5 text-primary" />
             <span>Book Details</span>
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto flex-1 pr-2">
           {/* Book Cover */}
           <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden">
             <span className="text-lg font-bold text-blue-800 text-center px-4">
@@ -102,9 +102,10 @@ export default function BookDetailsModal({
             </>
           )}
           
-          <Separator />
-          
-          {/* Action Buttons */}
+        </div>
+        
+        {/* Action Buttons - Fixed at bottom */}
+        <div className="flex-shrink-0 pt-4 border-t">
           <div className="flex space-x-3">
             {book.isAvailable && onBorrow ? (
               <Button 
