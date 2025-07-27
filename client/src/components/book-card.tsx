@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, getBookStatusColor, getBookStatusText } from "@/lib/utils";
 import type { BookWithOwner } from "@shared/schema";
+import ShareButton from "@/components/social/share-button";
+import WishlistButton from "@/components/social/wishlist-button";
 
 interface BookCardProps {
   book: BookWithOwner;
@@ -90,7 +92,7 @@ export default function BookCard({
               </p>
             )}
             
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-2">
               <Badge className={`text-xs ${statusColor}`}>
                 {statusText}
               </Badge>
@@ -98,9 +100,28 @@ export default function BookCard({
                 {formatCurrency(book.dailyFee)}/day
               </span>
             </div>
+            
+            {/* Social Actions */}
+            <div className="flex items-center space-x-2">
+              <WishlistButton 
+                bookId={book.id} 
+                size="sm"
+                showText={false}
+                className="h-6 w-6 p-0"
+              />
+              <ShareButton
+                bookId={book.id}
+                bookTitle={book.title}
+                bookAuthor={book.author}
+                dailyFee={book.dailyFee}
+                size="sm"
+                showText={false}
+                className="h-6 w-6 p-0"
+              />
+            </div>
           </div>
           
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 ml-2">
             {book.isAvailable && onBorrow ? (
               <Button 
                 onClick={() => onBorrow(book)}

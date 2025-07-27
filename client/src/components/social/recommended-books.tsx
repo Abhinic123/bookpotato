@@ -8,6 +8,7 @@ import { useState } from "react";
 import BookCard from "@/components/book-card";
 import GenrePreferencesModal from "./genre-preferences-modal";
 import WishlistButton from "./wishlist-button";
+import ShareButton from "./share-button";
 
 interface Book {
   id: number;
@@ -173,14 +174,25 @@ export default function RecommendedBooks() {
                             <span className="text-sm font-semibold text-green-600">
                               ₹{book.dailyFee}/day
                             </span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-6 px-2 text-xs border-red-200 text-red-500 hover:bg-red-50"
-                            >
-                              <Heart className="w-3 h-3 mr-1" />
-                              Add
-                            </Button>
+                            <div className="flex items-center space-x-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 px-2 text-xs border-red-200 text-red-500 hover:bg-red-50"
+                              >
+                                <Heart className="w-3 h-3 mr-1" />
+                                Add
+                              </Button>
+                              <ShareButton
+                                bookId={book.id}
+                                bookTitle={book.title}
+                                bookAuthor={book.author}
+                                dailyFee={book.dailyFee}
+                                size="sm"
+                                showText={false}
+                                className="h-6 w-6 p-0"
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>

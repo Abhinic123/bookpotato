@@ -7,6 +7,7 @@ import { Book, User, Calendar, MapPin, Clock, Star, Heart, MessageSquare } from 
 import type { BookWithOwner } from "@shared/schema";
 import WishlistButton from "@/components/social/wishlist-button";
 import BookReviews from "@/components/social/book-reviews";
+import ShareButton from "@/components/social/share-button";
 
 interface BookDetailsModalProps {
   book: BookWithOwner | null;
@@ -108,7 +109,7 @@ export default function BookDetailsModal({
         
         {/* Action Buttons - Fixed at bottom */}
         <div className="flex-shrink-0 pt-4 border-t">
-          <div className="flex space-x-3">
+          <div className="flex space-x-2">
             {book.isAvailable && onBorrow ? (
               <Button 
                 onClick={() => {
@@ -134,6 +135,23 @@ export default function BookDetailsModal({
                 Currently Unavailable
               </Button>
             )}
+            
+            <WishlistButton 
+              bookId={book.id} 
+              size="default"
+              showText={false}
+              className="px-3"
+            />
+            
+            <ShareButton
+              bookId={book.id}
+              bookTitle={book.title}
+              bookAuthor={book.author}
+              dailyFee={book.dailyFee}
+              size="default"
+              showText={false}
+              className="px-3"
+            />
             
             <Button 
               variant="outline" 

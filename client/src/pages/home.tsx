@@ -11,6 +11,7 @@ import BookDetailsModal from "@/components/modals/book-details-modal";
 import AddBookModal from "@/components/modals/add-book-modal";
 import EnhancedLeaderboard from "@/components/brocks/enhanced-leaderboard";
 import RecommendedBooks from "@/components/social/recommended-books";
+import QuickShareWidget from "@/components/social/quick-share-widget";
 import { formatCurrency, formatDateRelative } from "@/lib/utils";
 import type { BookWithOwner, RentalWithDetails } from "@shared/schema";
 
@@ -271,6 +272,11 @@ export default function Home() {
       {/* What You May Like - Recommended Books */}
       <div className="p-4">
         <RecommendedBooks />
+      </div>
+
+      {/* Quick Share Widget */}
+      <div className="p-4">
+        <QuickShareWidget />
       </div>
 
       {/* Recently Added Books */}
