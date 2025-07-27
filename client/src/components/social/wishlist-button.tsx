@@ -53,7 +53,7 @@ export default function WishlistButton({
         title: isWishlisted ? "Removed from Wishlist" : "Added to Wishlist",
         description: isWishlisted 
           ? "Book removed from your wishlist" 
-          : "You'll be notified when this book becomes available",
+          : "Book added to your wishlist successfully",
       });
     },
     onError: () => {

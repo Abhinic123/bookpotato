@@ -3188,7 +3188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           genre: books.genre,
           dailyFee: books.dailyFee,
           isAvailable: books.isAvailable,
-          coverUrl: books.coverUrl
+
         }
       })
       .from(wishlists)
@@ -3196,6 +3196,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .where(eq(wishlists.userId, req.session.userId!))
       .orderBy(wishlists.priority, wishlists.addedAt);
       
+      console.log(`📚 Retrieved ${wishlistItems.length} wishlist items for user ${req.session.userId}`);
       res.json(wishlistItems);
     } catch (error) {
       console.error("Get wishlist error:", error);

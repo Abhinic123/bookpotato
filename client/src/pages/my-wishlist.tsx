@@ -20,7 +20,7 @@ interface WishlistItem {
     genre: string;
     dailyFee: string;
     isAvailable: boolean;
-    coverUrl?: string;
+
   };
 }
 
