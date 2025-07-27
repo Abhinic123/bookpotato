@@ -17,6 +17,7 @@ import { getCurrentUser, logout } from "@/lib/auth";
 import { getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import AddBookModal from "@/components/modals/add-book-modal";
+import FeedbackButton from "@/components/feedback-button";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -209,6 +210,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
         open={showAddModal}
         onOpenChange={setShowAddModal}
       />
+      
+      {/* Feedback Button */}
+      <FeedbackButton />
     </div>
   );
 }

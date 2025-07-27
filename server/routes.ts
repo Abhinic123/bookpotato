@@ -1453,6 +1453,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Feedback submission
+  app.post("/api/feedback", requireAuth, async (req, res) => {
+    try {
+      const { category, feedback } = req.body;
+      const userId = req.session.userId!;
+      
+      if (!category || !feedback?.trim()) {
+        return res.status(400).json({ message: "Category and feedback are required" });
+      }
+      
+      // For now, just log the feedback - in production you'd save to database
+      console.log(`📝 Feedback received from user ${userId}:`, {
+        category,
+        feedback: feedback.trim(),
+        timestamp: new Date().toISOString()
+      });
+      
+      res.json({ message: "Feedback submitted successfully" });
+    } catch (error) {
+      console.error("Submit feedback error:", error);
+      res.status(500).json({ message: "Failed to submit feedback" });
+    }
+  });
+
   // Apply Brocks to payment calculation
   app.post("/api/payments/apply-brocks", requireAuth, async (req, res) => {
     try {
