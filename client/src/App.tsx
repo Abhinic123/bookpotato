@@ -23,6 +23,7 @@ import EarningsPage from "@/pages/earnings";
 import RewardsPage from "@/pages/rewards";
 import BuyBrocksPage from "@/pages/buy-brocks";
 import HowItWorks from "@/pages/how-it-works";
+import Downloads from "@/pages/downloads";
 import AppLayout from "@/components/layout/app-layout";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -42,6 +43,7 @@ function AuthenticatedApp() {
         <Route path="/profile" component={EnhancedProfile} />
         <Route path="/admin" component={AdminPanel} />
         <Route path="/how-it-works" component={HowItWorks} />
+        <Route path="/downloads" component={Downloads} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
@@ -73,6 +75,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/auth" component={EnhancedAuth} />
+        <Route path="/downloads" component={Downloads} />
         <Route component={Welcome} />
       </Switch>
     );

@@ -1904,7 +1904,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const userCredits = await storage.getUserCredits(req.session.userId!);
         const brocksRequired = Math.round(totalAmount * creditsToRupeesRate); // Convert rupees to Brocks using admin rate
         
-        if (userCredits.balance < brocksRequired) {
+        if (!userCredits || userCredits.balance < brocksRequired) {
           return res.status(400).json({ message: "Insufficient Brocks balance for this transaction" });
         }
         
@@ -3070,18 +3070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Downloads route
-  app.get("/downloads", (req, res) => {
-    try {
-      const downloadsPath = join(process.cwd(), "downloads.html");
-      const html = readFileSync(downloadsPath, "utf8");
-      res.setHeader("Content-Type", "text/html");
-      res.send(html);
-    } catch (error) {
-      console.error("Downloads page error:", error);
-      res.status(404).send("Downloads page not found");
-    }
-  });
+
 
   const httpServer = createServer(app);
   return httpServer;
