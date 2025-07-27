@@ -581,6 +581,22 @@ export type InsertUserGenrePreference = z.infer<typeof insertUserGenrePreference
 export type AvailabilityAlert = typeof availabilityAlerts.$inferSelect;
 export type InsertAvailabilityAlert = z.infer<typeof insertAvailabilityAlertSchema>;
 
+export const feedbackTable = pgTable("feedback", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  category: text("category").notNull(),
+  feedback: text("feedback").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertFeedbackSchema = createInsertSchema(feedbackTable).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Feedback = typeof feedbackTable.$inferSelect;
+export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
+
 // Extended types for social features
 export type BookWithReviews = Book & {
   reviews: BookReview[];

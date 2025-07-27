@@ -4,7 +4,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { storage } from "./storage";
 import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema, users, rentalExtensions, societyRequests, societyMembers } from "@shared/schema";
-import { userGenrePreferences, wishlists, bookReviews, books } from "@shared/schema";
+import { userGenrePreferences, wishlists, bookReviews, books, feedbackTable } from "@shared/schema";
 import { z } from "zod";
 import { db, pool } from "./db";
 import { sql, eq, and, inArray, not } from "drizzle-orm";
@@ -1463,14 +1463,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Category and feedback are required" });
       }
       
-      // For now, just log the feedback - in production you'd save to database
-      console.log(`📝 Feedback received from user ${userId}:`, {
+      // Save feedback to database
+      const feedbackEntry = await db.insert(feedbackTable).values({
+        userId,
         category,
         feedback: feedback.trim(),
-        timestamp: new Date().toISOString()
+      }).returning();
+      
+      console.log(`📝 Feedback saved from user ${userId}:`, {
+        id: feedbackEntry[0].id,
+        category,
+        feedback: feedback.trim(),
       });
       
-      res.json({ message: "Feedback submitted successfully" });
+      res.json({ message: "Feedback submitted successfully", id: feedbackEntry[0].id });
     } catch (error) {
       console.error("Submit feedback error:", error);
       res.status(500).json({ message: "Failed to submit feedback" });

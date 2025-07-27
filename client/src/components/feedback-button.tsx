@@ -20,10 +20,7 @@ export default function FeedbackButton({ variant = "floating" }: FeedbackButtonP
 
   const submitFeedbackMutation = useMutation({
     mutationFn: async (data: { category: string; feedback: string }) => {
-      return apiRequest("/api/feedback", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      return apiRequest("POST", "/api/feedback", data);
     },
     onSuccess: () => {
       toast({
