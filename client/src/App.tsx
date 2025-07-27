@@ -24,6 +24,7 @@ import RewardsPage from "@/pages/rewards";
 import BuyBrocksPage from "@/pages/buy-brocks";
 import HowItWorks from "@/pages/how-it-works";
 import Downloads from "@/pages/downloads";
+import MyWishlist from "@/pages/my-wishlist";
 import AppLayout from "@/components/layout/app-layout";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -44,6 +45,7 @@ function AuthenticatedApp() {
         <Route path="/admin" component={AdminPanel} />
         <Route path="/how-it-works" component={HowItWorks} />
         <Route path="/downloads" component={Downloads} />
+        <Route path="/my-wishlist" component={MyWishlist} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

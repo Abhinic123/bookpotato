@@ -457,4 +457,141 @@ export type InsertSocietyRequest = z.infer<typeof insertSocietyRequestSchema>;
 export type PlatformSettings = typeof platformSettings.$inferSelect;
 export type InsertPlatformSettings = z.infer<typeof insertPlatformSettingsSchema>;
 
+// Social Features Tables
+
+// Book Reviews System
+export const bookReviews = pgTable("book_reviews", {
+  id: serial("id").primaryKey(),
+  bookId: integer("book_id").references(() => books.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  rating: integer("rating").notNull(), // 1-5 stars
+  reviewText: text("review_text"),
+  isPublic: boolean("is_public").default(true),
+  helpfulVotes: integer("helpful_votes").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// User Wishlists
+export const wishlists = pgTable("wishlists", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  bookId: integer("book_id").references(() => books.id).notNull(),
+  priority: integer("priority").default(1), // 1-high, 2-medium, 3-low
+  notes: text("notes"),
+  addedAt: timestamp("added_at").defaultNow().notNull(),
+});
+
+// Reading Lists
+export const readingLists = pgTable("reading_lists", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  isPublic: boolean("is_public").default(true),
+  genre: text("genre"),
+  mood: text("mood"), // relaxing, thrilling, educational, etc.
+  bookCount: integer("book_count").default(0),
+  followers: integer("followers").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Reading List Books
+export const readingListBooks = pgTable("reading_list_books", {
+  id: serial("id").primaryKey(),
+  listId: integer("list_id").references(() => readingLists.id).notNull(),
+  bookId: integer("book_id").references(() => books.id).notNull(),
+  addedAt: timestamp("added_at").defaultNow().notNull(),
+  order: integer("order").default(0),
+});
+
+// User Genre Preferences
+export const userGenrePreferences = pgTable("user_genre_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  genre: text("genre").notNull(),
+  preferenceLevel: integer("preference_level").notNull(), // 1-5 (love to dislike)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Availability Alerts
+export const availabilityAlerts = pgTable("availability_alerts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  bookId: integer("book_id").references(() => books.id).notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  notifiedAt: timestamp("notified_at"),
+});
+
+// Social Features Insert Schemas
+export const insertBookReviewSchema = createInsertSchema(bookReviews).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  helpfulVotes: true,
+});
+
+export const insertWishlistSchema = createInsertSchema(wishlists).omit({
+  id: true,
+  addedAt: true,
+});
+
+export const insertReadingListSchema = createInsertSchema(readingLists).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  bookCount: true,
+  followers: true,
+});
+
+export const insertReadingListBookSchema = createInsertSchema(readingListBooks).omit({
+  id: true,
+  addedAt: true,
+});
+
+export const insertUserGenrePreferenceSchema = createInsertSchema(userGenrePreferences).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAvailabilityAlertSchema = createInsertSchema(availabilityAlerts).omit({
+  id: true,
+  createdAt: true,
+  notifiedAt: true,
+});
+
+// Social Features Types
+export type BookReview = typeof bookReviews.$inferSelect;
+export type InsertBookReview = z.infer<typeof insertBookReviewSchema>;
+
+export type Wishlist = typeof wishlists.$inferSelect;
+export type InsertWishlist = z.infer<typeof insertWishlistSchema>;
+
+export type ReadingList = typeof readingLists.$inferSelect;
+export type InsertReadingList = z.infer<typeof insertReadingListSchema>;
+
+export type ReadingListBook = typeof readingListBooks.$inferSelect;
+export type InsertReadingListBook = z.infer<typeof insertReadingListBookSchema>;
+
+export type UserGenrePreference = typeof userGenrePreferences.$inferSelect;
+export type InsertUserGenrePreference = z.infer<typeof insertUserGenrePreferenceSchema>;
+
+export type AvailabilityAlert = typeof availabilityAlerts.$inferSelect;
+export type InsertAvailabilityAlert = z.infer<typeof insertAvailabilityAlertSchema>;
+
+// Extended types for social features
+export type BookWithReviews = Book & {
+  reviews: BookReview[];
+  averageRating: number;
+  reviewCount: number;
+  isWishlisted?: boolean;
+};
+
+export type ReadingListWithBooks = ReadingList & {
+  books: Book[];
+  creator: Pick<User, 'id' | 'name'>;
+};
+
 

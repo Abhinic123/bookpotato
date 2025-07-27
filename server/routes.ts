@@ -4,6 +4,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { storage } from "./storage";
 import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema, users, rentalExtensions, societyRequests } from "@shared/schema";
+import { userGenrePreferences, wishlists, bookReviews, books } from "@shared/schema";
 import { z } from "zod";
 import { db, pool } from "./db";
 import { sql, eq, and } from "drizzle-orm";
@@ -3071,6 +3072,277 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
 
+
+  // Social Features Routes
+
+  // Genre Preferences
+  app.post("/api/user/genre-preferences", requireAuth, async (req, res) => {
+    try {
+      const { preferences } = req.body;
+      
+      // Delete existing preferences - using executeRaw since the tables don't exist yet
+      try {
+        await db.delete(userGenrePreferences).where(eq(userGenrePreferences.userId, req.session.userId!));
+      } catch (error) {
+        // Table might not exist yet, ignore
+      }
+      
+      // Insert new preferences
+      for (const pref of preferences) {
+        await db.insert(userGenrePreferences).values({
+          userId: req.session.userId!,
+          genre: pref.genre,
+          preferenceLevel: pref.preferenceLevel
+        });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Save genre preferences error:", error);
+      res.status(500).json({ message: "Failed to save preferences" });
+    }
+  });
+
+  app.get("/api/user/genre-preferences", requireAuth, async (req, res) => {
+    try {
+      const preferences = await db.select()
+        .from(userGenrePreferences)
+        .where(eq(userGenrePreferences.userId, req.session.userId!));
+      
+      res.json(preferences);
+    } catch (error) {
+      console.error("Get genre preferences error:", error);
+      res.status(500).json({ message: "Failed to fetch preferences" });
+    }
+  });
+
+  // Wishlist
+  app.post("/api/wishlist", requireAuth, async (req, res) => {
+    try {
+      const { bookId, priority, notes } = req.body;
+      
+      // Check if already wishlisted
+      const existing = await db.select()
+        .from(wishlists)
+        .where(and(
+          eq(wishlists.userId, req.session.userId!),
+          eq(wishlists.bookId, bookId)
+        ))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        return res.status(400).json({ message: "Book already in wishlist" });
+      }
+      
+      const wishlistItem = await db.insert(wishlists).values({
+        userId: req.session.userId!,
+        bookId,
+        priority: priority || 1,
+        notes
+      }).returning();
+      
+      res.json(wishlistItem[0]);
+    } catch (error) {
+      console.error("Add to wishlist error:", error);
+      res.status(500).json({ message: "Failed to add to wishlist" });
+    }
+  });
+
+  app.delete("/api/wishlist/:bookId", requireAuth, async (req, res) => {
+    try {
+      const bookId = parseInt(req.params.bookId);
+      
+      await db.delete(wishlists)
+        .where(and(
+          eq(wishlists.userId, req.session.userId!),
+          eq(wishlists.bookId, bookId)
+        ));
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Remove from wishlist error:", error);
+      res.status(500).json({ message: "Failed to remove from wishlist" });
+    }
+  });
+
+  app.get("/api/wishlist/check/:bookId", requireAuth, async (req, res) => {
+    try {
+      const bookId = parseInt(req.params.bookId);
+      
+      const wishlistItem = await db.select()
+        .from(wishlists)
+        .where(and(
+          eq(wishlists.userId, req.session.userId!),
+          eq(wishlists.bookId, bookId)
+        ))
+        .limit(1);
+      
+      res.json({ isWishlisted: wishlistItem.length > 0 });
+    } catch (error) {
+      console.error("Check wishlist error:", error);
+      res.status(500).json({ isWishlisted: false });
+    }
+  });
+
+  app.get("/api/wishlist", requireAuth, async (req, res) => {
+    try {
+      const wishlistItems = await db.select({
+        id: wishlists.id,
+        priority: wishlists.priority,
+        notes: wishlists.notes,
+        addedAt: wishlists.addedAt,
+        book: {
+          id: books.id,
+          title: books.title,
+          author: books.author,
+          genre: books.genre,
+          dailyFee: books.dailyFee,
+          isAvailable: books.isAvailable,
+          coverUrl: books.coverUrl
+        }
+      })
+      .from(wishlists)
+      .innerJoin(books, eq(wishlists.bookId, books.id))
+      .where(eq(wishlists.userId, req.session.userId!))
+      .orderBy(wishlists.priority, wishlists.addedAt);
+      
+      res.json(wishlistItems);
+    } catch (error) {
+      console.error("Get wishlist error:", error);
+      res.status(500).json({ message: "Failed to fetch wishlist" });
+    }
+  });
+
+  // Book Reviews
+  app.post("/api/books/:bookId/reviews", requireAuth, async (req, res) => {
+    try {
+      const bookId = parseInt(req.params.bookId);
+      const { rating, reviewText, isPublic } = req.body;
+      
+      // Check if user already reviewed this book
+      const existing = await db.select()
+        .from(bookReviews)
+        .where(and(
+          eq(bookReviews.userId, req.session.userId!),
+          eq(bookReviews.bookId, bookId)
+        ))
+        .limit(1);
+      
+      let review;
+      if (existing.length > 0) {
+        // Update existing review
+        review = await db.update(bookReviews)
+          .set({
+            rating,
+            reviewText,
+            isPublic: isPublic !== false,
+            updatedAt: new Date()
+          })
+          .where(eq(bookReviews.id, existing[0].id))
+          .returning();
+      } else {
+        // Create new review
+        review = await db.insert(bookReviews).values({
+          userId: req.session.userId!,
+          bookId,
+          rating,
+          reviewText,
+          isPublic: isPublic !== false
+        }).returning();
+      }
+      
+      res.json(review[0]);
+    } catch (error) {
+      console.error("Add review error:", error);
+      res.status(500).json({ message: "Failed to add review" });
+    }
+  });
+
+  app.get("/api/books/:bookId/reviews", async (req, res) => {
+    try {
+      const bookId = parseInt(req.params.bookId);
+      
+      const reviews = await db.select({
+        id: bookReviews.id,
+        rating: bookReviews.rating,
+        reviewText: bookReviews.reviewText,
+        helpfulVotes: bookReviews.helpfulVotes,
+        createdAt: bookReviews.createdAt,
+        user: {
+          id: users.id,
+          name: users.name
+        }
+      })
+      .from(bookReviews)
+      .innerJoin(users, eq(bookReviews.userId, users.id))
+      .where(and(
+        eq(bookReviews.bookId, bookId),
+        eq(bookReviews.isPublic, true)
+      ))
+      .orderBy(bookReviews.createdAt);
+      
+      res.json(reviews);
+    } catch (error) {
+      console.error("Get reviews error:", error);
+      res.status(500).json({ message: "Failed to fetch reviews" });
+    }
+  });
+
+  // Recommended Books based on Genre Preferences
+  app.get("/api/books/recommended", requireAuth, async (req, res) => {
+    try {
+      // Get user's genre preferences
+      const preferences = await db.select()
+        .from(userGenrePreferences)
+        .where(eq(userGenrePreferences.userId, req.session.userId!));
+      
+      if (preferences.length === 0) {
+        // No preferences set, return popular books
+        const popularBooks = await db.select()
+          .from(books)
+          .where(eq(books.isAvailable, true))
+          .limit(10);
+        return res.json(popularBooks);
+      }
+      
+      // Get user's societies
+      const userSocieties = await storage.getSocietiesByUser(req.session.userId!);
+      
+      // Get books from user's societies matching their preferred genres
+      const preferredGenres = preferences
+        .filter(p => p.preferenceLevel >= 3) // Only liked and loved genres
+        .map(p => p.genre);
+      
+      let recommendedBooks = [];
+      for (const society of userSocieties) {
+        const societyBooks = await db.select()
+          .from(books)
+          .where(and(
+            eq(books.societyId, society.id),
+            eq(books.isAvailable, true)
+          ));
+        
+        // Filter by preferred genres
+        const matchingBooks = societyBooks.filter(book => 
+          preferredGenres.some(genre => 
+            book.genre.toLowerCase().includes(genre.toLowerCase())
+          )
+        );
+        
+        recommendedBooks.push(...matchingBooks);
+      }
+      
+      // Remove duplicates and limit
+      const uniqueBooks = recommendedBooks.filter((book, index, self) => 
+        index === self.findIndex(b => b.id === book.id)
+      ).slice(0, 15);
+      
+      res.json(uniqueBooks);
+    } catch (error) {
+      console.error("Get recommended books error:", error);
+      res.status(500).json({ message: "Failed to fetch recommended books" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
