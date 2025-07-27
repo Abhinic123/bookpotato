@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Building2, ChevronRight, Clock, Coins, Gift, Award } from "lucide-react";
+import { Building2, ChevronRight, Clock, Coins, Gift, Award, Plus, HelpCircle, BookPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import BookCard from "@/components/book-card";
 import BorrowBookModal from "@/components/modals/borrow-book-modal";
 import BookDetailsModal from "@/components/modals/book-details-modal";
+import EnhancedLeaderboard from "@/components/brocks/enhanced-leaderboard";
 import { formatCurrency, formatDateRelative } from "@/lib/utils";
 import type { BookWithOwner, RentalWithDetails } from "@shared/schema";
 
@@ -142,7 +143,7 @@ export default function Home() {
               <div className="flex items-center justify-center space-x-1 mb-1">
                 <Coins className="h-5 w-5 text-amber-600" />
                 <div className="text-2xl font-bold text-amber-600">
-                  {userCredits?.credits?.balance || userCredits?.balance || 0}
+                  {(userCredits as any)?.balance || 0}
                 </div>
               </div>
               <div className="text-sm text-text-secondary">Brocks Credits</div>
@@ -164,6 +165,29 @@ export default function Home() {
           </Card>
         </div>
         
+        {/* Action Buttons */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200" onClick={() => navigate('/my-books')}>
+            <CardContent className="pt-6 text-center">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <BookPlus className="h-6 w-6 text-blue-600" />
+                <div className="text-lg font-semibold text-blue-700">Add Book</div>
+              </div>
+              <div className="text-sm text-blue-600">Share & Earn Money</div>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-green-50 to-emerald-50 border-green-200" onClick={() => navigate('/how-it-works')}>
+            <CardContent className="pt-6 text-center">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <HelpCircle className="h-6 w-6 text-green-600" />
+                <div className="text-lg font-semibold text-green-700">How It Works</div>
+              </div>
+              <div className="text-sm text-green-600">Learn the Platform</div>
+            </CardContent>
+          </Card>
+        </div>
+        
         {/* Rewards Centre Button */}
         <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200" onClick={() => navigate('/buy-brocks')}>
           <CardContent className="pt-6 text-center">
@@ -177,7 +201,7 @@ export default function Home() {
       </div>
 
       {/* Recent Rewards */}
-      {recentRewards && recentRewards.length > 0 && (
+      {recentRewards && (recentRewards as any[])?.length > 0 && (
         <div className="p-4">
           <Card>
             <CardContent className="pt-6">
@@ -193,7 +217,7 @@ export default function Home() {
                 </Button>
               </div>
               <div className="space-y-3">
-                {recentRewards.slice(0, 3).map((reward: any, index: number) => (
+                {(recentRewards as any[])?.slice(0, 3).map((reward: any, index: number) => (
                   <div key={index} className="flex items-center space-x-3 p-2 bg-amber-50 rounded-lg">
                     <Gift className="h-4 w-4 text-amber-600" />
                     <div className="flex-1">
@@ -318,62 +342,10 @@ export default function Home() {
         </div>
       )}
 
-      {/* Brocks Credits Leaderboard */}
+      {/* Enhanced Brocks Leaderboard */}
       {brocksLeaderboard && (brocksLeaderboard as any[]).length > 0 && (
         <div className="p-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-text-primary flex items-center space-x-2">
-                  <Coins className="h-5 w-5 text-amber-600" />
-                  <span>Brocks Leaderboard</span>
-                </h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => navigate('/profile')}
-                  className="text-primary"
-                >
-                  View Full <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {(brocksLeaderboard as any[]).slice(0, 5).map((entry: any, index: number) => (
-                  <div
-                    key={entry.userId}
-                    className={`flex items-center justify-between p-3 rounded-lg ${
-                      index < 3 
-                        ? 'bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200' 
-                        : 'bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className={`flex items-center justify-center w-8 h-8 rounded-full text-white font-bold text-sm ${
-                        index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
-                        index === 1 ? 'bg-gradient-to-br from-gray-400 to-gray-600' :
-                        index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
-                        'bg-gray-400'
-                      }`}>
-                        {entry.rank <= 3 ? (
-                          index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'
-                        ) : (
-                          entry.rank
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-medium text-sm text-text-primary">{entry.name}</div>
-                        <div className="text-xs text-text-secondary">Rank #{entry.rank}</div>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Coins className="h-4 w-4 text-amber-600" />
-                      <span className="text-sm font-semibold text-amber-600">{entry.credits}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <EnhancedLeaderboard leaderboard={brocksLeaderboard as any[]} />
         </div>
       )}
 

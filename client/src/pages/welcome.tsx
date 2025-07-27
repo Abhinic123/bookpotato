@@ -20,7 +20,21 @@ const welcomeScreens = [
     description: "Connect with your neighbors and share books within your society. Discover new reads while building a stronger community.",
     icon: BookOpen,
     gradient: "from-blue-500 to-cyan-500",
-    image: "/api/placeholder/400/300"
+    illustration: (
+      <svg viewBox="0 0 200 150" className="w-32 h-24 mx-auto">
+        <defs>
+          <linearGradient id="bookGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#3B82F6" />
+            <stop offset="100%" stopColor="#06B6D4" />
+          </linearGradient>
+        </defs>
+        <rect x="50" y="40" width="60" height="80" rx="4" fill="url(#bookGradient)" />
+        <rect x="70" y="50" width="60" height="80" rx="4" fill="#1D4ED8" />
+        <rect x="90" y="60" width="60" height="80" rx="4" fill="#0EA5E9" />
+        <circle cx="100" cy="25" r="15" fill="#FEF3C7" />
+        <path d="M95 20 L100 30 L105 20" stroke="#F59E0B" strokeWidth="2" fill="none" />
+      </svg>
+    )
   },
   {
     id: 2,
@@ -29,7 +43,25 @@ const welcomeScreens = [
     description: "Find and join your residential society to start sharing books with your neighbors. Build lasting connections through literature.",
     icon: Users,
     gradient: "from-purple-500 to-pink-500",
-    image: "/api/placeholder/400/300"
+    illustration: (
+      <svg viewBox="0 0 200 150" className="w-32 h-24 mx-auto">
+        <defs>
+          <linearGradient id="buildingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#8B5CF6" />
+            <stop offset="100%" stopColor="#EC4899" />
+          </linearGradient>
+        </defs>
+        <rect x="40" y="60" width="40" height="70" fill="url(#buildingGradient)" />
+        <rect x="90" y="40" width="50" height="90" fill="#7C3AED" />
+        <rect x="150" y="70" width="35" height="60" fill="#A855F7" />
+        <circle cx="60" cy="35" r="8" fill="#FDE68A" />
+        <circle cx="115" cy="15" r="8" fill="#FDE68A" />
+        <circle cx="167" cy="45" r="8" fill="#FDE68A" />
+        <rect x="50" y="80" width="8" height="12" fill="#FEF3C7" />
+        <rect x="100" y="60" width="8" height="12" fill="#FEF3C7" />
+        <rect x="160" y="90" width="8" height="12" fill="#FEF3C7" />
+      </svg>
+    )
   },
   {
     id: 3,
@@ -38,7 +70,23 @@ const welcomeScreens = [
     description: "Explore books available in your society. From bestsellers to classics, find your next great read just steps away from home.",
     icon: MapPin,
     gradient: "from-green-500 to-teal-500",
-    image: "/api/placeholder/400/300"
+    illustration: (
+      <svg viewBox="0 0 200 150" className="w-32 h-24 mx-auto">
+        <defs>
+          <linearGradient id="mapGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#10B981" />
+            <stop offset="100%" stopColor="#14B8A6" />
+          </linearGradient>
+        </defs>
+        <circle cx="100" cy="75" r="60" fill="url(#mapGradient)" opacity="0.3" />
+        <path d="M100 45 Q110 55 100 75 Q90 55 100 45" fill="#EF4444" />
+        <circle cx="100" cy="55" r="4" fill="#FFFFFF" />
+        <rect x="80" y="90" width="12" height="16" fill="#3B82F6" />
+        <rect x="108" y="85" width="12" height="20" fill="#8B5CF6" />
+        <rect x="136" y="95" width="10" height="15" fill="#10B981" />
+        <path d="M70 110 Q100 90 130 110" stroke="#6B7280" strokeWidth="2" fill="none" strokeDasharray="3,3" />
+      </svg>
+    )
   },
   {
     id: 4,
@@ -47,7 +95,26 @@ const welcomeScreens = [
     description: "Lend your books to community members and earn daily rental fees. Turn your personal library into a source of income.",
     icon: Star,
     gradient: "from-orange-500 to-red-500",
-    image: "/api/placeholder/400/300"
+    illustration: (
+      <svg viewBox="0 0 200 150" className="w-32 h-24 mx-auto">
+        <defs>
+          <linearGradient id="coinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#F59E0B" />
+            <stop offset="100%" stopColor="#EF4444" />
+          </linearGradient>
+        </defs>
+        <rect x="60" y="70" width="30" height="40" rx="2" fill="#3B82F6" />
+        <rect x="110" y="60" width="30" height="50" rx="2" fill="#8B5CF6" />
+        <circle cx="75" cy="50" r="12" fill="url(#coinGradient)" />
+        <text x="75" y="55" textAnchor="middle" fill="#FFFFFF" fontSize="8" fontWeight="bold">₹</text>
+        <circle cx="125" cy="40" r="12" fill="url(#coinGradient)" />
+        <text x="125" y="45" textAnchor="middle" fill="#FFFFFF" fontSize="8" fontWeight="bold">₹</text>
+        <circle cx="160" cy="85" r="10" fill="#F59E0B" />
+        <text x="160" y="89" textAnchor="middle" fill="#FFFFFF" fontSize="6" fontWeight="bold">₹</text>
+        <path d="M75 62 L75 68" stroke="#F59E0B" strokeWidth="2" />
+        <path d="M125 52 L125 58" stroke="#F59E0B" strokeWidth="2" />
+      </svg>
+    )
   }
 ];
 
@@ -110,9 +177,9 @@ export default function Welcome() {
 
           {/* Main Content */}
           <div className="p-6 text-center space-y-6">
-            {/* Icon */}
-            <div className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-r ${screen.gradient} flex items-center justify-center`}>
-              <Icon className="w-10 h-10 text-white" />
+            {/* Illustration */}
+            <div className="mb-6">
+              {screen.illustration}
             </div>
 
             {/* Text Content */}

@@ -22,6 +22,7 @@ import NotificationsPage from "@/pages/notifications";
 import EarningsPage from "@/pages/earnings";
 import RewardsPage from "@/pages/rewards";
 import BuyBrocksPage from "@/pages/buy-brocks";
+import HowItWorks from "@/pages/how-it-works";
 import AppLayout from "@/components/layout/app-layout";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -40,6 +41,7 @@ function AuthenticatedApp() {
         <Route path="/notifications" component={NotificationsPage} />
         <Route path="/profile" component={EnhancedProfile} />
         <Route path="/admin" component={AdminPanel} />
+        <Route path="/how-it-works" component={HowItWorks} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
