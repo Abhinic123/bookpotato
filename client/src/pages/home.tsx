@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import BookCard from "@/components/book-card";
 import BorrowBookModal from "@/components/modals/borrow-book-modal";
 import BookDetailsModal from "@/components/modals/book-details-modal";
+import AddBookModal from "@/components/modals/add-book-modal";
 import EnhancedLeaderboard from "@/components/brocks/enhanced-leaderboard";
 import { formatCurrency, formatDateRelative } from "@/lib/utils";
 import type { BookWithOwner, RentalWithDetails } from "@shared/schema";
@@ -17,6 +18,7 @@ export default function Home() {
   const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
   const [showBorrowModal, setShowBorrowModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showAddBookModal, setShowAddBookModal] = useState(false);
 
   const { data: societies } = useQuery({
     queryKey: ["/api/societies/my"],
@@ -167,7 +169,7 @@ export default function Home() {
         
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200" onClick={() => navigate('/my-books')}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200" onClick={() => setShowAddBookModal(true)}>
             <CardContent className="pt-6 text-center">
               <div className="flex items-center justify-center space-x-2 mb-2">
                 <BookPlus className="h-6 w-6 text-blue-600" />
@@ -366,6 +368,11 @@ export default function Home() {
         onEdit={() => {
           // TODO: Handle edit functionality
         }}
+      />
+
+      <AddBookModal
+        open={showAddBookModal}
+        onOpenChange={setShowAddBookModal}
       />
     </div>
   );

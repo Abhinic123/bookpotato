@@ -175,6 +175,14 @@ BookShare is a community-driven digital library platform that enables book shari
 - July 14, 2025: Simplified book cover display to always show blue background with book title instead of attempting to load external cover images
 - July 14, 2025: Updated book cards and details modal to use consistent fallback display for better reliability
 - July 14, 2025: Removed image expansion functionality to focus on text-based book display
+- July 27, 2025: Fixed "Add Book" button on home screen to open popup modal instead of navigating to page
+- July 27, 2025: Created comprehensive "How It Works" guide with step-by-step platform explanation
+- July 27, 2025: Enhanced welcome screens with attractive SVG illustrations for each feature
+- July 27, 2025: Implemented creative Brocks ranking system with 6 tiers (Explorer to Emperor) and visual badges
+- July 27, 2025: Added enhanced leaderboard with progress bars, achievement system, and gamification elements
+- July 27, 2025: Created comprehensive pitch deck documentation with business model and financial projections
+- July 27, 2025: Developed detailed technical specifications covering system architecture and API documentation
+- July 27, 2025: Compiled extensive future features roadmap with innovative enhancement opportunities
 ```
 
 ## Changelog
