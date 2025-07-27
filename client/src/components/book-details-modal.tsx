@@ -7,7 +7,9 @@ import { Book, User, Calendar, MapPin, Clock, Star, Heart, MessageSquare } from 
 import type { BookWithOwner } from "@shared/schema";
 import WishlistButton from "@/components/social/wishlist-button";
 import BookReviews from "@/components/social/book-reviews";
+import BookReviewForm from "@/components/social/book-review-form";
 import ShareButton from "@/components/social/share-button";
+import { useState } from "react";
 
 interface BookDetailsModalProps {
   book: BookWithOwner | null;
@@ -15,6 +17,7 @@ interface BookDetailsModalProps {
   onOpenChange: (open: boolean) => void;
   onBorrow?: (book: BookWithOwner) => void;
   onEdit?: (book: BookWithOwner) => void;
+  user?: { id: number; name?: string };
 }
 
 export default function BookDetailsModal({ 
@@ -22,8 +25,11 @@ export default function BookDetailsModal({
   open, 
   onOpenChange, 
   onBorrow, 
-  onEdit 
+  onEdit,
+  user
 }: BookDetailsModalProps) {
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  
   if (!book) return null;
 
   const statusColor = getBookStatusColor(book.isAvailable);
@@ -104,6 +110,35 @@ export default function BookDetailsModal({
               </div>
             </>
           )}
+
+          {/* Reviews Section */}
+          <Separator />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium text-gray-700 flex items-center">
+                <Star className="h-4 w-4 mr-1" />
+                Reviews & Ratings
+              </h4>
+              {user && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowReviewForm(!showReviewForm)}
+                >
+                  {showReviewForm ? "Cancel" : "Write Review"}
+                </Button>
+              )}
+            </div>
+            
+            {showReviewForm && user && (
+              <BookReviewForm 
+                bookId={book.id}
+                onSuccess={() => setShowReviewForm(false)}
+              />
+            )}
+            
+            <BookReviews bookId={book.id} />
+          </div>
           
         </div>
         

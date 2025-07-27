@@ -371,10 +371,10 @@ export default function Home() {
       />
 
       <BookDetailsModal
-        isOpen={showDetailsModal}
-        onClose={() => {
-          setShowDetailsModal(false);
-          setSelectedBook(null);
+        open={showDetailsModal}
+        onOpenChange={(open) => {
+          setShowDetailsModal(open);
+          if (!open) setSelectedBook(null);
         }}
         book={selectedBook}
         user={{ id: 1 }} // TODO: Get actual user data

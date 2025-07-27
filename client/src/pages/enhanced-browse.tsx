@@ -437,6 +437,7 @@ export default function EnhancedBrowse() {
           setShowDetailsModal(false);
           setShowBorrowModal(true);
         }}
+        user={{ id: 1 }} // TODO: Get actual user data
       />
 
       {/* Borrow Book Modal */}
