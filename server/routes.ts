@@ -2088,20 +2088,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { packageId, paymentMethod } = req.body;
       
-      // Define available packages
-      const packages = {
-        starter: { brocks: 50, price: 99, bonus: 0 },
-        value: { brocks: 100, price: 179, bonus: 10 },
-        premium: { brocks: 250, price: 399, bonus: 50 },
-        mega: { brocks: 500, price: 749, bonus: 150 },
-      };
-      
-      const selectedPackage = packages[packageId as keyof typeof packages];
+      // Get package from database
+      const selectedPackage = await storage.getBrocksPackageById(parseInt(packageId));
       if (!selectedPackage) {
         return res.status(400).json({ message: "Invalid package selected" });
       }
       
-      const totalBrocks = selectedPackage.brocks + selectedPackage.bonus;
+      const totalBrocks = selectedPackage.brocks + (selectedPackage.bonus || 0);
       
       // Simulate payment processing (in real app, integrate with payment gateway)
       console.log(`💳 Processing payment: ₹${selectedPackage.price} for ${totalBrocks} Brocks via ${paymentMethod}`);
@@ -2110,7 +2103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.awardCredits(
         req.session.userId!, 
         totalBrocks, 
-        `Purchased ${selectedPackage.brocks} + ${selectedPackage.bonus} bonus Brocks`
+        `Purchased ${selectedPackage.name} - ${selectedPackage.brocks} + ${selectedPackage.bonus || 0} bonus Brocks`
       );
       
       console.log(`🎁 Awarded ${totalBrocks} Brocks to user ${req.session.userId!} via purchase`);
@@ -2118,6 +2111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         success: true,
         brocksAwarded: totalBrocks,
+        packageName: selectedPackage.name,
         transactionId: `txn_${Date.now()}`,
         message: "Payment processed successfully"
       });
@@ -3079,12 +3073,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/user/genre-preferences", requireAuth, async (req, res) => {
     try {
       const { preferences } = req.body;
+      const userId = req.session.userId!;
       
-      // For now, just store preferences in memory since the DB tables don't exist yet
-      // This will work once we push the schema changes
+      // Clear existing preferences
+      await db.delete(userGenrePreferences)
+        .where(eq(userGenrePreferences.userId, userId));
       
-      // For now, return success without DB operations
-      // Will work once we push the schema changes
+      // Insert new preferences
+      if (preferences && preferences.length > 0) {
+        const preferencesToInsert = preferences.map((pref: any) => ({
+          userId,
+          genre: pref.genre,
+          preferenceLevel: pref.preferenceLevel,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }));
+        
+        await db.insert(userGenrePreferences).values(preferencesToInsert);
+        console.log(`📚 Saved ${preferences.length} genre preferences for user ${userId}`);
+      }
       
       res.json({ success: true });
     } catch (error) {
@@ -3103,6 +3110,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get genre preferences error:", error);
       res.status(500).json({ message: "Failed to fetch preferences" });
+    }
+  });
+
+  // Get recommended books based on user preferences
+  app.get("/api/books/recommended", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      // Get user's genre preferences
+      const preferences = await db.select()
+        .from(userGenrePreferences)
+        .where(eq(userGenrePreferences.userId, userId));
+      
+      if (preferences.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get user's societies to find books from
+      const userSocieties = await db.select()
+        .from(societyMembers)
+        .where(eq(societyMembers.userId, userId));
+      
+      const societyIds = userSocieties.map(sm => sm.societyId);
+      
+      if (societyIds.length === 0) {
+        return res.json([]);
+      }
+      
+      // Get books from user's societies that match their preferred genres
+      const preferredGenres = preferences
+        .filter(p => p.preferenceLevel >= 3) // Only include liked/loved genres
+        .map(p => p.genre);
+      
+      const recommendedBooks = await db.select({
+        id: books.id,
+        title: books.title,
+        author: books.author,
+        genre: books.genre,
+        dailyFee: books.dailyFee,
+        isAvailable: books.isAvailable,
+        description: books.description,
+        owner: {
+          id: users.id,
+          name: users.name
+        }
+      })
+      .from(books)
+      .innerJoin(users, eq(books.ownerId, users.id))
+      .where(and(
+        books.societyId.in(societyIds),
+        books.genre.in(preferredGenres),
+        eq(books.isAvailable, true),
+        not(eq(books.ownerId, userId)) // Don't recommend user's own books
+      ))
+      .orderBy(sql`RANDOM()`)
+      .limit(6);
+      
+      console.log(`📚 Found ${recommendedBooks.length} recommended books for user ${userId} based on preferences`);
+      res.json(recommendedBooks);
+    } catch (error) {
+      console.error("Get recommended books error:", error);
+      res.status(500).json({ message: "Failed to fetch recommendations" });
     }
   });
 

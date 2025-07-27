@@ -70,7 +70,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { name: "Home", icon: Home, path: "/" },
     { name: "Browse", icon: Search, path: "/browse" },
     { name: "My Books", icon: Bookmark, path: "/my-books" },
-    { name: "Wishlist", icon: Heart, path: "/my-wishlist" },
+    { name: "Earnings", icon: Coins, path: "/earnings" },
     { name: "Societies", icon: Users, path: "/societies" },
   ];
 
@@ -134,6 +134,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   <Link href="/profile">
                     <User className="mr-2 h-4 w-4" />
                     <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/my-wishlist">
+                    <Heart className="mr-2 h-4 w-4" />
+                    <span>Wishlist</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/buy-brocks">
+                    <Wallet className="mr-2 h-4 w-4" />
+                    <span>Buy Brocks</span>
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin && (

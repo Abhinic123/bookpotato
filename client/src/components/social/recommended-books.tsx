@@ -22,9 +22,19 @@ interface Book {
 
 export default function RecommendedBooks() {
   const [showPreferences, setShowPreferences] = useState(false);
-  
-  // For demo purposes, simulate user preferences until DB is ready
-  const [hasPreferences, setHasPreferences] = useState(false);
+
+  // Check if user has set preferences
+  const { data: userPreferences } = useQuery({
+    queryKey: ["/api/user/genre-preferences"],
+  });
+
+  const hasPreferences = userPreferences && (userPreferences as any[]).length > 0;
+
+  // Get recommended books based on preferences
+  const { data: recommendedBooks = [] } = useQuery({
+    queryKey: ["/api/books/recommended"],
+    enabled: hasPreferences,
+  });
   
   // Demo books data to show the social features working
   const demoBooks: Book[] = [
@@ -102,7 +112,6 @@ export default function RecommendedBooks() {
           isOpen={showPreferences}
           onClose={() => {
             setShowPreferences(false);
-            setHasPreferences(true); // For demo purposes
           }}
           isFirstTime={true}
         />
@@ -149,9 +158,9 @@ export default function RecommendedBooks() {
               </Badge>
             </div>
 
-            {/* Demo recommended books */}
+            {/* Recommended books based on preferences */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {demoBooks.map((book: Book, index: number) => (
+              {(recommendedBooks as any[]).slice(0, 4).map((book: any, index: number) => (
                 <motion.div
                   key={book.id}
                   initial={{ opacity: 0, y: 20 }}

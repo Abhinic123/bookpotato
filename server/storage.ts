@@ -1720,6 +1720,18 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getBrocksPackageById(id: number): Promise<BrocksPackage | null> {
+    try {
+      const [packageData] = await db.select().from(brocksPackages)
+        .where(and(eq(brocksPackages.id, id), eq(brocksPackages.isActive, true)))
+        .limit(1);
+      return packageData || null;
+    } catch (error) {
+      console.error('Error fetching Brocks package by ID:', error);
+      return null;
+    }
+  }
+
   async createBrocksPackage(packageData: InsertBrocksPackage): Promise<BrocksPackage | null> {
     try {
       const [newPackage] = await db
