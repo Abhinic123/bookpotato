@@ -137,6 +137,9 @@ export interface IStorage {
   getPageContent(pageKey: string): Promise<PageContent | undefined>;
   updatePageContent(pageKey: string, data: Partial<InsertPageContent>): Promise<PageContent>;
   getAllPageContent(): Promise<PageContent[]>;
+  
+  // Brocks application
+  applyBrocksToPayment(userId: number, offerType: 'rupees' | 'commission-free', brocksUsed: number, originalAmount: number): Promise<{ newAmount: number; brocksSpent: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1296,15 +1299,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Credits system methods
-  async getUserCredits(userId: number): Promise<UserCredits | undefined> {
-    try {
-      const [credits] = await db.select().from(userCredits).where(eq(userCredits.userId, userId));
-      return credits;
-    } catch (error) {
-      console.error('Error fetching user credits:', error);
-      throw error;
-    }
-  }
 
   async createUserCredits(credits: InsertUserCredits): Promise<UserCredits> {
     try {
@@ -1515,8 +1509,7 @@ export class DatabaseStorage implements IStorage {
         await db
           .update(rewardSettings)
           .set({ 
-            settingValue: value,
-            updatedAt: new Date()
+            settingValue: value
           })
           .where(eq(rewardSettings.settingKey, key));
       } else {
@@ -1525,9 +1518,7 @@ export class DatabaseStorage implements IStorage {
           .insert(rewardSettings)
           .values({
             settingKey: key,
-            settingValue: value,
-            createdAt: new Date(),
-            updatedAt: new Date()
+            settingValue: value
           });
       }
     } catch (error) {
@@ -1903,10 +1894,10 @@ export class MemStorage implements IStorage {
   async updatePageContent(pageKey: string, data: Partial<InsertPageContent>): Promise<PageContent> {
     const [content] = await db
       .insert(pageContent)
-      .values({ pageKey, ...data, updatedAt: new Date() })
+      .values({ pageKey, ...data })
       .onConflictDoUpdate({
         target: pageContent.pageKey,
-        set: { ...data, updatedAt: new Date() },
+        set: { ...data },
       })
       .returning();
     return content;
@@ -1914,6 +1905,57 @@ export class MemStorage implements IStorage {
 
   async getAllPageContent(): Promise<PageContent[]> {
     return await db.select().from(pageContent);
+  }
+
+  async applyBrocksToPayment(userId: number, offerType: 'rupees' | 'commission-free', brocksUsed: number, originalAmount: number): Promise<{ newAmount: number; brocksSpent: number }> {
+    try {
+      // Get current user credits
+      const userCredits = await this.getUserCredits(userId);
+      if (!userCredits || userCredits.balance < brocksUsed) {
+        throw new Error('Insufficient Brocks credits');
+      }
+
+      let newAmount = originalAmount;
+      let brocksSpent = 0;
+
+      if (offerType === 'rupees') {
+        // Get conversion rate
+        const conversionRateSetting = await this.getRewardSetting('credits_to_rupees_rate');
+        const conversionRate = parseInt(conversionRateSetting?.settingValue || '20');
+        
+        // Calculate rupees discount
+        const rupeesDiscount = Math.floor(brocksUsed / conversionRate);
+        newAmount = Math.max(0, originalAmount - rupeesDiscount);
+        brocksSpent = rupeesDiscount * conversionRate; // Only spend exact amount needed
+        
+        // Spend the credits using deductCredits
+        const success = await this.deductCredits(userId, brocksSpent, `Converted ${brocksSpent} Brocks to ₹${rupeesDiscount} discount`);
+        if (!success) {
+          throw new Error('Failed to deduct Brocks credits');
+        }
+      } else if (offerType === 'commission-free') {
+        // For commission-free, we don't reduce payment amount but give future benefits
+        const conversionRateSetting = await this.getRewardSetting('credits_to_commission_free_rate');
+        const conversionRate = parseInt(conversionRateSetting?.settingValue || '20');
+        
+        const commissionFreeDays = Math.floor(brocksUsed / conversionRate);
+        brocksSpent = commissionFreeDays * conversionRate;
+        
+        // Spend the credits using deductCredits
+        const success = await this.deductCredits(userId, brocksSpent, `Converted ${brocksSpent} Brocks to ${commissionFreeDays} commission-free days`);
+        if (!success) {
+          throw new Error('Failed to deduct Brocks credits');
+        }
+        
+        // TODO: Implement commission-free days tracking in user profile
+        newAmount = originalAmount; // Payment amount doesn't change for commission-free
+      }
+
+      return { newAmount, brocksSpent };
+    } catch (error) {
+      console.error('Error applying Brocks to payment:', error);
+      throw error;
+    }
   }
 }
 

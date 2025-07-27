@@ -3,11 +3,11 @@ import { createServer, type Server } from "http";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { storage } from "./storage";
-import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema, users, rentalExtensions, societyRequests } from "@shared/schema";
+import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema, users, rentalExtensions, societyRequests, societyMembers } from "@shared/schema";
 import { userGenrePreferences, wishlists, bookReviews, books } from "@shared/schema";
 import { z } from "zod";
 import { db, pool } from "./db";
-import { sql, eq, and } from "drizzle-orm";
+import { sql, eq, and, inArray, not } from "drizzle-orm";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 
@@ -18,13 +18,11 @@ declare module "express-session" {
   }
 }
 
-// Extend Express Request to include session
+// Extend Express Request to include session  
 declare global {
   namespace Express {
     interface Request {
-      session: import("express-session").Session & Partial<import("express-session").SessionData> & {
-        userId?: number;
-      };
+      session: import("express-session").Session & Partial<import("express-session").SessionData>;
     }
   }
 }
@@ -1471,7 +1469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Apply Brocks to payment error:", error);
-      res.status(500).json({ message: error.message || "Failed to apply Brocks to payment" });
+      res.status(500).json({ message: (error as Error).message || "Failed to apply Brocks to payment" });
     }
   });
 
@@ -3159,8 +3157,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .from(books)
       .innerJoin(users, eq(books.ownerId, users.id))
       .where(and(
-        books.societyId.in(societyIds),
-        books.genre.in(preferredGenres),
+        inArray(books.societyId, societyIds),
+        inArray(books.genre, preferredGenres),
         eq(books.isAvailable, true),
         not(eq(books.ownerId, userId)) // Don't recommend user's own books
       ))
