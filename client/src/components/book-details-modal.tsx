@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency, getBookStatusColor, getBookStatusText } from "@/lib/utils";
-import { Book, User, Calendar, MapPin, Clock, Star } from "lucide-react";
+import { Book, User, Calendar, MapPin, Clock, Star, Heart, MessageSquare } from "lucide-react";
 import type { BookWithOwner } from "@shared/schema";
+import WishlistButton from "@/components/social/wishlist-button";
+import BookReviews from "@/components/social/book-reviews";
 
 interface BookDetailsModalProps {
   book: BookWithOwner | null;

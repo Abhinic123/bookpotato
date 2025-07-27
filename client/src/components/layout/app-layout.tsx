@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, BookOpen, Home, Search, Users, Bookmark, Plus, LogOut, User, Settings, Wallet, Coins } from "lucide-react";
+import { Bell, BookOpen, Home, Search, Users, Bookmark, Plus, LogOut, User, Settings, Wallet, Coins, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -70,7 +70,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { name: "Home", icon: Home, path: "/" },
     { name: "Browse", icon: Search, path: "/browse" },
     { name: "My Books", icon: Bookmark, path: "/my-books" },
-    { name: "Earnings", icon: Wallet, path: "/earnings" },
+    { name: "Wishlist", icon: Heart, path: "/my-wishlist" },
     { name: "Societies", icon: Users, path: "/societies" },
   ];
 
