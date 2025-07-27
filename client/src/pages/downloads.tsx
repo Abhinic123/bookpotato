@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, FileText, BookOpen } from "lucide-react";
+import { Download, FileText, BookOpen, LogIn, Home } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 
 export default function Downloads() {
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -151,7 +152,22 @@ User Experience Improvements:
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-blue-900 mb-4">📚 BookShare Documentation</h1>
-          <p className="text-lg text-blue-700">Download comprehensive business and technical documentation</p>
+          <p className="text-lg text-blue-700 mb-4">Download comprehensive business and technical documentation</p>
+          
+          <div className="flex justify-center space-x-4">
+            <Link href="/auth">
+              <Button className="bg-green-600 hover:bg-green-700">
+                <LogIn className="h-4 w-4 mr-2" />
+                Login to BookShare
+              </Button>
+            </Link>
+            <Link href="/">
+              <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
+                <Home className="h-4 w-4 mr-2" />
+                Home Page
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
@@ -276,9 +292,19 @@ User Experience Improvements:
         </div>
 
         <div className="text-center mt-8">
-          <p className="text-gray-600">
+          <p className="text-gray-600 mb-4">
             All documents are professionally formatted and ready to share with investors, developers, or stakeholders.
           </p>
+          
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
+            <p className="text-green-800 font-medium mb-2">Ready to start using BookShare?</p>
+            <Link href="/auth">
+              <Button className="bg-green-600 hover:bg-green-700 w-full">
+                <LogIn className="h-4 w-4 mr-2" />
+                Login or Create Account
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
