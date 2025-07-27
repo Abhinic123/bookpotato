@@ -8,14 +8,14 @@ import { useToast } from "@/hooks/use-toast";
 
 interface WishlistButtonProps {
   bookId: number;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "default" | "lg";
   showText?: boolean;
   className?: string;
 }
 
 export default function WishlistButton({ 
   bookId, 
-  size = "md", 
+  size = "default", 
   showText = true, 
   className = "" 
 }: WishlistButtonProps) {
@@ -67,13 +67,13 @@ export default function WishlistButton({
 
   const sizeClasses = {
     sm: "h-8 px-2 text-xs",
-    md: "h-9 px-3 text-sm",
+    default: "h-9 px-3 text-sm",
     lg: "h-10 px-4 text-base"
   };
 
   const iconSizes = {
     sm: "w-3 h-3",
-    md: "w-4 h-4", 
+    default: "w-4 h-4", 
     lg: "w-5 h-5"
   };
 
