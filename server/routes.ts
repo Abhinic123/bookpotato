@@ -1,5 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { readFileSync } from "fs";
+import { join } from "path";
 import { storage } from "./storage";
 import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema, users, rentalExtensions, societyRequests } from "@shared/schema";
 import { z } from "zod";
@@ -3065,6 +3067,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error updating page content:", error);
       res.status(500).json({ message: "Failed to update page content" });
+    }
+  });
+
+  // Downloads route
+  app.get("/downloads", (req, res) => {
+    try {
+      const downloadsPath = join(process.cwd(), "downloads.html");
+      const html = readFileSync(downloadsPath, "utf8");
+      res.setHeader("Content-Type", "text/html");
+      res.send(html);
+    } catch (error) {
+      console.error("Downloads page error:", error);
+      res.status(404).send("Downloads page not found");
     }
   });
 
