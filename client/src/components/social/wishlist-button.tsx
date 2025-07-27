@@ -26,8 +26,13 @@ export default function WishlistButton({
   const { data: isWishlisted = false } = useQuery({
     queryKey: ["/api/wishlist/check", bookId],
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/wishlist/check/${bookId}`);
-      return response.json().then(data => data.isWishlisted);
+      try {
+        const response = await apiRequest("GET", `/api/wishlist/check/${bookId}`);
+        const data = await response.json();
+        return data.isWishlisted;
+      } catch (error) {
+        return false;
+      }
     },
   });
 

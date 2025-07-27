@@ -21,30 +21,48 @@ interface Book {
 
 export default function RecommendedBooks() {
   const [showPreferences, setShowPreferences] = useState(false);
-
-  // Check if user has genre preferences
-  const { data: preferences = [] } = useQuery({
-    queryKey: ["/api/user/genre-preferences"],
-    queryFn: async () => {
-      const response = await fetch("/api/user/genre-preferences");
-      if (!response.ok) return [];
-      return response.json();
+  
+  // For demo purposes, simulate user preferences until DB is ready
+  const [hasPreferences, setHasPreferences] = useState(false);
+  
+  // Demo books data to show the social features working
+  const demoBooks: Book[] = [
+    {
+      id: 1,
+      title: "The Psychology of Money",
+      author: "Morgan Housel",
+      genre: "Business",
+      dailyFee: "15",
+      isAvailable: true
     },
-  });
-
-  // Get recommended books
-  const { data: recommendedBooks = [], isLoading } = useQuery({
-    queryKey: ["/api/books/recommended"],
-    queryFn: async () => {
-      const response = await fetch("/api/books/recommended");
-      if (!response.ok) return [];
-      return response.json();
+    {
+      id: 2,
+      title: "Atomic Habits",
+      author: "James Clear",
+      genre: "Self-Help",
+      dailyFee: "12",
+      isAvailable: true
     },
-    enabled: preferences.length > 0, // Only fetch if user has preferences
-  });
+    {
+      id: 3,
+      title: "The Silent Patient",
+      author: "Alex Michaelides",
+      genre: "Mystery",
+      dailyFee: "10",
+      isAvailable: false
+    },
+    {
+      id: 4,
+      title: "Educated",
+      author: "Tara Westover",
+      genre: "Biography",
+      dailyFee: "14",
+      isAvailable: true
+    }
+  ];
 
-  // Show preference setup for new users
-  if (preferences.length === 0) {
+  // Show genre preference setup for new users
+  if (!hasPreferences) {
     return (
       <>
         <Card className="bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
@@ -81,7 +99,10 @@ export default function RecommendedBooks() {
 
         <GenrePreferencesModal
           isOpen={showPreferences}
-          onClose={() => setShowPreferences(false)}
+          onClose={() => {
+            setShowPreferences(false);
+            setHasPreferences(true); // For demo purposes
+          }}
           isFirstTime={true}
         />
       </>
@@ -113,92 +134,68 @@ export default function RecommendedBooks() {
         </CardHeader>
 
         <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"
-              />
+          <div className="space-y-4">
+            {/* Show demo preferred genres */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Badge className="bg-red-100 text-red-700 border-red-300">
+                ❤️ Business
+              </Badge>
+              <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                👍 Self-Help
+              </Badge>
+              <Badge className="bg-blue-100 text-blue-700 border-blue-300">
+                👍 Mystery
+              </Badge>
             </div>
-          ) : recommendedBooks.length === 0 ? (
-            <div className="text-center py-8">
-              <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">
-                No books match your preferences yet. Check back later for new additions!
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Show user's preferred genres */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                {preferences
-                  .filter((p: any) => p.preferenceLevel >= 3)
-                  .map((preference: any) => (
-                    <Badge
-                      key={preference.genre}
-                      variant="secondary"
-                      className={`${
-                        preference.preferenceLevel === 5
-                          ? "bg-red-100 text-red-700 border-red-300"
-                          : "bg-blue-100 text-blue-700 border-blue-300"
-                      }`}
-                    >
-                      {preference.preferenceLevel === 5 ? "❤️" : "👍"} {preference.genre}
-                    </Badge>
-                  ))}
-              </div>
 
-              {/* Recommended books grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recommendedBooks.slice(0, 6).map((book: Book, index: number) => (
-                  <motion.div
-                    key={book.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <Card className="hover:shadow-lg transition-shadow duration-200">
-                      <CardContent className="p-4">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-12 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded flex items-center justify-center flex-shrink-0">
-                            <BookOpen className="w-6 h-6 text-white" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-sm truncate">{book.title}</h3>
-                            <p className="text-xs text-gray-600 truncate">{book.author}</p>
-                            <Badge variant="outline" className="text-xs mt-1">
-                              {book.genre}
-                            </Badge>
-                            <div className="flex items-center justify-between mt-2">
-                              <span className="text-sm font-semibold text-green-600">
-                                ₹{book.dailyFee}/day
-                              </span>
-                              <WishlistButton
-                                bookId={book.id}
-                                size="sm"
-                                showText={false}
-                                className="h-6 w-6 p-0"
-                              />
-                            </div>
+            {/* Demo recommended books */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {demoBooks.map((book: Book, index: number) => (
+                <motion.div
+                  key={book.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="hover:shadow-lg transition-shadow duration-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-12 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded flex items-center justify-center flex-shrink-0">
+                          <BookOpen className="w-6 h-6 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-sm truncate">{book.title}</h3>
+                          <p className="text-xs text-gray-600 truncate">{book.author}</p>
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {book.genre}
+                          </Badge>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-sm font-semibold text-green-600">
+                              ₹{book.dailyFee}/day
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-6 px-2 text-xs border-red-200 text-red-500 hover:bg-red-50"
+                            >
+                              <Heart className="w-3 h-3 mr-1" />
+                              Add
+                            </Button>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Show more button */}
-              {recommendedBooks.length > 6 && (
-                <div className="text-center pt-4">
-                  <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
-                    View More Recommendations
-                  </Button>
-                </div>
-              )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
             </div>
-          )}
+
+            <div className="text-center pt-4">
+              <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
+                View More Recommendations
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
