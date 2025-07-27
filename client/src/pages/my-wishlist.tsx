@@ -204,6 +204,14 @@ export default function MyWishlist() {
                                     <Button 
                                       size="sm"
                                       className="bg-green-600 hover:bg-green-700"
+                                      onClick={() => {
+                                        toast({
+                                          title: "Borrow Book",
+                                          description: `Opening borrow process for "${item.book.title}"`,
+                                        });
+                                        // Navigate to browse page to find and borrow the book
+                                        window.location.href = '/browse';
+                                      }}
                                     >
                                       Borrow Now
                                     </Button>
