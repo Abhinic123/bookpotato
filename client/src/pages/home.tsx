@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import BookCard from "@/components/book-card";
 import BorrowBookModal from "@/components/modals/borrow-book-modal";
-import BookDetailsModal from "@/components/modals/book-details-modal";
+import BookDetailsModal from "@/components/book-details-modal";
 import AddBookModal from "@/components/modals/add-book-modal";
 import EnhancedLeaderboard from "@/components/brocks/enhanced-leaderboard";
 import FeedbackButton from "@/components/feedback-button";
