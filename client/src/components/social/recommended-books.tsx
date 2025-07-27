@@ -31,9 +31,10 @@ export default function RecommendedBooks() {
   const hasPreferences = userPreferences && (userPreferences as any[]).length > 0;
 
   // Get recommended books based on preferences
-  const { data: recommendedBooks = [] } = useQuery({
+  const { data: recommendedBooks = [], refetch: refetchRecommendations } = useQuery({
     queryKey: ["/api/books/recommended"],
     enabled: hasPreferences,
+    refetchOnWindowFocus: false,
   });
   
   // Demo books data to show the social features working

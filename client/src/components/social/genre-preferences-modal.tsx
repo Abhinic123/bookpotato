@@ -50,8 +50,15 @@ export default function GenrePreferencesModal({ isOpen, onClose, isFirstTime = f
           ? "Your reading preferences have been saved. Let's find books you'll love!"
           : "Your genre preferences have been updated successfully.",
       });
+      // Invalidate multiple related queries to refresh recommendations
+      queryClient.invalidateQueries({ queryKey: ["/api/user/genre-preferences"] });
       queryClient.invalidateQueries({ queryKey: ["/api/books/recommended"] });
       onClose();
+      
+      // Small delay to ensure data refreshes properly
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     },
     onError: () => {
       toast({

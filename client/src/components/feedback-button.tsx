@@ -8,7 +8,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
-export default function FeedbackButton() {
+interface FeedbackButtonProps {
+  variant?: "floating" | "inline";
+}
+
+export default function FeedbackButton({ variant = "floating" }: FeedbackButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [category, setCategory] = useState("");
@@ -52,15 +56,24 @@ export default function FeedbackButton() {
     submitFeedbackMutation.mutate({ category, feedback });
   };
 
+  const triggerButton = variant === "floating" ? (
+    <Button
+      className="fixed bottom-24 left-4 h-12 w-12 rounded-full bg-secondary hover:bg-secondary/90 shadow-lg z-30"
+      size="icon"
+    >
+      <MessageSquare className="h-5 w-5" />
+    </Button>
+  ) : (
+    <Button variant="outline" className="w-full flex items-center space-x-2">
+      <MessageSquare className="h-4 w-4" />
+      <span>Share Feedback</span>
+    </Button>
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button
-          className="fixed bottom-24 right-4 h-12 w-12 rounded-full bg-primary hover:bg-primary/90 shadow-lg z-40"
-          size="icon"
-        >
-          <MessageSquare className="h-5 w-5" />
-        </Button>
+        {triggerButton}
       </DialogTrigger>
       <DialogContent className="max-w-md mx-auto">
         <DialogHeader>

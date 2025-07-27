@@ -187,6 +187,10 @@ BookShare is a community-driven digital library platform that enables book shari
 - July 27, 2025: Implemented React-based downloads system accessible both authenticated and unauthenticated
 - July 27, 2025: Fixed download functionality with enhanced error handling and visual feedback
 - July 27, 2025: Added login navigation links to downloads page for easy access to main application
+- July 27, 2025: Fixed critical database schema issue by adding missing preference_level column to user_genre_preferences table
+- July 27, 2025: Implemented feedback submission system with inline form on home page and category-based submissions
+- July 27, 2025: Restored add book floating action button to proper z-index positioning (z-40)
+- July 27, 2025: Enhanced book recommendation system to properly refresh after preference changes with cache invalidation
 ```
 
 ## Changelog

@@ -10,6 +10,7 @@ import BorrowBookModal from "@/components/modals/borrow-book-modal";
 import BookDetailsModal from "@/components/modals/book-details-modal";
 import AddBookModal from "@/components/modals/add-book-modal";
 import EnhancedLeaderboard from "@/components/brocks/enhanced-leaderboard";
+import FeedbackButton from "@/components/feedback-button";
 import RecommendedBooks from "@/components/social/recommended-books";
 import QuickShareWidget from "@/components/social/quick-share-widget";
 import { formatCurrency, formatDateRelative } from "@/lib/utils";
@@ -386,6 +387,17 @@ export default function Home() {
         open={showAddBookModal}
         onOpenChange={setShowAddBookModal}
       />
+
+      {/* Feedback Section */}
+      <div className="p-4">
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="text-center mb-4">
+            <h3 className="text-lg font-semibold text-text-primary mb-2">Help Us Improve</h3>
+            <p className="text-sm text-text-secondary">Your feedback helps make BookShare better for everyone</p>
+          </div>
+          <FeedbackButton variant="inline" />
+        </div>
+      </div>
     </div>
   );
 }
