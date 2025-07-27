@@ -1,8 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, FileText, BookOpen } from "lucide-react";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Downloads() {
+  const [downloading, setDownloading] = useState<string | null>(null);
+  const { toast } = useToast();
   
   const pitchDeckContent = `BookShare: Community Digital Library Platform
 Executive Summary & Pitch Deck
@@ -66,46 +70,80 @@ User Experience Improvements:
 [Complete roadmap continues...]`;
 
   const downloadAsFile = (content: string, filename: string, type: 'txt' | 'doc') => {
-    let blob;
-    let extension;
+    setDownloading(filename);
     
-    if (type === 'doc') {
-      // Create a simple Word-compatible format
-      const wordContent = `
-        <html xmlns:v="urn:schemas-microsoft-com:vml" 
-              xmlns:o="urn:schemas-microsoft-com:office:office" 
-              xmlns:w="urn:schemas-microsoft-com:office:word" 
-              xmlns="http://www.w3.org/TR/REC-html40">
-        <head>
-          <meta charset="utf-8">
-          <title>${filename}</title>
-          <style>
-            body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.6; }
-            h1 { color: #2563eb; font-size: 18pt; margin-bottom: 12pt; }
-            h2 { color: #1e40af; font-size: 14pt; margin-top: 18pt; margin-bottom: 8pt; }
-            p { margin-bottom: 8pt; }
-          </style>
-        </head>
-        <body>
-          <div>${content.replace(/\n/g, '<br>').replace(/•/g, '&bull;')}</div>
-        </body>
-        </html>
-      `;
-      blob = new Blob([wordContent], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-      extension = '.doc';
-    } else {
-      blob = new Blob([content], { type: 'text/plain' });
-      extension = '.txt';
+    try {
+      let blob;
+      let extension;
+      
+      if (type === 'doc') {
+        // Create a simple Word-compatible format
+        const wordContent = `
+          <html xmlns:v="urn:schemas-microsoft-com:vml" 
+                xmlns:o="urn:schemas-microsoft-com:office:office" 
+                xmlns:w="urn:schemas-microsoft-com:office:word" 
+                xmlns="http://www.w3.org/TR/REC-html40">
+          <head>
+            <meta charset="utf-8">
+            <title>${filename}</title>
+            <style>
+              body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.6; }
+              h1 { color: #2563eb; font-size: 18pt; margin-bottom: 12pt; }
+              h2 { color: #1e40af; font-size: 14pt; margin-top: 18pt; margin-bottom: 8pt; }
+              p { margin-bottom: 8pt; }
+            </style>
+          </head>
+          <body>
+            <div>${content.replace(/\n/g, '<br>').replace(/•/g, '&bull;')}</div>
+          </body>
+          </html>
+        `;
+        blob = new Blob([wordContent], { type: 'application/msword' });
+        extension = '.doc';
+      } else {
+        blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        extension = '.txt';
+      }
+      
+      // Check if browser supports downloads
+      if (!window.URL || !window.URL.createObjectURL) {
+        alert('Your browser does not support file downloads. Please try a different browser.');
+        return;
+      }
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = filename + extension;
+      
+      // Add to DOM, click, and remove
+      document.body.appendChild(a);
+      a.click();
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 100);
+      
+      console.log(`Download initiated: ${filename}${extension}`);
+      
+      toast({
+        title: "Download Started",
+        description: `${filename}${extension} is downloading...`,
+      });
+      
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast({
+        title: "Download Failed",
+        description: "Please try again or use a different browser.",
+        variant: "destructive",
+      });
+    } finally {
+      setTimeout(() => setDownloading(null), 1000);
     }
-    
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename + extension;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -147,9 +185,10 @@ User Experience Improvements:
                     <Button 
                       onClick={() => downloadAsFile(pitchDeckContent, 'BookShare_Investor_Pitch_Deck', 'doc')}
                       className="bg-blue-600 hover:bg-blue-700"
+                      disabled={downloading === 'BookShare_Investor_Pitch_Deck'}
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      Download Word
+                      {downloading === 'BookShare_Investor_Pitch_Deck' ? 'Downloading...' : 'Download Word'}
                     </Button>
                     <Button 
                       variant="outline"
