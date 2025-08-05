@@ -140,6 +140,13 @@ export interface IStorage {
   
   // Brocks application
   applyBrocksToPayment(userId: number, offerType: 'rupees' | 'commission-free', brocksUsed: number, originalAmount: number): Promise<{ newAmount: number; brocksSpent: number }>;
+  
+  // Society Chat
+  getSocietyMessages(societyId: number, limit?: number, offset?: number): Promise<any[]>;
+  createSocietyMessage(societyId: number, senderId: number, content: string, messageType?: string): Promise<any>;
+  updateChatReadStatus(societyId: number, userId: number, messageId?: number): Promise<void>;
+  getChatReadStatus(societyId: number, userId: number): Promise<any>;
+  getUnreadMessageCount(societyId: number, userId: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1955,6 +1962,92 @@ export class MemStorage implements IStorage {
     } catch (error) {
       console.error('Error applying Brocks to payment:', error);
       throw error;
+    }
+  }
+
+  // Society Chat Methods
+  async getSocietyMessages(societyId: number, limit: number = 50, offset: number = 0): Promise<any[]> {
+    try {
+      const messages = await db.execute(sql`
+        SELECT 
+          sc.id,
+          sc.society_id,
+          sc.sender_id,
+          sc.content,
+          sc.message_type,
+          sc.is_edited,
+          sc.edited_at,
+          sc.created_at,
+          u.name as sender_name,
+          u.profile_picture as sender_picture
+        FROM society_chats sc
+        JOIN users u ON sc.sender_id = u.id
+        WHERE sc.society_id = ${societyId}
+        ORDER BY sc.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `);
+      return messages.rows || [];
+    } catch (error) {
+      console.error('Error fetching society messages:', error);
+      return [];
+    }
+  }
+
+  async createSocietyMessage(societyId: number, senderId: number, content: string, messageType: string = 'text'): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO society_chats (society_id, sender_id, content, message_type, created_at)
+        VALUES (${societyId}, ${senderId}, ${content}, ${messageType}, NOW())
+        RETURNING *
+      `);
+      return result.rows?.[0] || null;
+    } catch (error) {
+      console.error('Error creating society message:', error);
+      throw error;
+    }
+  }
+
+  async updateChatReadStatus(societyId: number, userId: number, messageId?: number): Promise<void> {
+    try {
+      await db.execute(sql`
+        INSERT INTO chat_read_status (society_id, user_id, last_read_message_id, last_read_at)
+        VALUES (${societyId}, ${userId}, ${messageId || null}, NOW())
+        ON CONFLICT (society_id, user_id) 
+        DO UPDATE SET 
+          last_read_message_id = EXCLUDED.last_read_message_id,
+          last_read_at = EXCLUDED.last_read_at
+      `);
+    } catch (error) {
+      console.error('Error updating chat read status:', error);
+    }
+  }
+
+  async getChatReadStatus(societyId: number, userId: number): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        SELECT * FROM chat_read_status 
+        WHERE society_id = ${societyId} AND user_id = ${userId}
+      `);
+      return result.rows?.[0] || null;
+    } catch (error) {
+      console.error('Error getting chat read status:', error);
+      return null;
+    }
+  }
+
+  async getUnreadMessageCount(societyId: number, userId: number): Promise<number> {
+    try {
+      const readStatus = await this.getChatReadStatus(societyId, userId);
+      const lastReadMessageId = readStatus?.last_read_message_id || 0;
+      
+      const result = await db.execute(sql`
+        SELECT COUNT(*) as count FROM society_chats 
+        WHERE society_id = ${societyId} AND id > ${lastReadMessageId}
+      `);
+      return parseInt(result.rows?.[0]?.count || '0');
+    } catch (error) {
+      console.error('Error getting unread message count:', error);
+      return 0;
     }
   }
 }

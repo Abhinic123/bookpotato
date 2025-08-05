@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Users, Building2, Hash, Check, AlertTriangle, ExternalLink, MapPin } from "lucide-react";
+import { Plus, Users, Building2, Hash, Check, AlertTriangle, ExternalLink, MapPin, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -386,14 +386,25 @@ export default function Societies() {
                     </div>
                   </div>
                 </div>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleUnjoinSociety(society.id)}
-                  className="text-text-secondary hover:text-destructive"
-                >
-                  Leave
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => window.location.href = `/societies/${society.id}/chat`}
+                    className="text-primary hover:text-primary"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-1" />
+                    Chat
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => handleUnjoinSociety(society.id)}
+                    className="text-text-secondary hover:text-destructive"
+                  >
+                    Leave
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

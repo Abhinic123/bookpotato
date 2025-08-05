@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { storage } from "./storage";
+import { WebSocketServer, WebSocket } from "ws";
 import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema, users, rentalExtensions, societyRequests, societyMembers } from "@shared/schema";
 import { userGenrePreferences, wishlists, bookReviews, books, feedbackTable } from "@shared/schema";
 import { z } from "zod";
@@ -3433,5 +3434,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // WebSocket server for real-time chat
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws: any, req) => {
+    console.log('💬 New WebSocket connection');
+    
+    ws.on('message', async (data: Buffer) => {
+      try {
+        const message = JSON.parse(data.toString());
+        
+        if (message.type === 'join_society') {
+          ws.societyId = message.societyId;
+          ws.userId = message.userId;
+          console.log(`💬 User ${message.userId} joined society ${message.societyId} chat`);
+        }
+        
+        if (message.type === 'typing') {
+          // Broadcast typing indicator to other users in the society
+          wss.clients.forEach((client: any) => {
+            if (client !== ws && client.readyState === WebSocket.OPEN && client.societyId === ws.societyId) {
+              client.send(JSON.stringify({
+                type: 'user_typing',
+                userId: ws.userId,
+                isTyping: message.isTyping
+              }));
+            }
+          });
+        }
+      } catch (error) {
+        console.error('WebSocket message error:', error);
+      }
+    });
+    
+    ws.on('close', () => {
+      console.log('💬 WebSocket connection closed');
+    });
+  });
+
+  // Society Chat Routes
+  app.get("/api/societies/:societyId/messages", requireAuth, async (req, res) => {
+    try {
+      const societyId = parseInt(req.params.societyId);
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      // Check if user is member of society
+      const isMember = await storage.isMemberOfSociety(societyId, req.session.userId!);
+      if (!isMember) {
+        return res.status(403).json({ message: "Not a member of this society" });
+      }
+      
+      const messages = await storage.getSocietyMessages(societyId, limit, offset);
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching society messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/societies/:societyId/messages", requireAuth, async (req, res) => {
+    try {
+      const societyId = parseInt(req.params.societyId);
+      const { content, messageType = 'text' } = req.body;
+      const senderId = req.session.userId!;
+      
+      // Check if user is member of society
+      const isMember = await storage.isMemberOfSociety(societyId, senderId);
+      if (!isMember) {
+        return res.status(403).json({ message: "Not a member of this society" });
+      }
+      
+      const message = await storage.createSocietyMessage(societyId, senderId, content, messageType);
+      
+      // Broadcast message to all connected clients in the society
+      wss.clients.forEach((client: any) => {
+        if (client.readyState === WebSocket.OPEN && client.societyId === societyId) {
+          client.send(JSON.stringify({
+            type: 'new_message',
+            message: {
+              ...message,
+              sender_name: req.user?.name,
+              sender_picture: req.user?.profilePicture
+            }
+          }));
+        }
+      });
+      
+      res.json(message);
+    } catch (error) {
+      console.error("Error sending message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  app.put("/api/societies/:societyId/chat/read-status", requireAuth, async (req, res) => {
+    try {
+      const societyId = parseInt(req.params.societyId);
+      const { messageId } = req.body;
+      const userId = req.session.userId!;
+      
+      await storage.updateChatReadStatus(societyId, userId, messageId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating read status:", error);
+      res.status(500).json({ message: "Failed to update read status" });
+    }
+  });
+
+  app.get("/api/societies/:societyId/chat/unread-count", requireAuth, async (req, res) => {
+    try {
+      const societyId = parseInt(req.params.societyId);
+      const userId = req.session.userId!;
+      
+      const count = await storage.getUnreadMessageCount(societyId, userId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Error getting unread count:", error);
+      res.status(500).json({ message: "Failed to get unread count" });
+    }
+  });
+
   return httpServer;
 }

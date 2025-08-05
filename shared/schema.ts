@@ -104,6 +104,26 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Society chat system
+export const societyChats = pgTable("society_chats", {
+  id: serial("id").primaryKey(),
+  societyId: integer("society_id").notNull(),
+  senderId: integer("sender_id").notNull(),
+  content: text("content").notNull(),
+  messageType: text("message_type").default("text").notNull(), // 'text', 'image', 'file'
+  isEdited: boolean("is_edited").default(false).notNull(),
+  editedAt: timestamp("edited_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const chatReadStatus = pgTable("chat_read_status", {
+  id: serial("id").primaryKey(),
+  societyId: integer("society_id").notNull(),
+  userId: integer("user_id").notNull(),
+  lastReadMessageId: integer("last_read_message_id"),
+  lastReadAt: timestamp("last_read_at").defaultNow().notNull(),
+});
+
 export const referralRewards = pgTable("referral_rewards", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
@@ -321,6 +341,18 @@ export const insertExtensionRequestSchema = createInsertSchema(extensionRequests
   status: true,
   approvedAt: true,
   createdAt: true,
+});
+
+export const insertSocietyChatSchema = createInsertSchema(societyChats).omit({
+  id: true,
+  isEdited: true,
+  editedAt: true,
+  createdAt: true,
+});
+
+export const insertChatReadStatusSchema = createInsertSchema(chatReadStatus).omit({
+  id: true,
+  lastReadAt: true,
 });
 
 export const insertRentalExtensionSchema = createInsertSchema(rentalExtensions).omit({
