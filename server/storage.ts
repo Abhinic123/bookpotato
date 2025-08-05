@@ -2050,6 +2050,170 @@ export class MemStorage implements IStorage {
       return 0;
     }
   }
+
+  // Direct Messages Methods
+  async getDirectMessages(userId1: number, userId2: number, limit: number = 50, offset: number = 0): Promise<any[]> {
+    try {
+      const messages = await db.execute(sql`
+        SELECT 
+          dm.id,
+          dm.sender_id,
+          dm.receiver_id,
+          dm.content,
+          dm.message_type,
+          dm.is_read,
+          dm.is_edited,
+          dm.edited_at,
+          dm.created_at,
+          sender.name as sender_name,
+          sender.profile_picture as sender_picture,
+          receiver.name as receiver_name,
+          receiver.profile_picture as receiver_picture
+        FROM direct_messages dm
+        JOIN users sender ON dm.sender_id = sender.id
+        JOIN users receiver ON dm.receiver_id = receiver.id
+        WHERE (dm.sender_id = ${userId1} AND dm.receiver_id = ${userId2})
+           OR (dm.sender_id = ${userId2} AND dm.receiver_id = ${userId1})
+        ORDER BY dm.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `);
+      return messages.rows || [];
+    } catch (error) {
+      console.error('Error fetching direct messages:', error);
+      return [];
+    }
+  }
+
+  async createDirectMessage(senderId: number, receiverId: number, content: string, messageType: string = 'text'): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO direct_messages (sender_id, receiver_id, content, message_type, created_at)
+        VALUES (${senderId}, ${receiverId}, ${content}, ${messageType}, NOW())
+        RETURNING *
+      `);
+      return result.rows?.[0] || null;
+    } catch (error) {
+      console.error('Error creating direct message:', error);
+      throw error;
+    }
+  }
+
+  async markDirectMessagesAsRead(userId1: number, userId2: number): Promise<void> {
+    try {
+      await db.execute(sql`
+        UPDATE direct_messages 
+        SET is_read = TRUE 
+        WHERE receiver_id = ${userId1} AND sender_id = ${userId2} AND is_read = FALSE
+      `);
+    } catch (error) {
+      console.error('Error marking direct messages as read:', error);
+    }
+  }
+
+  async getDirectMessageContacts(userId: number): Promise<any[]> {
+    try {
+      const contacts = await db.execute(sql`
+        SELECT DISTINCT
+          CASE 
+            WHEN dm.sender_id = ${userId} THEN dm.receiver_id
+            ELSE dm.sender_id
+          END as contact_id,
+          u.name as contact_name,
+          u.profile_picture as contact_picture,
+          latest.content as last_message,
+          latest.created_at as last_message_at,
+          latest.sender_id as last_sender_id,
+          COALESCE(unread.unread_count, 0) as unread_count
+        FROM direct_messages dm
+        JOIN users u ON (
+          CASE 
+            WHEN dm.sender_id = ${userId} THEN dm.receiver_id
+            ELSE dm.sender_id
+          END = u.id
+        )
+        JOIN LATERAL (
+          SELECT content, created_at, sender_id
+          FROM direct_messages dm2
+          WHERE (dm2.sender_id = ${userId} AND dm2.receiver_id = u.id)
+             OR (dm2.sender_id = u.id AND dm2.receiver_id = ${userId})
+          ORDER BY created_at DESC
+          LIMIT 1
+        ) latest ON true
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) as unread_count
+          FROM direct_messages dm3
+          WHERE dm3.sender_id = u.id 
+            AND dm3.receiver_id = ${userId} 
+            AND dm3.is_read = FALSE
+        ) unread ON true
+        WHERE dm.sender_id = ${userId} OR dm.receiver_id = ${userId}
+        ORDER BY latest.created_at DESC
+      `);
+      return contacts.rows || [];
+    } catch (error) {
+      console.error('Error fetching direct message contacts:', error);
+      return [];
+    }
+  }
+
+  // Chat Rooms Methods
+  async getSocietyChatRooms(societyId: number): Promise<any[]> {
+    try {
+      const rooms = await db.execute(sql`
+        SELECT 
+          cr.*,
+          u.name as creator_name,
+          COUNT(sc.id) as message_count
+        FROM chat_rooms cr
+        LEFT JOIN users u ON cr.created_by = u.id
+        LEFT JOIN society_chats sc ON cr.id = sc.room_id
+        WHERE cr.society_id = ${societyId}
+        GROUP BY cr.id, u.name
+        ORDER BY cr.created_at ASC
+      `);
+      return rooms.rows || [];
+    } catch (error) {
+      console.error('Error fetching society chat rooms:', error);
+      return [];
+    }
+  }
+
+  async createChatRoom(societyId: number, name: string, description: string, roomType: string, createdBy: number): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO chat_rooms (society_id, name, description, room_type, created_by, created_at)
+        VALUES (${societyId}, ${name}, ${description}, ${roomType}, ${createdBy}, NOW())
+        RETURNING *
+      `);
+      return result.rows?.[0] || null;
+    } catch (error) {
+      console.error('Error creating chat room:', error);
+      throw error;
+    }
+  }
+
+  async getSocietyMembers(societyId: number): Promise<any[]> {
+    try {
+      const members = await db.execute(sql`
+        SELECT 
+          u.id,
+          u.name,
+          u.email,
+          u.profile_picture,
+          sm.joined_at,
+          CASE WHEN u.id = s.created_by THEN true ELSE false END as is_admin
+        FROM society_members sm
+        JOIN users u ON sm.user_id = u.id
+        JOIN societies s ON sm.society_id = s.id
+        WHERE sm.society_id = ${societyId}
+        ORDER BY is_admin DESC, u.name ASC
+      `);
+      return members.rows || [];
+    } catch (error) {
+      console.error('Error fetching society members:', error);
+      return [];
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

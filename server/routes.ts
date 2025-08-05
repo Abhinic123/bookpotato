@@ -3556,5 +3556,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Direct Messages Routes
+  app.get("/api/direct-messages/contacts", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const contacts = await storage.getDirectMessageContacts(userId);
+      res.json(contacts);
+    } catch (error) {
+      console.error("Error fetching contacts:", error);
+      res.status(500).json({ message: "Failed to fetch contacts" });
+    }
+  });
+
+  app.get("/api/direct-messages/:contactId", requireAuth, async (req, res) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      const userId = req.session.userId!;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      const messages = await storage.getDirectMessages(userId, contactId, limit, offset);
+      
+      // Mark messages as read
+      await storage.markDirectMessagesAsRead(userId, contactId);
+      
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching direct messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post("/api/direct-messages/:contactId", requireAuth, async (req, res) => {
+    try {
+      const contactId = parseInt(req.params.contactId);
+      const { content, messageType = 'text' } = req.body;
+      const senderId = req.session.userId!;
+      
+      const message = await storage.createDirectMessage(senderId, contactId, content, messageType);
+      
+      // Broadcast message to WebSocket clients
+      wss.clients.forEach((client: any) => {
+        if (client.readyState === WebSocket.OPEN && 
+            (client.userId === contactId || client.userId === senderId)) {
+          client.send(JSON.stringify({
+            type: 'new_direct_message',
+            message,
+            senderId,
+            receiverId: contactId
+          }));
+        }
+      });
+      
+      res.json(message);
+    } catch (error) {
+      console.error("Error sending direct message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  // Enhanced Society Chat Routes
+  app.get("/api/societies/:societyId/chat-rooms", requireAuth, async (req, res) => {
+    try {
+      const societyId = parseInt(req.params.societyId);
+      
+      // Check if user is member of society
+      const isMember = await storage.isMemberOfSociety(societyId, req.session.userId!);
+      if (!isMember) {
+        return res.status(403).json({ message: "Not a member of this society" });
+      }
+      
+      const rooms = await storage.getSocietyChatRooms(societyId);
+      res.json(rooms);
+    } catch (error) {
+      console.error("Error fetching chat rooms:", error);
+      res.status(500).json({ message: "Failed to fetch chat rooms" });
+    }
+  });
+
+  app.post("/api/societies/:societyId/chat-rooms", requireAuth, async (req, res) => {
+    try {
+      const societyId = parseInt(req.params.societyId);
+      const { name, description, roomType = 'general' } = req.body;
+      const createdBy = req.session.userId!;
+      
+      // Check if user is member of society
+      const isMember = await storage.isMemberOfSociety(societyId, createdBy);
+      if (!isMember) {
+        return res.status(403).json({ message: "Not a member of this society" });
+      }
+      
+      const room = await storage.createChatRoom(societyId, name, description, roomType, createdBy);
+      res.json(room);
+    } catch (error) {
+      console.error("Error creating chat room:", error);
+      res.status(500).json({ message: "Failed to create chat room" });
+    }
+  });
+
+  app.get("/api/societies/:societyId/members", requireAuth, async (req, res) => {
+    try {
+      const societyId = parseInt(req.params.societyId);
+      
+      // Check if user is member of society
+      const isMember = await storage.isMemberOfSociety(societyId, req.session.userId!);
+      if (!isMember) {
+        return res.status(403).json({ message: "Not a member of this society" });
+      }
+      
+      const members = await storage.getSocietyMembers(societyId);
+      res.json(members);
+    } catch (error) {
+      console.error("Error fetching society members:", error);
+      res.status(500).json({ message: "Failed to fetch members" });
+    }
+  });
+
   return httpServer;
 }

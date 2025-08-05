@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -641,5 +641,62 @@ export type ReadingListWithBooks = ReadingList & {
   books: Book[];
   creator: Pick<User, 'id' | 'name'>;
 };
+
+// Enhanced Chat System Tables
+export const directMessages = pgTable("direct_messages", {
+  id: serial("id").primaryKey(),
+  senderId: integer("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  receiverId: integer("receiver_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  messageType: varchar("message_type", { length: 20 }).default("text"),
+  isRead: boolean("is_read").default(false),
+  isEdited: boolean("is_edited").default(false),
+  editedAt: timestamp("edited_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const chatRooms = pgTable("chat_rooms", {
+  id: serial("id").primaryKey(),
+  societyId: integer("society_id").notNull().references(() => societies.id, { onDelete: "cascade" }),
+  roomType: varchar("room_type", { length: 20 }).default("general"),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Update society_chats to include room_id
+export const societyChatsEnhanced = pgTable("society_chats", {
+  id: serial("id").primaryKey(),
+  societyId: integer("society_id").notNull().references(() => societies.id, { onDelete: "cascade" }),
+  roomId: integer("room_id").references(() => chatRooms.id, { onDelete: "cascade" }),
+  senderId: integer("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  messageType: varchar("message_type", { length: 20 }).default("text"),
+  isEdited: boolean("is_edited").default(false),
+  editedAt: timestamp("edited_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Schema exports for direct messages
+export const insertDirectMessageSchema = createInsertSchema(directMessages).omit({
+  id: true,
+  createdAt: true,
+  isRead: true,
+  isEdited: true,
+  editedAt: true,
+});
+
+export const insertChatRoomSchema = createInsertSchema(chatRooms).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types
+export type DirectMessage = typeof directMessages.$inferSelect;
+export type InsertDirectMessage = z.infer<typeof insertDirectMessageSchema>;
+
+export type ChatRoom = typeof chatRooms.$inferSelect;
+export type InsertChatRoom = z.infer<typeof insertChatRoomSchema>;
 
 

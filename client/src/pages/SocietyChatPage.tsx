@@ -2,7 +2,7 @@ import { useParams, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import SocietyChat from "./SocietyChat";
+import EnhancedSocietyChat from "./EnhancedSocietyChat";
 
 export default function SocietyChatPage() {
   const { societyId } = useParams();
@@ -50,8 +50,8 @@ export default function SocietyChatPage() {
         <h1 className="text-2xl font-bold">Society Chat</h1>
       </div>
       
-      <div className="max-w-4xl mx-auto">
-        <SocietyChat 
+      <div className="w-full">
+        <EnhancedSocietyChat 
           societyId={parseInt(societyId || '0')} 
           societyName={society.name} 
         />

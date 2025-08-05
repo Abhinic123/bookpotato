@@ -82,6 +82,17 @@ BookShare is a community-driven digital library platform that enables book shari
 - Referral statistics and tracking
 - Integration with Brocks credit system
 
+### Enhanced Chat System
+- **Society Chat Rooms**: General discussion rooms for each society with real-time messaging
+- **One-on-One Direct Messages**: Private messaging between society members
+- **Integrated Notifications**: All app notifications accessible within chat interface
+- **WebSocket Real-time Communication**: Live message delivery and typing indicators
+- **Society Member Directory**: Browse and message other society members directly
+- **Unread Message Tracking**: Count and status indicators for unread messages
+- **Tabbed Interface**: Seamless switching between general chat, direct messages, and notifications
+- **Message History**: Persistent storage and retrieval of all conversations
+- **Read Status Management**: Track when messages are read by recipients
+
 ## Data Flow
 
 1. **User Registration**: User creates account → joins/creates society → can add books or browse available books
@@ -191,6 +202,13 @@ BookShare is a community-driven digital library platform that enables book shari
 - July 27, 2025: Implemented feedback submission system with inline form on home page and category-based submissions
 - July 27, 2025: Restored add book floating action button to proper z-index positioning (z-40)
 - July 27, 2025: Enhanced book recommendation system to properly refresh after preference changes with cache invalidation
+- August 5, 2025: Implemented comprehensive enhanced chat system with one-on-one direct messaging and general society chat
+- August 5, 2025: Added WebSocket real-time messaging support for both society and direct messages
+- August 5, 2025: Created tabbed chat interface integrating notifications, direct messages, and society chat rooms
+- August 5, 2025: Added society member directory with direct message access from chat interface
+- August 5, 2025: Implemented read status tracking for direct messages with unread count indicators
+- August 5, 2025: Created database tables for direct_messages, chat_rooms, and enhanced society_chats
+- August 5, 2025: Added comprehensive chat API endpoints for all messaging functionality
 ```
 
 ## Changelog
