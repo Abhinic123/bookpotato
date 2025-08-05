@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useLocation } from "wouter";
 import { Plus, Users, Building2, Hash, Check, AlertTriangle, ExternalLink, MapPin, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,6 +156,7 @@ export default function Societies() {
   const [selectedLocation, setSelectedLocation] = useState<{address: string; coordinates: [number, number]} | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const form = useForm<CreateSocietyFormData>({
     resolver: zodResolver(createSocietySchema),
@@ -390,7 +392,7 @@ export default function Societies() {
                   <Button 
                     size="sm" 
                     variant="outline"
-                    onClick={() => window.location.href = `/societies/${society.id}/chat`}
+                    onClick={() => setLocation(`/societies/${society.id}/chat`)}
                     className="text-primary hover:text-primary"
                   >
                     <MessageCircle className="h-4 w-4 mr-1" />
