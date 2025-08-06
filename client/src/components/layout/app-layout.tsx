@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, BookOpen, Home, Search, Users, Bookmark, Plus, LogOut, User, Settings, Wallet, Coins, Heart } from "lucide-react";
+import { Bell, BookOpen, Home, Search, Users, Bookmark, Plus, LogOut, User, Settings, Wallet, Coins, Heart, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -70,7 +70,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { name: "Home", icon: Home, path: "/" },
     { name: "Browse", icon: Search, path: "/browse" },
     { name: "My Books", icon: Bookmark, path: "/my-books" },
-    { name: "Earnings", icon: Coins, path: "/earnings" },
+    { name: "Chat", icon: MessageCircle, path: "/chat" },
     { name: "Societies", icon: Users, path: "/societies" },
   ];
 
@@ -96,6 +96,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <span className="text-sm font-medium text-amber-600">
                   {userCredits?.balance || 0}
                 </span>
+              </Button>
+            </Link>
+            <Link href="/earnings">
+              <Button variant="ghost" size="sm" className="flex items-center space-x-1 px-2">
+                <Wallet className="h-4 w-4 text-green-600" />
+                <span className="text-sm font-medium text-green-600">Earnings</span>
               </Button>
             </Link>
             <Link href="/notifications">

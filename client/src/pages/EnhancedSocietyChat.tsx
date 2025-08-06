@@ -240,7 +240,8 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
         <Users className="h-4 w-4" />
         Society Members ({members.length})
       </h4>
-      {members.map((member: SocietyMember) => (
+      <p className="text-xs text-muted-foreground mb-3">Click on any member to start a private chat</p>
+      {members.filter((member: SocietyMember) => member.id !== user?.id).map((member: SocietyMember) => (
         <div
           key={member.id}
           className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-muted transition-colors ${
@@ -263,14 +264,36 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
               {member.is_admin && (
                 <Badge variant="secondary" className="text-xs">Admin</Badge>
               )}
-              {member.id === user?.id && (
-                <Badge variant="outline" className="text-xs">You</Badge>
-              )}
             </div>
+            <span className="text-xs text-muted-foreground">
+              Click to chat privately
+            </span>
           </div>
-          <UserPlus className="h-4 w-4 text-muted-foreground" />
+          <MessageCircle className="h-4 w-4 text-primary" />
         </div>
       ))}
+      
+      {/* Show current user */}
+      {user && (
+        <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={user.profilePicture} />
+            <AvatarFallback>
+              {user.name.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">{user.name}</span>
+              <Badge variant="outline" className="text-xs">You</Badge>
+              {members.find((m: SocietyMember) => m.id === user.id)?.is_admin && (
+                <Badge variant="secondary" className="text-xs">Admin</Badge>
+              )}
+            </div>
+            <span className="text-xs text-muted-foreground">That's you!</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 

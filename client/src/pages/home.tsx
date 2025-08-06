@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
-import { Building2, ChevronRight, Clock, Coins, Gift, Award, Plus, HelpCircle, BookPlus } from "lucide-react";
+import { useLocation, Link } from "wouter";
+import { Building2, ChevronRight, Clock, Coins, Gift, Award, Plus, HelpCircle, BookPlus, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -387,6 +387,23 @@ export default function Home() {
         open={showAddBookModal}
         onOpenChange={setShowAddBookModal}
       />
+
+      {/* Chat Section */}
+      <div className="p-4">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mb-4">
+          <div className="text-center mb-4">
+            <MessageCircle className="h-12 w-12 mx-auto text-blue-600 mb-3" />
+            <h3 className="text-lg font-semibold text-text-primary mb-2">Connect with Your Community</h3>
+            <p className="text-sm text-text-secondary">Chat with fellow book lovers in your society</p>
+          </div>
+          <Link href="/chat" className="block">
+            <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+              <MessageCircle className="w-4 h-4 mr-2" />
+              Start Chatting
+            </Button>
+          </Link>
+        </div>
+      </div>
 
       {/* Feedback Section */}
       <div className="p-4">
