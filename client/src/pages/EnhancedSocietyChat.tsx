@@ -463,27 +463,30 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-          <div className="border-b p-2">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="general" className="flex items-center gap-2">
-                <Hash className="h-4 w-4" />
-                General Chat
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+          <div className="border-b p-2 flex-shrink-0">
+            <TabsList className="grid w-full grid-cols-3 h-10">
+              <TabsTrigger value="general" className="flex items-center gap-1 text-xs px-2">
+                <Hash className="h-3 w-3" />
+                <span className="hidden sm:inline">General Chat</span>
+                <span className="sm:hidden">Chat</span>
               </TabsTrigger>
-              <TabsTrigger value="direct" className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4" />
-                Direct Messages
+              <TabsTrigger value="direct" className="flex items-center gap-1 text-xs px-2">
+                <MessageCircle className="h-3 w-3" />
+                <span className="hidden sm:inline">Direct Messages</span>
+                <span className="sm:hidden">Direct</span>
                 {contacts.filter((c: Contact) => c.unread_count > 0).length > 0 && (
-                  <Badge variant="destructive" className="ml-1 text-xs">
+                  <Badge variant="destructive" className="ml-1 text-xs h-4 w-4 p-0 flex items-center justify-center">
                     {contacts.reduce((sum: number, c: Contact) => sum + c.unread_count, 0)}
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2">
-                <Bell className="h-4 w-4" />
-                Notifications
+              <TabsTrigger value="notifications" className="flex items-center gap-1 text-xs px-2">
+                <Bell className="h-3 w-3" />
+                <span className="hidden sm:inline">Notifications</span>
+                <span className="sm:hidden">Notify</span>
                 {notifications.length > 0 && (
-                  <Badge variant="destructive" className="ml-1 text-xs">
+                  <Badge variant="destructive" className="ml-1 text-xs h-4 w-4 p-0 flex items-center justify-center">
                     {notifications.length}
                   </Badge>
                 )}
@@ -491,16 +494,16 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
             </TabsList>
           </div>
 
-          <TabsContent value="general" className="flex-1 flex flex-col m-0">
+          <TabsContent value="general" className="flex-1 flex flex-col m-0 data-[state=active]:flex">
             <ScrollArea className="flex-1">
               {renderMessages(societyMessages)}
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="direct" className="flex-1 flex flex-col m-0">
+          <TabsContent value="direct" className="flex-1 flex flex-col m-0 data-[state=active]:flex">
             {selectedContact ? (
               <>
-                <div className="border-b p-3">
+                <div className="border-b p-3 flex-shrink-0">
                   <h4 className="font-medium">
                     Chat with {members.find((m: SocietyMember) => m.id === selectedContact)?.name}
                   </h4>
@@ -519,7 +522,7 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
             )}
           </TabsContent>
 
-          <TabsContent value="notifications" className="flex-1 m-0">
+          <TabsContent value="notifications" className="flex-1 m-0 data-[state=active]:flex">
             <ScrollArea className="h-full">
               {renderNotifications()}
             </ScrollArea>

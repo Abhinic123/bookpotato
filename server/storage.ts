@@ -74,6 +74,16 @@ export interface IStorage {
   createMessage(message: any): Promise<any>;
   markMessagesAsRead(userId: number, otherUserId: number): Promise<void>;
   
+  // Enhanced Chat System
+  getSocietyMembers(societyId: number): Promise<any[]>;
+  getSocietyChatRooms(societyId: number): Promise<any[]>;
+  getSocietyMessages(societyId: number, limit?: number, offset?: number): Promise<any[]>;
+  getDirectMessageContacts(userId: number): Promise<any[]>;
+  getDirectMessages(userId: number, contactId: number): Promise<any[]>;
+  createSocietyMessage(societyId: number, senderId: number, content: string, messageType: string): Promise<any>;
+  createDirectMessage(senderId: number, receiverId: number, content: string, messageType: string): Promise<any>;
+  markDirectMessageAsRead(messageId: number): Promise<void>;
+  
   // Advanced search
   searchBooksAdvanced(filters: any): Promise<BookWithOwner[]>;
   
