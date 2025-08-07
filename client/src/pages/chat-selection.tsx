@@ -74,7 +74,7 @@ export default function ChatSelection() {
             ) : (
               <div className="space-y-3">
                 {societies.map((society: Society) => (
-                  <Link key={society.id} href={`/societies/${society.id}/chat`}>
+                  <div key={society.id} onClick={() => setLocation(`/societies/${society.id}/chat`)} className="cursor-pointer">
                     <Card className="hover:shadow-md transition-shadow cursor-pointer">
                       <CardContent className="p-4">
                         <div className="flex items-center gap-3">
@@ -111,7 +111,7 @@ export default function ChatSelection() {
                         </div>
                       </CardContent>
                     </Card>
-                  </Link>
+                  </div>
                 ))}
               </div>
             )}

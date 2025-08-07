@@ -145,13 +145,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <DropdownMenuItem asChild>
                   <Link href="/my-wishlist">
                     <Heart className="mr-2 h-4 w-4" />
-                    <span>Wishlist</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/buy-brocks">
-                    <Wallet className="mr-2 h-4 w-4" />
-                    <span>Buy Brocks</span>
+                    <span>My Wishlist</span>
                   </Link>
                 </DropdownMenuItem>
                 {isAdmin && (

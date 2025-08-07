@@ -52,6 +52,50 @@ export default function EarningsPage() {
     );
   }
 
+  const RewardsTab = () => (
+    <div className="p-4">
+      <div className="text-center mb-6">
+        <div className="flex justify-center mb-3">
+          <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-4 rounded-full">
+            <Gift className="h-8 w-8 text-white" />
+          </div>
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Rewards Center</h2>
+        <p className="text-gray-600">Brocks credits and rewards management</p>
+      </div>
+      
+      <div className="space-y-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Coins className="h-12 w-12 mx-auto text-amber-600 mb-3" />
+            <h3 className="font-semibold mb-2">Buy Brocks Credits</h3>
+            <p className="text-sm text-gray-600 mb-4">Purchase credits to unlock premium features</p>
+            <Link href="/buy-brocks">
+              <Button className="w-full">
+                <Coins className="w-4 h-4 mr-2" />
+                Buy Brocks
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 text-center">
+            <Gift className="h-12 w-12 mx-auto text-green-600 mb-3" />
+            <h3 className="font-semibold mb-2">Detailed Rewards</h3>
+            <p className="text-sm text-gray-600 mb-4">View your complete rewards history</p>
+            <Link href="/rewards">
+              <Button variant="outline" className="w-full">
+                <Gift className="w-4 h-4 mr-2" />
+                View All Rewards
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'returned':
@@ -83,31 +127,32 @@ export default function EarningsPage() {
   };
 
   return (
-    <div className="p-4 space-y-6">
-      {/* Header */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <Wallet className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Earnings & Spending</h1>
-          </div>
-          <div className="flex space-x-2">
-            <Link href="/buy-brocks">
-              <Button size="sm" className="flex items-center space-x-2">
-                <Coins className="h-4 w-4" />
-                <span>Buy Brocks</span>
-              </Button>
-            </Link>
-            <Link href="/rewards">
-              <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                <Gift className="h-4 w-4" />
-                <span>Rewards Center</span>
-              </Button>
-            </Link>
-          </div>
-        </div>
-        <p className="text-gray-600">Track your book lending earnings and borrowing expenses</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-md mx-auto bg-white min-h-screen">
+        <Tabs defaultValue="earnings" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 m-4">
+            <TabsTrigger value="earnings" className="flex items-center gap-2">
+              <Wallet className="h-4 w-4" />
+              Earnings
+            </TabsTrigger>
+            <TabsTrigger value="rewards" className="flex items-center gap-2">
+              <Gift className="h-4 w-4" />
+              Rewards
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="earnings">
+            <div className="p-4 space-y-6">
+              {/* Header */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-3">
+                    <Wallet className="w-8 h-8 text-blue-600" />
+                    <h1 className="text-3xl font-bold text-gray-900">Earnings & Spending</h1>
+                  </div>
+                </div>
+                <p className="text-gray-600">Track your book lending earnings and borrowing expenses</p>
+              </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4">
@@ -146,14 +191,13 @@ export default function EarningsPage() {
         </CardContent>
       </Card>
 
-      {/* Transaction History */}
-      <Tabs defaultValue="earnings" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="earnings">Earnings ({earningsData?.lentRentals?.length || 0})</TabsTrigger>
-          <TabsTrigger value="spending">Spending ({earningsData?.borrowedRentals?.length || 0})</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="earnings" className="space-y-4">
+      {/* Earnings Section */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4 flex items-center">
+          <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
+          Earnings ({earningsData?.lentRentals?.length || 0})
+        </h3>
+        <div className="space-y-4">
           {earningsData?.lentRentals?.length === 0 ? (
             <Card>
               <CardContent className="pt-6 text-center">
@@ -198,9 +242,16 @@ export default function EarningsPage() {
               </Card>
             ))
           )}
-        </TabsContent>
-        
-        <TabsContent value="spending" className="space-y-4">
+        </div>
+      </div>
+      
+      {/* Spending Section */}
+      <div>
+        <h3 className="text-lg font-semibold mb-4 flex items-center">
+          <TrendingDown className="h-5 w-5 mr-2 text-red-600" />
+          Spending ({earningsData?.borrowedRentals?.length || 0})
+        </h3>
+        <div className="space-y-4">
           {earningsData?.borrowedRentals?.length === 0 ? (
             <Card>
               <CardContent className="pt-6 text-center">
@@ -245,8 +296,16 @@ export default function EarningsPage() {
               </Card>
             ))
           )}
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="rewards">
+            <RewardsTab />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
