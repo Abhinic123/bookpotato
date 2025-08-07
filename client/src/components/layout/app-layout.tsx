@@ -34,6 +34,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   });
 
   const isAdmin = (authData?.user as any)?.isAdmin || authData?.user?.email === 'abhinic@gmail.com';
+  const isOnChatPage = location.startsWith('/society-chat/');
 
   const { data: notifications } = useQuery({
     queryKey: ["/api/notifications"],
@@ -172,14 +173,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
         {children}
       </main>
 
-      {/* Floating Action Button */}
-      <Button
-        onClick={() => setShowAddModal(true)}
-        className="fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-lg z-40"
-        size="icon"
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
+      {/* Floating Action Button - Hide on chat pages */}
+      {!isOnChatPage && (
+        <Button
+          onClick={() => setShowAddModal(true)}
+          className="fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-lg z-40"
+          size="icon"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      )}
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-30">
