@@ -145,10 +145,7 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
   // Send society message mutation
   const sendSocietyMessageMutation = useMutation({
     mutationFn: async (content: string) => {
-      return apiRequest(`/api/societies/${societyId}/messages`, {
-        method: 'POST',
-        body: { content, messageType: 'text' }
-      });
+      return apiRequest(`/api/societies/${societyId}/messages`, 'POST', { content, messageType: 'text' });
     },
     onSuccess: () => {
       setMessage("");
@@ -160,10 +157,7 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
   const sendDirectMessageMutation = useMutation({
     mutationFn: async (content: string) => {
       if (!selectedContact) throw new Error('No contact selected');
-      return apiRequest(`/api/direct-messages/${selectedContact}`, {
-        method: 'POST',
-        body: { content, messageType: 'text' }
-      });
+      return apiRequest(`/api/direct-messages/${selectedContact}`, 'POST', { content, messageType: 'text' });
     },
     onSuccess: () => {
       setMessage("");
@@ -184,7 +178,7 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
       websocket.send(JSON.stringify({
         type: 'join_society',
         societyId,
-        userId: user.id
+        userId: user?.user?.id || user?.id
       }));
       setWs(websocket);
     };
@@ -277,16 +271,16 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
       {user && (
         <div className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user.profilePicture} />
+            <AvatarImage src={user?.user?.profilePicture || user?.profilePicture} />
             <AvatarFallback>
-              {user.name.charAt(0).toUpperCase()}
+              {(user?.user?.name || user?.name || 'U').charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{user.name}</span>
+              <span className="text-sm font-medium">{user?.user?.name || user?.name}</span>
               <Badge variant="outline" className="text-xs">You</Badge>
-              {members.find((m: SocietyMember) => m.id === user.id)?.is_admin && (
+              {members.find((m: SocietyMember) => m.id === (user?.user?.id || user?.id))?.is_admin && (
                 <Badge variant="secondary" className="text-xs">Admin</Badge>
               )}
             </div>
@@ -387,7 +381,7 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
           <div
             key={msg.id}
             className={`flex items-start gap-3 ${
-              msg.sender_id === user?.id ? 'flex-row-reverse' : ''
+              msg.sender_id === (user?.user?.id || user?.id) ? 'flex-row-reverse' : ''
             }`}
           >
             <Avatar className="h-8 w-8">
@@ -397,7 +391,7 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
               </AvatarFallback>
             </Avatar>
             
-            <div className={`flex flex-col ${msg.sender_id === user?.id ? 'items-end' : 'items-start'}`}>
+            <div className={`flex flex-col ${msg.sender_id === (user?.user?.id || user?.id) ? 'items-end' : 'items-start'}`}>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm font-medium">{msg.sender_name}</span>
                 <span className="text-xs text-muted-foreground">
@@ -407,7 +401,7 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
               
               <div
                 className={`rounded-lg px-3 py-2 max-w-[70%] ${
-                  msg.sender_id === user?.id
+                  msg.sender_id === (user?.user?.id || user?.id)
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted'
                 }`}
@@ -479,9 +473,9 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
               <TabsTrigger value="direct" className="flex items-center gap-2">
                 <MessageCircle className="h-4 w-4" />
                 Direct Messages
-                {contacts.filter(c => c.unread_count > 0).length > 0 && (
+                {contacts.filter((c: Contact) => c.unread_count > 0).length > 0 && (
                   <Badge variant="destructive" className="ml-1 text-xs">
-                    {contacts.reduce((sum, c) => sum + c.unread_count, 0)}
+                    {contacts.reduce((sum: number, c: Contact) => sum + c.unread_count, 0)}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -508,7 +502,7 @@ export default function EnhancedSocietyChat({ societyId, societyName }: Enhanced
               <>
                 <div className="border-b p-3">
                   <h4 className="font-medium">
-                    Chat with {members.find(m => m.id === selectedContact)?.name}
+                    Chat with {members.find((m: SocietyMember) => m.id === selectedContact)?.name}
                   </h4>
                 </div>
                 <ScrollArea className="flex-1">
