@@ -2224,6 +2224,73 @@ export class MemStorage implements IStorage {
       return [];
     }
   }
+
+  async getDirectMessages(userId: number, contactId: number): Promise<any[]> {
+    try {
+      const messages = await db.execute(sql`
+        SELECT 
+          dm.id,
+          dm.sender_id,
+          dm.receiver_id,
+          dm.content,
+          dm.message_type,
+          dm.is_read,
+          dm.created_at,
+          u.name as sender_name,
+          u.profile_picture as sender_picture
+        FROM direct_messages dm
+        JOIN users u ON dm.sender_id = u.id
+        WHERE (dm.sender_id = ${userId} AND dm.receiver_id = ${contactId})
+           OR (dm.sender_id = ${contactId} AND dm.receiver_id = ${userId})
+        ORDER BY dm.created_at ASC
+      `);
+      return messages.rows || [];
+    } catch (error) {
+      console.error('Error fetching direct messages:', error);
+      return [];
+    }
+  }
+
+  async createSocietyMessage(societyId: number, senderId: number, content: string, messageType: string): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO society_chats (society_id, sender_id, content, message_type, created_at)
+        VALUES (${societyId}, ${senderId}, ${content}, ${messageType}, NOW())
+        RETURNING *
+      `);
+      return result.rows?.[0] || null;
+    } catch (error) {
+      console.error('Error creating society message:', error);
+      throw error;
+    }
+  }
+
+  async createDirectMessage(senderId: number, receiverId: number, content: string, messageType: string): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO direct_messages (sender_id, receiver_id, content, message_type, is_read, created_at)
+        VALUES (${senderId}, ${receiverId}, ${content}, ${messageType}, FALSE, NOW())
+        RETURNING *
+      `);
+      return result.rows?.[0] || null;
+    } catch (error) {
+      console.error('Error creating direct message:', error);
+      throw error;
+    }
+  }
+
+  async markDirectMessageAsRead(messageId: number): Promise<void> {
+    try {
+      await db.execute(sql`
+        UPDATE direct_messages 
+        SET is_read = TRUE 
+        WHERE id = ${messageId}
+      `);
+    } catch (error) {
+      console.error('Error marking direct message as read:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
