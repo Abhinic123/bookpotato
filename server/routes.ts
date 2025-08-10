@@ -3513,8 +3513,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not a member of this society" });
       }
       
-      const messages = await storage.getSocietyMessages(societyId, limit, offset);
-      res.json(messages);
+      // Direct database query for society messages
+      const messages = await db.execute(sql`
+        SELECT 
+          sc.id,
+          sc.society_id,
+          sc.sender_id,
+          sc.content,
+          sc.message_type,
+          sc.is_edited,
+          sc.edited_at,
+          sc.created_at,
+          u.name as sender_name,
+          u.profile_picture as sender_picture
+        FROM society_chats sc
+        JOIN users u ON sc.sender_id = u.id
+        WHERE sc.society_id = ${societyId}
+        ORDER BY sc.created_at DESC
+        LIMIT ${limit} OFFSET ${offset}
+      `);
+      res.json(messages.rows || []);
     } catch (error) {
       console.error("Error fetching society messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
@@ -3587,8 +3605,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/direct-messages/contacts", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      const contacts = await storage.getDirectMessageContacts(userId);
-      res.json(contacts);
+      // Direct database query for society member contacts
+      const contacts = await db.execute(sql`
+        SELECT DISTINCT
+          u.id as contact_id,
+          u.name as contact_name,
+          u.profile_picture as contact_picture,
+          '' as last_message,
+          NOW() as last_message_at,
+          0 as last_sender_id,
+          0 as unread_count
+        FROM society_members sm1
+        JOIN society_members sm2 ON sm1.society_id = sm2.society_id
+        JOIN users u ON sm2.user_id = u.id
+        WHERE sm1.user_id = ${userId} AND u.id != ${userId}
+        ORDER BY u.name ASC
+      `);
+      res.json(contacts.rows || []);
     } catch (error) {
       console.error("Error fetching contacts:", error);
       res.status(500).json({ message: "Failed to fetch contacts" });
@@ -3691,8 +3724,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not a member of this society" });
       }
       
-      const members = await storage.getSocietyMembers(societyId);
-      res.json(members);
+      // Direct database query since storage method has interface issues
+      const members = await db.execute(sql`
+        SELECT DISTINCT
+          u.id,
+          u.name,
+          u.email,
+          u.profile_picture,
+          sm.joined_at,
+          CASE WHEN u.id = s.created_by THEN true ELSE false END as is_admin
+        FROM society_members sm
+        JOIN users u ON sm.user_id = u.id
+        JOIN societies s ON sm.society_id = s.id
+        WHERE sm.society_id = ${societyId}
+        ORDER BY is_admin DESC, u.name ASC
+      `);
+      res.json(members.rows || []);
     } catch (error) {
       console.error("Error fetching society members:", error);
       res.status(500).json({ message: "Failed to fetch members" });
