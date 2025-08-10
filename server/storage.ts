@@ -164,6 +164,7 @@ export interface IStorage {
   getDirectMessages(userId: number, contactId: number): Promise<any[]>;
   createDirectMessage(senderId: number, receiverId: number, content: string, messageType?: string): Promise<any>;
   markDirectMessageAsRead(messageId: number): Promise<void>;
+  markDirectMessagesAsRead(userId1: number, userId2: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2272,7 +2273,7 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async createDirectMessage(senderId: number, receiverId: number, content: string, messageType: string): Promise<any> {
+  async createDirectMessage(senderId: number, receiverId: number, content: string, messageType: string = 'text'): Promise<any> {
     try {
       const result = await db.execute(sql`
         INSERT INTO direct_messages (sender_id, receiver_id, content, message_type, is_read, created_at)
@@ -2296,6 +2297,18 @@ export class MemStorage implements IStorage {
     } catch (error) {
       console.error('Error marking direct message as read:', error);
       throw error;
+    }
+  }
+
+  async markDirectMessagesAsRead(userId1: number, userId2: number): Promise<void> {
+    try {
+      await db.execute(sql`
+        UPDATE direct_messages 
+        SET is_read = TRUE 
+        WHERE receiver_id = ${userId1} AND sender_id = ${userId2} AND is_read = FALSE
+      `);
+    } catch (error) {
+      console.error('Error marking direct messages as read:', error);
     }
   }
 }
