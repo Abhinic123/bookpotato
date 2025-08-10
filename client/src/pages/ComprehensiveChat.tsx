@@ -141,10 +141,13 @@ export default function ComprehensiveChat({ societyId, societyName }: Comprehens
   // Send Society Message Mutation
   const sendSocietyMessageMutation = useMutation({
     mutationFn: async (content: string) => {
-      return apiRequest(`/api/societies/${societyId}/messages`, {
+      const response = await fetch(`/api/societies/${societyId}/messages`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content, messageType: "text" }),
       });
+      if (!response.ok) throw new Error("Failed to send message");
+      return response.json();
     },
     onSuccess: () => {
       setMessage("");
@@ -155,10 +158,13 @@ export default function ComprehensiveChat({ societyId, societyName }: Comprehens
   // Send Direct Message Mutation
   const sendDirectMessageMutation = useMutation({
     mutationFn: async ({ receiverId, content }: { receiverId: number; content: string }) => {
-      return apiRequest("/api/direct-messages", {
+      const response = await fetch("/api/direct-messages", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ receiverId, content, messageType: "text" }),
       });
+      if (!response.ok) throw new Error("Failed to send message");
+      return response.json();
     },
     onSuccess: () => {
       setMessage("");
@@ -170,10 +176,12 @@ export default function ComprehensiveChat({ societyId, societyName }: Comprehens
   // Handle notification actions
   const handleNotificationAction = async (notificationId: number, action: string, metadata?: any) => {
     try {
-      await apiRequest(`/api/notifications/${notificationId}/${action}`, {
+      const response = await fetch(`/api/notifications/${notificationId}/${action}`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(metadata || {}),
       });
+      if (!response.ok) throw new Error(`Failed to ${action} notification`);
       
       queryClient.invalidateQueries({ queryKey: ["/api/notifications"] });
       
@@ -203,7 +211,7 @@ export default function ComprehensiveChat({ societyId, societyName }: Comprehens
       socket.send(JSON.stringify({ 
         type: "join_society", 
         societyId: societyId,
-        userId: user.id 
+        userId: user?.id 
       }));
     };
 
@@ -427,8 +435,8 @@ export default function ComprehensiveChat({ societyId, societyName }: Comprehens
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-5 w-5 text-green-600" />
                 <h3 className="font-semibold text-green-900">
-                  {societyMembers.find(m => m.id === selectedContact)?.name || 
-                   directContacts.find(c => c.contact_id === selectedContact)?.contact_name}
+                  {societyMembers.find((m: SocietyMember) => m.id === selectedContact)?.name || 
+                   directContacts.find((c: Contact) => c.contact_id === selectedContact)?.contact_name}
                 </h3>
               </div>
             </div>
