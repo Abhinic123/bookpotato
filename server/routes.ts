@@ -3605,9 +3605,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/direct-messages/contacts", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      // Direct database query for society member contacts
+      // Direct database query for unique society member contacts
       const contacts = await db.execute(sql`
-        SELECT DISTINCT
+        SELECT DISTINCT ON (u.id)
           u.id as contact_id,
           u.name as contact_name,
           u.profile_picture as contact_picture,
@@ -3619,7 +3619,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         JOIN society_members sm2 ON sm1.society_id = sm2.society_id
         JOIN users u ON sm2.user_id = u.id
         WHERE sm1.user_id = ${userId} AND u.id != ${userId}
-        ORDER BY u.name ASC
+        GROUP BY u.id, u.name, u.profile_picture
+        ORDER BY u.id, u.name ASC
       `);
       res.json(contacts.rows || []);
     } catch (error) {
@@ -3724,19 +3725,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not a member of this society" });
       }
       
-      // Direct database query since storage method has interface issues
+      // Direct database query with proper deduplication
       const members = await db.execute(sql`
-        SELECT DISTINCT
+        SELECT DISTINCT ON (u.id)
           u.id,
           u.name,
           u.email,
           u.profile_picture,
-          sm.joined_at,
+          MIN(sm.joined_at) as joined_at,
           CASE WHEN u.id = s.created_by THEN true ELSE false END as is_admin
         FROM society_members sm
         JOIN users u ON sm.user_id = u.id
         JOIN societies s ON sm.society_id = s.id
         WHERE sm.society_id = ${societyId}
+        GROUP BY u.id, u.name, u.email, u.profile_picture, s.created_by
         ORDER BY is_admin DESC, u.name ASC
       `);
       res.json(members.rows || []);
