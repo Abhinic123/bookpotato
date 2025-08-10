@@ -3545,13 +3545,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { content, messageType = 'text' } = req.body;
       const senderId = req.session.userId!;
       
-      // Check if user is member of society
-      const isMember = await storage.isMemberOfSociety(societyId, senderId);
-      if (!isMember) {
+      // Check if user is member of society with direct query
+      const memberCheck = await db.execute(sql`
+        SELECT 1 FROM society_members 
+        WHERE society_id = ${societyId} AND user_id = ${senderId}
+        LIMIT 1
+      `);
+      
+      if (!memberCheck.rows || memberCheck.rows.length === 0) {
         return res.status(403).json({ message: "Not a member of this society" });
       }
       
-      const message = await storage.createSocietyMessage(societyId, senderId, content, messageType);
+      // Create message with direct database query
+      const result = await db.execute(sql`
+        INSERT INTO society_chats (society_id, sender_id, content, message_type, created_at)
+        VALUES (${societyId}, ${senderId}, ${content}, ${messageType}, NOW())
+        RETURNING *
+      `);
+      const message = result.rows?.[0] || null;
       
       // Broadcast message to all connected clients in the society
       wss.clients.forEach((client: any) => {
@@ -3605,9 +3616,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/direct-messages/contacts", requireAuth, async (req, res) => {
     try {
       const userId = req.session.userId!;
-      // Direct database query for unique society member contacts
+      // Direct database query for unique society member contacts - fixed syntax
       const contacts = await db.execute(sql`
-        SELECT DISTINCT ON (u.id)
+        SELECT 
           u.id as contact_id,
           u.name as contact_name,
           u.profile_picture as contact_picture,
@@ -3620,7 +3631,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         JOIN users u ON sm2.user_id = u.id
         WHERE sm1.user_id = ${userId} AND u.id != ${userId}
         GROUP BY u.id, u.name, u.profile_picture
-        ORDER BY u.id, u.name ASC
+        ORDER BY u.name ASC
       `);
       res.json(contacts.rows || []);
     } catch (error) {
@@ -3636,35 +3647,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = parseInt(req.query.limit as string) || 50;
       const offset = parseInt(req.query.offset as string) || 0;
       
-      const messages = await storage.getDirectMessages(userId, contactId, limit, offset);
+      // Direct database query for messages
+      const messages = await db.execute(sql`
+        SELECT 
+          dm.id,
+          dm.sender_id,
+          dm.receiver_id,
+          dm.content,
+          dm.message_type,
+          dm.is_read,
+          dm.created_at,
+          u.name as sender_name,
+          u.profile_picture as sender_picture
+        FROM direct_messages dm
+        JOIN users u ON dm.sender_id = u.id
+        WHERE (dm.sender_id = ${userId} AND dm.receiver_id = ${contactId})
+           OR (dm.sender_id = ${contactId} AND dm.receiver_id = ${userId})
+        ORDER BY dm.created_at ASC
+        LIMIT ${limit} OFFSET ${offset}
+      `);
       
-      // Mark messages as read
-      await storage.markDirectMessagesAsRead(userId, contactId);
+      // Mark messages as read with direct query
+      await db.execute(sql`
+        UPDATE direct_messages 
+        SET is_read = TRUE 
+        WHERE receiver_id = ${userId} AND sender_id = ${contactId} AND is_read = FALSE
+      `);
       
-      res.json(messages);
+      res.json(messages.rows || []);
     } catch (error) {
       console.error("Error fetching direct messages:", error);
       res.status(500).json({ message: "Failed to fetch messages" });
     }
   });
 
-  app.post("/api/direct-messages/:contactId", requireAuth, async (req, res) => {
+  app.post("/api/direct-messages", requireAuth, async (req, res) => {
     try {
-      const contactId = parseInt(req.params.contactId);
-      const { content, messageType = 'text' } = req.body;
+      const { receiverId, content, messageType = 'text' } = req.body;
       const senderId = req.session.userId!;
       
-      const message = await storage.createDirectMessage(senderId, contactId, content, messageType);
+      // Direct database query to create message
+      const result = await db.execute(sql`
+        INSERT INTO direct_messages (sender_id, receiver_id, content, message_type, is_read, created_at)
+        VALUES (${senderId}, ${receiverId}, ${content}, ${messageType}, FALSE, NOW())
+        RETURNING *
+      `);
+      const message = result.rows?.[0] || null;
       
       // Broadcast message to WebSocket clients
       wss.clients.forEach((client: any) => {
         if (client.readyState === WebSocket.OPEN && 
-            (client.userId === contactId || client.userId === senderId)) {
+            (client.userId === receiverId || client.userId === senderId)) {
           client.send(JSON.stringify({
             type: 'new_direct_message',
             message,
             senderId,
-            receiverId: contactId
+            receiverId: receiverId
           }));
         }
       });
@@ -3725,9 +3763,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not a member of this society" });
       }
       
-      // Direct database query with proper deduplication
+      // Direct database query with proper deduplication - fixed DISTINCT ON
       const members = await db.execute(sql`
-        SELECT DISTINCT ON (u.id)
+        SELECT 
           u.id,
           u.name,
           u.email,
