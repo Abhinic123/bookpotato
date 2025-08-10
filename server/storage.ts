@@ -157,6 +157,13 @@ export interface IStorage {
   updateChatReadStatus(societyId: number, userId: number, messageId?: number): Promise<void>;
   getChatReadStatus(societyId: number, userId: number): Promise<any>;
   getUnreadMessageCount(societyId: number, userId: number): Promise<number>;
+  getSocietyMembers(societyId: number): Promise<any[]>;
+  getDirectMessageContacts(userId: number): Promise<any[]>;
+  getSocietyChatRooms(userId: number): Promise<any[]>;
+  createChatRoom(societyId: number, name: string, createdBy: number): Promise<any>;
+  getDirectMessages(userId: number, contactId: number): Promise<any[]>;
+  createDirectMessage(senderId: number, receiverId: number, content: string, messageType?: string): Promise<any>;
+  markDirectMessageAsRead(messageId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {

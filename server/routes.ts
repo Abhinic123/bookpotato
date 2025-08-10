@@ -3380,51 +3380,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Recommended Books based on Genre Preferences
   app.get("/api/books/recommended", requireAuth, async (req, res) => {
     try {
+      console.log(`📚 Finding recommended books for user ${req.session.userId}`);
+      
       // Get user's genre preferences
       const preferences = await db.select()
         .from(userGenrePreferences)
         .where(eq(userGenrePreferences.userId, req.session.userId!));
       
-      if (preferences.length === 0) {
-        // No preferences set, return popular books
-        const popularBooks = await db.select()
-          .from(books)
-          .where(eq(books.isAvailable, true))
-          .limit(10);
-        return res.json(popularBooks);
-      }
+      console.log(`📚 User has ${preferences.length} genre preferences`);
       
-      // Get user's societies
+      // Get user's societies first
       const userSocieties = await storage.getSocietiesByUser(req.session.userId!);
+      console.log(`📚 User is member of ${userSocieties.length} societies`);
       
-      // Get books from user's societies matching their preferred genres
-      const preferredGenres = preferences
-        .filter(p => p.preferenceLevel >= 3) // Only liked and loved genres
-        .map(p => p.genre);
-      
-      let recommendedBooks = [];
-      for (const society of userSocieties) {
-        const societyBooks = await db.select()
-          .from(books)
-          .where(and(
-            eq(books.societyId, society.id),
-            eq(books.isAvailable, true)
-          ));
-        
-        // Filter by preferred genres
-        const matchingBooks = societyBooks.filter(book => 
-          preferredGenres.some(genre => 
-            book.genre.toLowerCase().includes(genre.toLowerCase())
-          )
-        );
-        
-        recommendedBooks.push(...matchingBooks);
+      if (userSocieties.length === 0) {
+        console.log(`📚 User has no societies, returning empty recommendations`);
+        return res.json([]);
       }
       
-      // Remove duplicates and limit
-      const uniqueBooks = recommendedBooks.filter((book, index, self) => 
+      // Get all available books from user's societies with owner information
+      let allRecommendedBooks = [];
+      
+      for (const society of userSocieties) {
+        console.log(`📚 Checking society: ${society.name} (ID: ${society.id})`);
+        
+        const societyBooksResult = await db.execute(sql`
+          SELECT 
+            b.*,
+            u.id as owner_id,
+            u.name as owner_name
+          FROM books b
+          JOIN users u ON b.owner_id = u.id
+          WHERE b.society_id = ${society.id} 
+            AND b.is_available = true
+            AND b.owner_id != ${req.session.userId!}
+          ORDER BY b.created_at DESC
+        `);
+        
+        const societyBooks = societyBooksResult.rows || [];
+        console.log(`📚 Found ${societyBooks.length} available books in ${society.name}`);
+        
+        // If user has preferences, prioritize matching genres
+        if (preferences.length > 0) {
+          const genrePreferenceMap = new Map();
+          preferences.forEach(p => {
+            genrePreferenceMap.set(p.genre.toLowerCase(), p.preferenceLevel);
+          });
+          
+          // Score books based on genre preference
+          const scoredBooks = societyBooks.map(book => ({
+            ...book,
+            owner: { id: book.owner_id, name: book.owner_name },
+            preferenceScore: genrePreferenceMap.get(book.genre.toLowerCase()) || 0
+          })).sort((a, b) => b.preferenceScore - a.preferenceScore); // Higher preference first
+          
+          allRecommendedBooks.push(...scoredBooks);
+        } else {
+          // No preferences, just add all books with owner info
+          const booksWithOwner = societyBooks.map(book => ({
+            ...book,
+            owner: { id: book.owner_id, name: book.owner_name },
+            preferenceScore: 0
+          }));
+          allRecommendedBooks.push(...booksWithOwner);
+        }
+      }
+      
+      // Remove duplicates and limit to 15 books
+      const uniqueBooks = allRecommendedBooks.filter((book, index, self) => 
         index === self.findIndex(b => b.id === book.id)
       ).slice(0, 15);
+      
+      console.log(`📚 Found ${uniqueBooks.length} recommended books for user ${req.session.userId} based on preferences`);
       
       res.json(uniqueBooks);
     } catch (error) {
