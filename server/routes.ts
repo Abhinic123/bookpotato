@@ -11,6 +11,7 @@ import { db, pool } from "./db";
 import { sql, eq, and, inArray, not } from "drizzle-orm";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import OpenAI from "openai";
 
 // Session interface
 declare module "express-session" {
@@ -40,6 +41,11 @@ const getCallbackURL = () => {
   const baseUrl = domain.startsWith('http') ? domain : `https://${domain}`;
   return `${baseUrl}/api/auth/google/callback`;
 };
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID || "87181857437-6dvvqvt19cd6796pq633h4eh540h480t.apps.googleusercontent.com",
@@ -3783,6 +3789,190 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching society members:", error);
       res.status(500).json({ message: "Failed to fetch members" });
+    }
+  });
+
+  // Bulk Book Upload Routes
+  
+  // Analyze bookshelf image using OpenAI Vision
+  app.post("/api/books/analyze-bookshelf", requireAuth, async (req, res) => {
+    try {
+      const { image } = req.body;
+      
+      if (!image) {
+        return res.status(400).json({ message: "Image is required" });
+      }
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `Analyze this bookshelf image and identify all the books you can see. For each book, extract:
+                - Title (exact title from the spine/cover)
+                - Author (if visible)
+                - Genre (best guess based on title/author)
+                - Brief description (if you know the book)
+
+                Return the results as a JSON object with a "books" array. Each book should have: title, author, genre, description.
+                Only include books where you can clearly read the title. Be precise with titles and authors.
+                
+                Response format: { "books": [{"title": "Book Title", "author": "Author Name", "genre": "Genre", "description": "Brief description"}] }`
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${image}`
+                }
+              }
+            ],
+          },
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 1500,
+      });
+
+      const result = JSON.parse(response.choices[0].message.content || '{"books": []}');
+      console.log(`📚 Detected ${result.books?.length || 0} books from bookshelf image`);
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Bookshelf analysis error:", error);
+      res.status(500).json({ message: "Failed to analyze bookshelf image" });
+    }
+  });
+
+  // Find ISBN for a book title and author
+  app.post("/api/books/find-isbn", requireAuth, async (req, res) => {
+    try {
+      const { title, author, region = "IN" } = req.body;
+      
+      if (!title) {
+        return res.status(400).json({ message: "Title is required" });
+      }
+
+      // Google Books API search
+      const searchQuery = `intitle:${encodeURIComponent(title)}${author ? `+inauthor:${encodeURIComponent(author)}` : ''}`;
+      const googleBooksUrl = `https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&country=${region}&langRestrict=en&maxResults=1`;
+      
+      const response = await fetch(googleBooksUrl);
+      if (!response.ok) {
+        return res.status(404).json({ message: "Book not found" });
+      }
+
+      const data = await response.json();
+      
+      if (data.items && data.items.length > 0) {
+        const book = data.items[0].volumeInfo;
+        const isbn13 = book.industryIdentifiers?.find((id: any) => id.type === "ISBN_13")?.identifier;
+        const isbn10 = book.industryIdentifiers?.find((id: any) => id.type === "ISBN_10")?.identifier;
+        
+        res.json({
+          isbn: isbn13 || isbn10 || "",
+          title: book.title,
+          author: book.authors?.[0] || author,
+          genre: book.categories?.[0] || "Fiction",
+          description: book.description || "",
+          imageUrl: book.imageLinks?.thumbnail?.replace('http:', 'https:') || ""
+        });
+      } else {
+        res.status(404).json({ message: "Book not found" });
+      }
+    } catch (error) {
+      console.error("ISBN lookup error:", error);
+      res.status(500).json({ message: "Failed to find ISBN" });
+    }
+  });
+
+  // Bulk add books
+  app.post("/api/books/bulk-add", requireAuth, async (req, res) => {
+    try {
+      const { books } = req.body;
+      const userId = req.session.userId!;
+      
+      if (!books || !Array.isArray(books) || books.length === 0) {
+        return res.status(400).json({ message: "Books array is required" });
+      }
+
+      let addedCount = 0;
+      const errors: string[] = [];
+
+      for (const bookData of books) {
+        try {
+          // Validate required fields
+          if (!bookData.title || !bookData.author || !bookData.societyId) {
+            errors.push(`Book "${bookData.title || 'Unknown'}" missing required fields`);
+            continue;
+          }
+
+          // Check if user is member of the society
+          const isMember = await storage.isMemberOfSociety(bookData.societyId, userId);
+          if (!isMember) {
+            errors.push(`Not a member of society for book "${bookData.title}"`);
+            continue;
+          }
+
+          // Create book
+          const book = await storage.createBook({
+            title: bookData.title,
+            author: bookData.author,
+            isbn: bookData.isbn || "",
+            genre: bookData.genre || "Fiction",
+            description: bookData.description || "",
+            imageUrl: bookData.imageUrl || "",
+            condition: bookData.condition || "Good",
+            dailyFee: bookData.dailyFee || 25,
+            ownerId: userId,
+            societyId: bookData.societyId,
+            isAvailable: true
+          });
+
+          if (book) {
+            addedCount++;
+            console.log(`📚 Added book: "${bookData.title}" by ${bookData.author}`);
+          }
+        } catch (error) {
+          console.error(`Error adding book "${bookData.title}":`, error);
+          errors.push(`Failed to add "${bookData.title}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      // Award Brocks credits for book uploads
+      if (addedCount > 0) {
+        const creditsPerUpload = await storage.getRewardSetting('credits_per_upload');
+        const creditsAmount = parseInt(creditsPerUpload?.settingValue || '1') * addedCount;
+        
+        try {
+          await storage.awardCredits(userId, creditsAmount, `Uploaded ${addedCount} books via bulk upload`);
+          console.log(`✅ Awarded ${creditsAmount} credits for bulk upload of ${addedCount} books`);
+        } catch (error) {
+          console.error(`❌ Failed to award credits for bulk upload:`, error);
+        }
+
+        // Update user's books uploaded count
+        try {
+          const user = await storage.getUser(userId);
+          if (user) {
+            await storage.updateUser(userId, {
+              booksUploaded: (user.booksUploaded || 0) + addedCount
+            });
+          }
+        } catch (error) {
+          console.error("Error updating user books count:", error);
+        }
+      }
+
+      res.json({
+        addedCount,
+        errors,
+        message: `Successfully added ${addedCount} books${errors.length > 0 ? ` with ${errors.length} errors` : ''}`
+      });
+    } catch (error) {
+      console.error("Bulk add books error:", error);
+      res.status(500).json({ message: "Failed to add books" });
     }
   });
 

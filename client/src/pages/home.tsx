@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
-import { Building2, ChevronRight, Clock, Coins, Gift, Award, Plus, HelpCircle, BookPlus, MessageCircle } from "lucide-react";
+import { Building2, ChevronRight, Clock, Coins, Gift, Award, Plus, HelpCircle, BookPlus, MessageCircle, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import BookCard from "@/components/book-card";
 import BorrowBookModal from "@/components/modals/borrow-book-modal";
 import BookDetailsModal from "@/components/book-details-modal";
 import AddBookModal from "@/components/modals/add-book-modal";
+import { BulkBookUpload } from "@/components/bulk-book-upload";
 import EnhancedLeaderboard from "@/components/brocks/enhanced-leaderboard";
 import FeedbackButton from "@/components/feedback-button";
 import RecommendedBooks from "@/components/social/recommended-books";
@@ -22,6 +23,7 @@ export default function Home() {
   const [showBorrowModal, setShowBorrowModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showAddBookModal, setShowAddBookModal] = useState(false);
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
 
   const { data: societies } = useQuery({
     queryKey: ["/api/societies/my"],
@@ -178,17 +180,17 @@ export default function Home() {
                 <BookPlus className="h-6 w-6 text-blue-600" />
                 <div className="text-lg font-semibold text-blue-700">Add Book</div>
               </div>
-              <div className="text-sm text-blue-600">Share & Earn Money</div>
+              <div className="text-sm text-blue-600">Manual Entry</div>
             </CardContent>
           </Card>
           
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-green-50 to-emerald-50 border-green-200" onClick={() => navigate('/how-it-works')}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200" onClick={() => setShowBulkUploadModal(true)}>
             <CardContent className="pt-6 text-center">
               <div className="flex items-center justify-center space-x-2 mb-2">
-                <HelpCircle className="h-6 w-6 text-green-600" />
-                <div className="text-lg font-semibold text-green-700">How It Works</div>
+                <Camera className="h-6 w-6 text-purple-600" />
+                <div className="text-lg font-semibold text-purple-700">Bulk Upload</div>
               </div>
-              <div className="text-sm text-green-600">Learn the Platform</div>
+              <div className="text-sm text-purple-600">Photo Recognition</div>
             </CardContent>
           </Card>
         </div>
@@ -415,6 +417,20 @@ export default function Home() {
           <FeedbackButton variant="inline" />
         </div>
       </div>
+
+      {/* Bulk Upload Modal */}
+      {showBulkUploadModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <BulkBookUpload
+            onClose={() => setShowBulkUploadModal(false)}
+            onBooksAdded={() => {
+              setShowBulkUploadModal(false);
+              // Refresh data after bulk upload
+              window.location.reload();
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
