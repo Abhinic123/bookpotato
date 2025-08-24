@@ -3890,11 +3890,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Request timeout. The image analysis is taking too long. Please try with a smaller image." });
       }
       
-      res.status(500).json({ 
-        message: "Failed to analyze bookshelf image. Please try again or contact support.", 
-        error: error.message,
-        details: "Check console logs for more information"
-      });
+      // Try alternative AI providers for image analysis
+      console.log('🔄 OpenAI failed, trying alternative providers...');
+      try {
+        const { imageAnalysisService } = await import('./imageAnalysis');
+        const fallbackResult = await imageAnalysisService.analyzeBookshelfImage(req.body.image);
+        console.log(`✅ Fallback analysis successful using ${fallbackResult.provider}`);
+        res.json(fallbackResult);
+        return;
+      } catch (fallbackError: any) {
+        console.error('❌ All AI providers failed:', fallbackError);
+        res.status(200).json({ 
+          message: "AI analysis temporarily unavailable. You can manually add books using the 'Add Book' button or barcode scanner.",
+          books: [],
+          fallbackMode: true,
+          error: error.message
+        });
+      }
     }
   });
 

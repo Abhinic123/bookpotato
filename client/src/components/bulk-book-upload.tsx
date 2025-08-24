@@ -87,7 +87,7 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
       if (data.fallbackMode) {
         toast({ 
           title: "AI Analysis Unavailable", 
-          description: "OpenAI quota exhausted. Please use manual book entry instead.",
+          description: "AI quota exhausted. Trying alternative providers...",
           variant: "destructive" 
         });
         setStep('capture');
