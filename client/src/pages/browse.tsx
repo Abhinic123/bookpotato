@@ -130,16 +130,30 @@ export default function Browse() {
           </div>
         ) : books && (books as any[]).length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(books as any[]).map((book: BookWithOwner) => (
-              <BookCard
-                key={book.id}
-                book={book}
-                onBorrow={book.ownerId !== user?.id ? handleBorrowBook : undefined}
-                onEdit={book.ownerId === user?.id ? handleEditBook : undefined}
-                variant="grid"
-                showOwner={true}
-              />
-            ))}
+            {(books as any[]).map((book: BookWithOwner) => {
+              // Debug logging
+              console.log('🔍 Debug ownership check:', {
+                bookId: book.id,
+                bookTitle: book.title,
+                bookOwnerId: book.ownerId,
+                currentUserId: user?.id,
+                userObject: user,
+                isOwner: book.ownerId === user?.id,
+                shouldShowBorrow: book.ownerId !== user?.id,
+                shouldShowEdit: book.ownerId === user?.id
+              });
+              
+              return (
+                <BookCard
+                  key={book.id}
+                  book={book}
+                  onBorrow={book.ownerId !== user?.id ? handleBorrowBook : undefined}
+                  onEdit={book.ownerId === user?.id ? handleEditBook : undefined}
+                  variant="grid"
+                  showOwner={true}
+                />
+              );
+            })}
           </div>
         ) : (
           <Card>
