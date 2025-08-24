@@ -2,231 +2,65 @@
 
 ## Overview
 
-BookShare is a community-driven digital library platform that enables book sharing within residential societies. The application allows users to join societies, lend their books to earn money, and borrow books from other members. It features a comprehensive rental system with payment processing, barcode scanning for book identification, and a referral program.
+BookShare is a community-driven digital library platform facilitating book sharing within residential societies. It enables users to lend and borrow books, manage rentals with payment processing, utilize barcode scanning for book identification, and participate in a referral program. The platform aims to create a comprehensive rental system, offering a new way for community members to share resources and earn through their book collections.
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
+### Frontend
 - **Framework**: React 18 with TypeScript
-- **Routing**: Wouter for client-side routing
-- **State Management**: TanStack Query (React Query) for server state
-- **UI Components**: Radix UI primitives with shadcn/ui component library
-- **Styling**: Tailwind CSS with custom CSS variables for theming
-- **Build Tool**: Vite for development and production builds
+- **Routing**: Wouter
+- **State Management**: TanStack Query (React Query)
+- **UI Components**: Radix UI primitives with shadcn/ui
+- **Styling**: Tailwind CSS with custom CSS variables
+- **Build Tool**: Vite
 
-### Backend Architecture
-- **Runtime**: Node.js with Express.js server
+### Backend
+- **Runtime**: Node.js with Express.js
 - **Language**: TypeScript with ES modules
-- **API Design**: RESTful API endpoints with JSON responses
+- **API Design**: RESTful API with JSON
 - **Session Management**: Express sessions with HTTP-only cookies
-- **File Structure**: Monorepo structure with shared types and schemas
+- **File Structure**: Monorepo
 
 ### Database & ORM
-- **Database**: PostgreSQL (configured via Neon serverless)
-- **ORM**: Drizzle ORM with schema-first approach
-- **Migrations**: Drizzle Kit for database migrations
-- **Connection**: Neon serverless with WebSocket support
+- **Database**: PostgreSQL (via Neon serverless)
+- **ORM**: Drizzle ORM
+- **Migrations**: Drizzle Kit
 
-## Key Components
-
-### Authentication System
-- Session-based authentication using express-session
-- User registration with email/password
-- Profile management with Indian city selection
-- Admin role system for platform management
-- Password reset functionality (schema prepared)
-
-### Society Management
-- Society creation with approval workflow (90+ apartments requirement)
-- Society joining via codes or direct membership
-- Multi-society membership support
-- Society statistics tracking (member count, book count, active rentals)
-
-### Book Management
-- Manual book entry with comprehensive metadata
-- Barcode scanning capability (using @zxing/library)
-- Book condition tracking (Very Good, Good, Fair, Poor)
-- Daily rental fee setting by book owners
-- Book availability status management
-
-### Rental System
-- Book borrowing with duration selection
-- Payment calculation including platform commission (5%)
-- Security deposit handling
-- Rental tracking and history
-- Due date management with overdue notifications
-
-### Payment Integration
-- Razorpay payment gateway integration
-- Order creation and payment verification
-- Commission-free periods for new users
-- Earnings tracking for book lenders
-
-### Brocks Credit System
-- Comprehensive reward system with Brocks credits as platform currency
-- Automatic credit awarding for user actions:
-  - Book upload: 1 credit (configurable)
-  - Referral: 5 credits (configurable) 
-  - Borrowing transaction: 5 credits (configurable)
-  - Lending transaction: 5 credits (configurable)
-- Credit conversion options:
-  - 20 credits → commission-free days (configurable ratio)
-  - 20 credits → rupees conversion (configurable ratio)
-- Admin-configurable settings for all reward parameters
-- Real-time credit balance display in navigation and home page
-
-### Referral Program
-- Unique referral codes for each user
-- Automatic Brocks credit rewards for successful referrals
-- Commission-free lending periods for successful referrals
-- Referral statistics and tracking
-- Integration with Brocks credit system
-
-### Enhanced Chat System
-- **Society Chat Rooms**: General discussion rooms for each society with real-time messaging
-- **One-on-One Direct Messages**: Private messaging between society members
-- **Integrated Notifications**: All app notifications accessible within chat interface
-- **WebSocket Real-time Communication**: Live message delivery and typing indicators
-- **Society Member Directory**: Browse and message other society members directly
-- **Unread Message Tracking**: Count and status indicators for unread messages
-- **Tabbed Interface**: Seamless switching between general chat, direct messages, and notifications
-- **Message History**: Persistent storage and retrieval of all conversations
-- **Read Status Management**: Track when messages are read by recipients
-
-## Data Flow
-
-1. **User Registration**: User creates account → joins/creates society → can add books or browse available books
-2. **Book Lending**: Owner adds book → sets daily fee → book becomes available for borrowing
-3. **Book Borrowing**: Borrower searches books → selects book → calculates fees → processes payment → creates rental record
-4. **Rental Management**: System tracks due dates → sends notifications → handles returns and renewals
+### Key Features
+- **Authentication**: Session-based, user registration, profile management, admin roles, password reset.
+- **Society Management**: Creation (with approval), joining, multi-society support, statistics tracking.
+- **Book Management**: Manual entry, barcode scanning, condition tracking, daily rental fees, availability management.
+- **Rental System**: Borrowing with duration, payment calculation (5% commission), security deposits, tracking, due date management.
+- **Brocks Credit System**: Platform currency awarded for actions (upload, referral, borrow, lend), convertible to commission-free days or rupees. Admin-configurable parameters.
+- **Referral Program**: Unique codes, Brocks credit rewards, commission-free periods.
+- **Enhanced Chat System**: Society chat rooms, one-on-one direct messages, integrated notifications, WebSocket real-time communication, society member directory, unread message tracking, tabbed interface, message history, read status management.
+- **Image Recognition**: Multi-provider system (Google Gemini, Anthropic Claude, Google Cloud Vision) for bulk book uploads with automatic failover.
+- **Barcode Scanner**: Enhanced camera functionality, improved image processing, direct camera access, professional viewfinder.
+- **Gamification**: Brocks ranking system (Explorer to Emperor), leaderboard with progress bars, achievement system.
 
 ## External Dependencies
 
 ### Payment Processing
-- **Razorpay**: Payment gateway for handling transactions
-- **Stripe**: Alternative payment provider (components prepared)
+- **Razorpay**
+- **Stripe** (components prepared)
 
 ### Database & Hosting
-- **Neon**: Serverless PostgreSQL hosting
-- **Replit**: Development and deployment platform
+- **Neon** (Serverless PostgreSQL)
+- **Replit** (Development and deployment)
 
 ### UI & Utilities
-- **Radix UI**: Headless UI components
-- **Tailwind CSS**: Utility-first CSS framework
-- **React Hook Form**: Form handling with validation
-- **Zod**: Schema validation library
+- **Radix UI**
+- **Tailwind CSS**
+- **React Hook Form**
+- **Zod**
 
 ### Media & Scanning
-- **@zxing/library**: Barcode scanning functionality
-- **Camera API**: Device camera access for barcode scanning
-
-## Deployment Strategy
-
-### Development
-- **Environment**: Node.js 20 with Replit development environment
-- **Hot Reload**: Vite development server with HMR
-- **Database**: PostgreSQL 16 module in Replit
-
-### Production
-- **Build Process**: Vite for client build, esbuild for server bundling
-- **Deployment Target**: Replit autoscale deployment
-- **Port Configuration**: Internal port 5000, external port 80
-- **Environment Variables**: DATABASE_URL, SESSION_SECRET
-
-### Database Management
-- **Schema Management**: Drizzle ORM with TypeScript schemas
-- **Migrations**: Automated via `npm run db:push` command
-- **Connection Pooling**: Neon serverless connection pooling
-
-## Recent Changes
-
-```
-- June 22, 2025: Fixed app startup errors and database connection issues
-- June 22, 2025: Switched to memory storage to resolve Neon database endpoint issues
-- June 22, 2025: Fixed logout redirect to properly clear session and return to welcome page
-- June 22, 2025: Fixed profile picture upload to work with memory storage
-- June 22, 2025: Added user account with email "jia.a.maheshwari@gmail.com" and password "bossbaby@12"
-- July 5, 2025: Added admin account with email "abhinic@gmail.com" and password "admin123" with full admin privileges
-- July 5, 2025: Database endpoint issue discovered - Neon endpoint is disabled, requiring Replit support intervention
-- July 5, 2025: Database successfully restored! Original data recovered including societies and books. Application now using permanent PostgreSQL storage.
-- July 5, 2025: Implemented dynamic platform settings system with admin panel
-- July 5, 2025: Fixed admin panel infinite re-render error
-- July 5, 2025: Restored comprehensive admin functionality including referral rewards management, badge creation, society request approval, and platform analytics
-- July 5, 2025: Fixed duplicate admin settings endpoints that prevented database updates - platform settings now save correctly
-- July 5, 2025: Added unique user number display in profile pages for all users
-- July 5, 2025: Implemented Google OAuth authentication with automatic user registration
-- July 5, 2025: Google OAuth configuration completed but network restrictions may block access in some environments
-- July 6, 2025: Implemented owner approval workflow for book extensions with request system
-- July 6, 2025: Extension requests now require book owner approval before payment processing
-- July 6, 2025: Added extension request notifications with approve/deny functionality
-- July 6, 2025: Updated extension modal to send approval requests instead of direct payments
-- July 6, 2025: Implemented Brocks credit system with admin-configurable settings
-- July 6, 2025: Added referral badge system (Silver: 5, Gold: 10, Platinum: 15 referrals)
-- July 6, 2025: Implemented book upload rewards with commission-free periods
-- July 6, 2025: Created comprehensive rewards database schema and API endpoints
-- July 7, 2025: Fixed Brocks rewards admin panel form handling and saving functionality
-- July 7, 2025: Replaced earnings display with Brocks credits system in navigation and home page
-- July 7, 2025: Added Brocks credits API endpoints for user credits and recent rewards tracking
-- July 7, 2025: Implemented comprehensive Brocks rewards system with automatic credit awarding
-- July 7, 2025: Added reward logic for book uploads (1 credit), referrals (5 credits), borrowing (5 credits), and lending (5 credits)
-- July 7, 2025: Implemented credit conversion system - 20 credits to commission-free days or rupees conversion
-- July 7, 2025: Enhanced admin panel with comprehensive Brocks settings for all reward parameters
-- July 7, 2025: Added referral code handling in user registration with automatic credit rewards
-- July 7, 2025: Fixed starting credits display issue - users now properly receive 100 starting credits
-- July 7, 2025: Integrated badges system into Brocks rewards display on home page
-- July 7, 2025: Updated credit awarding logic to ensure new users get proper starting balance
-- July 7, 2025: Added user badges API endpoint for displaying achievement badges
-- July 13, 2025: Implemented admin-configurable Brocks packages system with database schema and CRUD operations
-- July 13, 2025: Created comprehensive admin panel for managing Brocks packages (add, edit, delete, set popular)
-- July 13, 2025: Updated Buy Brocks page to dynamically load packages from admin configuration
-- July 13, 2025: Added full storage layer implementation for Brocks package management with proper error handling
-- July 13, 2025: Fixed critical storage.ts file corruption with duplicate class declarations preventing app startup
-- July 13, 2025: Verified Brocks package update functionality working correctly via API testing
-- June 22, 2025: Fixed books data handling in enhanced-browse page to prevent array errors
-- July 14, 2025: Simplified book cover display to always show blue background with book title instead of attempting to load external cover images
-- July 14, 2025: Updated book cards and details modal to use consistent fallback display for better reliability
-- July 14, 2025: Removed image expansion functionality to focus on text-based book display
-- July 27, 2025: Fixed "Add Book" button on home screen to open popup modal instead of navigating to page
-- July 27, 2025: Created comprehensive "How It Works" guide with step-by-step platform explanation
-- July 27, 2025: Enhanced welcome screens with attractive SVG illustrations for each feature
-- July 27, 2025: Implemented creative Brocks ranking system with 6 tiers (Explorer to Emperor) and visual badges
-- July 27, 2025: Added enhanced leaderboard with progress bars, achievement system, and gamification elements
-- July 27, 2025: Created comprehensive pitch deck documentation with business model and financial projections
-- July 27, 2025: Developed detailed technical specifications covering system architecture and API documentation
-- July 27, 2025: Compiled extensive future features roadmap with innovative enhancement opportunities
-- July 27, 2025: Created comprehensive downloads page with Word and text format documentation downloads
-- July 27, 2025: Implemented React-based downloads system accessible both authenticated and unauthenticated
-- July 27, 2025: Fixed download functionality with enhanced error handling and visual feedback
-- July 27, 2025: Added login navigation links to downloads page for easy access to main application
-- July 27, 2025: Fixed critical database schema issue by adding missing preference_level column to user_genre_preferences table
-- July 27, 2025: Implemented feedback submission system with inline form on home page and category-based submissions
-- July 27, 2025: Restored add book floating action button to proper z-index positioning (z-40)
-- July 27, 2025: Enhanced book recommendation system to properly refresh after preference changes with cache invalidation
-- August 5, 2025: Implemented comprehensive enhanced chat system with one-on-one direct messaging and general society chat
-- August 5, 2025: Added WebSocket real-time messaging support for both society and direct messages
-- August 5, 2025: Created tabbed chat interface integrating notifications, direct messages, and society chat rooms
-- August 5, 2025: Added society member directory with direct message access from chat interface
-- August 5, 2025: Implemented read status tracking for direct messages with unread count indicators
-- August 5, 2025: Created database tables for direct_messages, chat_rooms, and enhanced society_chats
-- August 5, 2025: Added comprehensive chat API endpoints for all messaging functionality
-- August 10, 2025: Created comprehensive promotional video script and storyboard for marketing BookShare app
-- August 10, 2025: Developed detailed production guide with technical specifications and distribution strategy for promotional content
-- August 24, 2025: Implemented multi-provider image recognition system with Google Gemini, Anthropic Claude, and Google Cloud Vision APIs as fallback providers for bulk book upload
-- August 24, 2025: Enhanced barcode scanner with improved high-quality camera functionality, better image processing, and direct camera access instead of gallery selection
-- August 24, 2025: Fixed camera interface with professional viewfinder, enhanced capture buttons, and image quality optimization for better barcode detection
-- August 24, 2025: Added automatic failover system for AI image analysis - when OpenAI quota exhausted, automatically tries Google Gemini, then Anthropic Claude
-- August 24, 2025: Created comprehensive AI Providers Guide with setup instructions for multiple image recognition services including free alternatives
-```
-
-## Changelog
-
-```
-Changelog:
-- June 15, 2025. Initial setup
-```
-
-## User Preferences
-
-```
-Preferred communication style: Simple, everyday language.
-```
+- **@zxing/library** (Barcode scanning)
+- **Camera API**
+- **Google Gemini** (Image recognition)
+- **Anthropic Claude** (Image recognition)
+- **Google Cloud Vision APIs** (Image recognition)
