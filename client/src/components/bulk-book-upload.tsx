@@ -84,6 +84,16 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
     },
     onSuccess: (data) => {
       console.log("🎉 Processing successful response:", data);
+      if (data.fallbackMode) {
+        toast({ 
+          title: "AI Analysis Unavailable", 
+          description: "OpenAI quota exhausted. Please use manual book entry instead.",
+          variant: "destructive" 
+        });
+        setStep('capture');
+        return;
+      }
+      
       if (!data.books || data.books.length === 0) {
         toast({ 
           title: "No books detected", 

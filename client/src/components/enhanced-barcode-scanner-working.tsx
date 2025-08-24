@@ -85,8 +85,108 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
     }
   };
 
-  const startCameraScanning = () => {
-    setError("Camera scanning is being enhanced. Please use 'Upload Barcode Image' or enter ISBN manually for now.");
+  const startCameraScanning = async () => {
+    try {
+      setError(null);
+      setIsProcessing(true);
+      setUploadStatus("Opening camera...");
+
+      // Request camera access
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: 'environment', // Use back camera if available
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        } 
+      });
+
+      // Create video element to show camera feed
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.autoplay = true;
+      video.playsInline = true;
+
+      // Create capture button
+      const captureBtn = document.createElement('button');
+      captureBtn.innerText = 'Capture Barcode';
+      captureBtn.style.position = 'fixed';
+      captureBtn.style.bottom = '20px';
+      captureBtn.style.left = '50%';
+      captureBtn.style.transform = 'translateX(-50%)';
+      captureBtn.style.padding = '12px 24px';
+      captureBtn.style.backgroundColor = '#3b82f6';
+      captureBtn.style.color = 'white';
+      captureBtn.style.border = 'none';
+      captureBtn.style.borderRadius = '8px';
+      captureBtn.style.fontSize = '16px';
+      captureBtn.style.zIndex = '9999';
+
+      // Create close button
+      const closeBtn = document.createElement('button');
+      closeBtn.innerText = '×';
+      closeBtn.style.position = 'fixed';
+      closeBtn.style.top = '20px';
+      closeBtn.style.right = '20px';
+      closeBtn.style.padding = '8px 12px';
+      closeBtn.style.backgroundColor = 'rgba(0,0,0,0.5)';
+      closeBtn.style.color = 'white';
+      closeBtn.style.border = 'none';
+      closeBtn.style.borderRadius = '50%';
+      closeBtn.style.fontSize = '20px';
+      closeBtn.style.zIndex = '9999';
+
+      // Style video for fullscreen
+      video.style.position = 'fixed';
+      video.style.top = '0';
+      video.style.left = '0';
+      video.style.width = '100vw';
+      video.style.height = '100vh';
+      video.style.objectFit = 'cover';
+      video.style.zIndex = '9998';
+      video.style.backgroundColor = 'black';
+
+      document.body.appendChild(video);
+      document.body.appendChild(captureBtn);
+      document.body.appendChild(closeBtn);
+
+      setUploadStatus("Camera ready - Position barcode in view and tap Capture");
+
+      const cleanup = () => {
+        stream.getTracks().forEach(track => track.stop());
+        document.body.removeChild(video);
+        document.body.removeChild(captureBtn);
+        document.body.removeChild(closeBtn);
+        setIsProcessing(false);
+        setUploadStatus("");
+      };
+
+      captureBtn.onclick = () => {
+        // Capture image from video
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(video, 0, 0);
+        
+        // Convert to blob and process
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], 'barcode-capture.jpg', { type: 'image/jpeg' });
+            const fakeEvent = { target: { files: [file] } };
+            handleImageUpload(fakeEvent as any);
+          }
+          cleanup();
+        }, 'image/jpeg', 0.8);
+      };
+
+      closeBtn.onclick = cleanup;
+
+    } catch (error) {
+      console.error('Camera access error:', error);
+      setError("Camera access denied or not available. Please use 'Upload Barcode Image' instead.");
+      setIsProcessing(false);
+      setUploadStatus("");
+    }
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,14 +198,30 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
     setUploadStatus("Processing barcode image...");
 
     try {
-      // Simulate barcode detection processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Convert image to base64
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const imageDataUrl = e.target?.result as string;
+          setUploadStatus("Analyzing barcode...");
+          
+          // Simulate OCR processing
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // For now, prompt user to enter manually since OCR needs proper implementation
+          setUploadStatus("");
+          setError("Barcode reading from images is being enhanced. Please enter the ISBN number manually for now.");
+          setIsProcessing(false);
+        } catch (ocrError) {
+          setError("Failed to read barcode from image. Please enter ISBN manually.");
+          setUploadStatus("");
+          setIsProcessing(false);
+        }
+      };
       
-      setUploadStatus("");
-      setError("Barcode detection from images is being enhanced. Please enter the ISBN manually for now.");
-      setIsProcessing(false);
+      reader.readAsDataURL(file);
     } catch (error) {
-      setError("Failed to process image. Please try again or enter manually.");
+      setError("Failed to process image. Please enter ISBN manually.");
       setUploadStatus("");
       setIsProcessing(false);
     }

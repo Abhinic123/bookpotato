@@ -209,7 +209,7 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
               <div className="p-4 border-b bg-blue-50 shrink-0">
                 <div className="flex items-center gap-2">
                   <Hash className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-semibold text-blue-900">{societyName} General Chat</h3>
+                  <span className="font-semibold text-blue-900">{societyName} General Chat</span>
                   <Badge variant="secondary">{societyMembers.length} members</Badge>
                 </div>
               </div>
@@ -259,18 +259,19 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
               </ScrollArea>
 
               <div className="p-4 border-t bg-white shrink-0">
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <Input
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Type your message..."
-                    className="flex-1"
+                    className="flex-1 min-h-[40px]"
                   />
                   <Button 
                     onClick={handleSendMessage}
                     disabled={!message.trim() || sendSocietyMessage.isPending}
                     size="icon"
+                    className="h-[40px] w-[40px] shrink-0"
                   >
                     {sendSocietyMessage.isPending ? (
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -288,10 +289,10 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
               {/* Contacts Sidebar */}
               <div className="w-1/3 border-r">
                 <div className="p-4 border-b bg-green-50">
-                  <h3 className="font-semibold text-green-900 flex items-center gap-2">
+                  <span className="font-semibold text-green-900 flex items-center gap-2">
                     <MessageCircle className="h-5 w-5" />
                     Direct Messages
-                  </h3>
+                  </span>
                 </div>
                 
                 <ScrollArea className="h-full">
@@ -335,9 +336,9 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                     <div className="p-4 border-b bg-green-50">
                       <div className="flex items-center gap-2">
                         <MessageCircle className="h-5 w-5 text-green-600" />
-                        <h3 className="font-semibold text-green-900">
+                        <span className="font-semibold text-green-900">
                           {societyMembers.find((m: any) => m.id === selectedContact)?.name || 'Unknown'}
-                        </h3>
+                        </span>
                       </div>
                     </div>
 
