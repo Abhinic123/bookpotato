@@ -25,8 +25,7 @@ export default function Home() {
   const [showAddBookModal, setShowAddBookModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   
-  // Debug: Log modal state changes
-  console.log("Home component render - showBulkUploadModal:", showBulkUploadModal);
+
 
   const { data: societies } = useQuery({
     queryKey: ["/api/societies/my"],
@@ -187,10 +186,7 @@ export default function Home() {
             </CardContent>
           </Card>
           
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200" onClick={() => {
-            console.log("Bulk upload button clicked");
-            setShowBulkUploadModal(true);
-          }}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200" onClick={() => setShowBulkUploadModal(true)}>
             <CardContent className="pt-4 pb-4 text-center">
               <div className="flex flex-col items-center space-y-1">
                 <Camera className="h-6 w-6 text-purple-600" />
@@ -451,12 +447,8 @@ export default function Home() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-auto">
           <div className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-white rounded-lg shadow-xl">
             <BulkBookUpload
-              onClose={() => {
-                console.log("Closing bulk upload modal");
-                setShowBulkUploadModal(false);
-              }}
+              onClose={() => setShowBulkUploadModal(false)}
               onBooksAdded={() => {
-                console.log("Books added successfully");
                 setShowBulkUploadModal(false);
                 // Refresh data after bulk upload
                 window.location.reload();
@@ -466,25 +458,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Debug indicator to show modal state */}
-      {showBulkUploadModal && (
-        <div className="fixed top-4 right-4 bg-red-500 text-white p-2 rounded z-[60]">
-          Modal is OPEN
-        </div>
-      )}
-      
-      {/* Temporary test button */}
-      <div className="fixed top-20 right-4 z-[60]">
-        <Button 
-          onClick={() => {
-            console.log("Test button clicked, current modal state:", showBulkUploadModal);
-            setShowBulkUploadModal(!showBulkUploadModal);
-          }}
-          className="bg-red-600 hover:bg-red-700 text-white"
-        >
-          Test Modal
-        </Button>
-      </div>
+
     </div>
   );
 }

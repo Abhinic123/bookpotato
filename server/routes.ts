@@ -3803,6 +3803,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Image is required" });
       }
 
+      console.log("📸 Starting OpenAI image analysis...");
+      
+      if (!process.env.OPENAI_API_KEY) {
+        console.error("❌ OPENAI_API_KEY is not set");
+        return res.status(500).json({ message: "OpenAI API key not configured" });
+      }
+      
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -3839,9 +3846,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`📚 Detected ${result.books?.length || 0} books from bookshelf image`);
       
       res.json(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Bookshelf analysis error:", error);
-      res.status(500).json({ message: "Failed to analyze bookshelf image" });
+      console.error("Error details:", error.response?.data || error.message);
+      
+      if (error.response?.status === 401) {
+        return res.status(500).json({ message: "OpenAI API authentication failed. Please check API key." });
+      }
+      
+      if (error.response?.status === 429) {
+        return res.status(500).json({ message: "OpenAI API rate limit exceeded. Please try again later." });
+      }
+      
+      res.status(500).json({ 
+        message: "Failed to analyze bookshelf image", 
+        error: error.message 
+      });
     }
   });
 

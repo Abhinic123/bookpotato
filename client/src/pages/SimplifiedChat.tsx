@@ -20,6 +20,14 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
   const { user } = useUser();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  if (!user?.user) {
+    return <div className="flex items-center justify-center h-64">
+      <p className="text-gray-500">Please login to access chat</p>
+    </div>;
+  }
+  
+  const currentUserId = user.user.id;
   const [message, setMessage] = useState("");
   const [activeTab, setActiveTab] = useState("society");
   const [selectedContact, setSelectedContact] = useState<number | null>(null);
@@ -189,8 +197,8 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                     </div>
                   ) : (
                     societyMessages.map((msg: any) => (
-                      <div key={msg.id} className={`flex gap-3 ${msg.sender_id === user.id ? 'justify-end' : ''}`}>
-                        {msg.sender_id !== user.id && (
+                      <div key={msg.id} className={`flex gap-3 ${msg.sender_id === currentUserId ? 'justify-end' : ''}`}>
+                        {msg.sender_id !== currentUserId && (
                           <Avatar className="w-8 h-8">
                             <AvatarImage src={msg.sender_picture} />
                             <AvatarFallback className="text-xs">
@@ -199,18 +207,18 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                           </Avatar>
                         )}
                         
-                        <div className={`max-w-[70%] ${msg.sender_id === user.id ? 'order-first' : ''}`}>
-                          {msg.sender_id !== user.id && (
+                        <div className={`max-w-[70%] ${msg.sender_id === currentUserId ? 'order-first' : ''}`}>
+                          {msg.sender_id !== currentUserId && (
                             <p className="text-xs text-gray-500 mb-1">{msg.sender_name}</p>
                           )}
                           <div className={`p-3 rounded-lg ${
-                            msg.sender_id === user.id 
+                            msg.sender_id === currentUserId 
                               ? 'bg-blue-500 text-white ml-auto' 
                               : 'bg-gray-100 text-gray-900'
                           }`}>
                             <p className="text-sm">{msg.content}</p>
                             <p className={`text-xs mt-1 ${
-                              msg.sender_id === user.id ? 'text-blue-100' : 'text-gray-500'
+                              msg.sender_id === currentUserId ? 'text-blue-100' : 'text-gray-500'
                             }`}>
                               {formatDate(msg.created_at)}
                             </p>
@@ -260,7 +268,7 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                     <div className="mb-4">
                       <p className="text-xs font-medium text-gray-500 mb-2 px-2">SOCIETY MEMBERS</p>
                       {societyMembers
-                        .filter((member: any) => member.id !== user.id)
+                        .filter((member: any) => member.id !== currentUserId)
                         .map((member: any) => (
                         <Button
                           key={member.id}
@@ -312,8 +320,8 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                           </div>
                         ) : (
                           directMessages.map((msg: any) => (
-                            <div key={msg.id} className={`flex gap-3 ${msg.sender_id === user.id ? 'justify-end' : ''}`}>
-                              {msg.sender_id !== user.id && (
+                            <div key={msg.id} className={`flex gap-3 ${msg.sender_id === currentUserId ? 'justify-end' : ''}`}>
+                              {msg.sender_id !== currentUserId && (
                                 <Avatar className="w-8 h-8">
                                   <AvatarImage src={msg.sender_picture} />
                                   <AvatarFallback className="text-xs">
@@ -322,15 +330,15 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                                 </Avatar>
                               )}
                               
-                              <div className={`max-w-[70%] ${msg.sender_id === user.id ? 'order-first' : ''}`}>
+                              <div className={`max-w-[70%] ${msg.sender_id === currentUserId ? 'order-first' : ''}`}>
                                 <div className={`p-3 rounded-lg ${
-                                  msg.sender_id === user.id 
+                                  msg.sender_id === currentUserId 
                                     ? 'bg-green-500 text-white ml-auto' 
                                     : 'bg-gray-100 text-gray-900'
                                 }`}>
                                   <p className="text-sm">{msg.content}</p>
                                   <p className={`text-xs mt-1 ${
-                                    msg.sender_id === user.id ? 'text-green-100' : 'text-gray-500'
+                                    msg.sender_id === currentUserId ? 'text-green-100' : 'text-gray-500'
                                   }`}>
                                     {formatDate(msg.created_at)}
                                   </p>
@@ -344,18 +352,21 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                     </ScrollArea>
 
                     <div className="p-4 border-t">
-                      <div className="flex gap-2">
-                        <Input
-                          value={message}
-                          onChange={(e) => setMessage(e.target.value)}
-                          onKeyPress={handleKeyPress}
-                          placeholder="Type your message..."
-                          className="flex-1"
-                        />
+                      <div className="flex gap-2 items-end">
+                        <div className="flex-1">
+                          <Input
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            placeholder="Type your message..."
+                            className="min-h-[40px]"
+                          />
+                        </div>
                         <Button 
                           onClick={handleSendMessage}
                           disabled={!message.trim() || sendDirectMessage.isPending}
                           size="icon"
+                          className="h-[40px] w-[40px] shrink-0"
                         >
                           <Send className="h-4 w-4" />
                         </Button>
