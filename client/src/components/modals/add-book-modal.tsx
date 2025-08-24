@@ -348,7 +348,15 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
               <div className="space-y-2">
                 <Button onClick={() => setScanMode(true)} className="w-full">
                   <Camera className="h-4 w-4 mr-2" />
-                  Start Camera Scan
+                  Scan Barcode
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {/* TODO: Add photo barcode functionality */}}
+                  className="w-full"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Click Photo of Barcode
                 </Button>
                 <Button 
                   variant="outline" 
@@ -363,14 +371,16 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
         ) : (
           <div className="space-y-4">
             <div className="text-center">
-              <Button 
-                variant="outline" 
-                onClick={() => setScanMode(true)}
-                className="mb-4"
-              >
-                <Camera className="h-4 w-4 mr-2" />
-                Scan Barcode (experimental beta stage)
-              </Button>
+              <div className="flex gap-2 mb-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setScanMode(true)}
+                  className="flex-1"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  Scan Barcode
+                </Button>
+              </div>
               <p className="text-sm text-text-secondary">or fill manually</p>
             </div>
 

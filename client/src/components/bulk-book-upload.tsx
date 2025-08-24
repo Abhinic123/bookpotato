@@ -59,15 +59,41 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
   // Process bookshelf image using OpenAI Vision
   const processImageMutation = useMutation({
     mutationFn: async (imageBase64: string) => {
+      console.log("📸 Starting image analysis request...");
       const response = await fetch("/api/books/analyze-bookshelf", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Credentials": "include"
+        },
+        credentials: "include",
         body: JSON.stringify({ image: imageBase64 }),
       });
-      if (!response.ok) throw new Error("Failed to analyze image");
-      return response.json();
+      
+      console.log("📊 Response status:", response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("❌ Analysis failed:", response.status, errorText);
+        throw new Error(`Failed to analyze image: ${response.status} ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log("✅ Analysis successful, books found:", data.books?.length || 0);
+      return data;
     },
     onSuccess: (data) => {
+      console.log("🎉 Processing successful response:", data);
+      if (!data.books || data.books.length === 0) {
+        toast({ 
+          title: "No books detected", 
+          description: "Try taking a clearer photo with better lighting",
+          variant: "destructive" 
+        });
+        setStep('capture');
+        return;
+      }
+
       const books: DetectedBook[] = data.books.map((book: any, index: number) => ({
         id: `book-${index}`,
         title: book.title,
@@ -88,8 +114,13 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
         fetchISBNForBook(index, book.title, book.author);
       });
     },
-    onError: () => {
-      toast({ title: "Failed to analyze image", variant: "destructive" });
+    onError: (error: any) => {
+      console.error("🚨 Bulk upload mutation error:", error);
+      toast({ 
+        title: "Image analysis failed", 
+        description: error.message || "Please try again with a different image",
+        variant: "destructive" 
+      });
       setStep('capture');
     },
   });

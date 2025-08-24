@@ -204,9 +204,9 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
         </div>
 
         <div className="flex-1 overflow-hidden">
-          <TabsContent value="society" className="h-full m-0">
+          <TabsContent value="society" className="h-full m-0 flex flex-col">
             <div className="flex flex-col h-full">
-              <div className="p-4 border-b bg-blue-50">
+              <div className="p-4 border-b bg-blue-50 shrink-0">
                 <div className="flex items-center gap-2">
                   <Hash className="h-5 w-5 text-blue-600" />
                   <h3 className="font-semibold text-blue-900">{societyName} General Chat</h3>
@@ -214,8 +214,8 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                 </div>
               </div>
 
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
+              <ScrollArea className="flex-1">
+                <div className="space-y-4 p-4">
                   {societyMessages.length === 0 ? (
                     <div className="text-center py-8">
                       <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -258,7 +258,7 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                 </div>
               </ScrollArea>
 
-              <div className="p-4 border-t">
+              <div className="p-4 border-t bg-white shrink-0">
                 <div className="flex gap-2">
                   <Input
                     value={message}
@@ -382,7 +382,7 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                       </div>
                     </ScrollArea>
 
-                    <div className="p-4 border-t">
+                    <div className="p-4 border-t bg-white">
                       <div className="flex gap-2 items-end">
                         <div className="flex-1">
                           <Input
@@ -397,7 +397,7 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                           onClick={handleSendMessage}
                           disabled={!message.trim() || sendDirectMessage.isPending}
                           size="icon"
-                          className="h-[40px] w-[40px] shrink-0"
+                          className="h-[40px] w-[40px] shrink-0 z-30"
                         >
                           <Send className="h-4 w-4" />
                         </Button>
