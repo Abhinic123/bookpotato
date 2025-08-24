@@ -92,18 +92,52 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
   const form = useForm<BookFormData>({
     resolver: zodResolver(bookSchema),
     defaultValues: {
-      title: editBook?.title || "",
-      author: editBook?.author || "",
-      isbn: editBook?.isbn || "",
-      genre: editBook?.genre || "",
-      description: editBook?.description || "",
-      imageUrl: editBook?.imageUrl || "",
-      coverImageUrl: editBook?.coverImageUrl || "",
-      condition: editBook?.condition || "",
-      dailyFee: editBook?.dailyFee?.toString() || "",
-      societyId: editBook?.societyId || (Array.isArray(societies) ? societies[0]?.id : 0) || 0,
+      title: "",
+      author: "",
+      isbn: "",
+      genre: "",
+      description: "",
+      imageUrl: "",
+      coverImageUrl: "",
+      condition: "",
+      dailyFee: "",
+      societyId: 0,
     },
   });
+
+  // Update form when editBook changes
+  useEffect(() => {
+    console.log('📝 AddBookModal editBook changed:', editBook);
+    if (editBook && open) {
+      console.log('📝 Resetting form with editBook data:', editBook);
+      form.reset({
+        title: editBook.title || "",
+        author: editBook.author || "",
+        isbn: editBook.isbn || "",
+        genre: editBook.genre || "",
+        description: editBook.description || "",
+        imageUrl: editBook.imageUrl || "",
+        coverImageUrl: editBook.coverImageUrl || "",
+        condition: editBook.condition || "",
+        dailyFee: editBook.dailyFee?.toString() || "",
+        societyId: editBook.societyId || (Array.isArray(societies) ? societies[0]?.id : 0) || 0,
+      });
+    } else if (open && !editBook) {
+      // Reset to empty form for new books
+      form.reset({
+        title: "",
+        author: "",
+        isbn: "",
+        genre: "",
+        description: "",
+        imageUrl: "",
+        coverImageUrl: "",
+        condition: "",
+        dailyFee: "",
+        societyId: (Array.isArray(societies) ? societies[0]?.id : 0) || 0,
+      });
+    }
+  }, [editBook, open, societies, form]);
 
   const addBookMutation = useMutation({
     mutationFn: async (data: BookFormData) => {

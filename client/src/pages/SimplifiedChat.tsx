@@ -104,30 +104,52 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
       refetchSocietyMessages();
       toast({ title: "Message sent!" });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Society message mutation error:", error);
-      toast({ title: `Failed to send message: ${error.message}`, variant: "destructive" });
+      toast({ 
+        title: "Failed to send message", 
+        description: error.message || "Please check if you're a member of this society",
+        variant: "destructive" 
+      });
     },
   });
 
   // Send Direct Message
   const sendDirectMessage = useMutation({
     mutationFn: async ({ receiverId, content }: { receiverId: number; content: string }) => {
+      console.log(`💬 Sending direct message to user ${receiverId}:`, content);
       const response = await fetch("/api/direct-messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json" 
+        },
+        credentials: "include",
         body: JSON.stringify({ receiverId, content, messageType: "text" }),
       });
-      if (!response.ok) throw new Error("Failed to send message");
-      return response.json();
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`💬 Direct message send failed:`, response.status, errorText);
+        throw new Error(`Failed to send message: ${response.status} ${errorText}`);
+      }
+      
+      const result = await response.json();
+      console.log(`💬 Direct message sent successfully:`, result);
+      return result;
     },
     onSuccess: () => {
       setMessage("");
       refetchDirectMessages();
       toast({ title: "Message sent!" });
     },
-    onError: () => {
-      toast({ title: "Failed to send message", variant: "destructive" });
+    onError: (error: any) => {
+      console.error(`💬 Direct message error:`, error);
+      toast({ 
+        title: "Failed to send message", 
+        description: error.message || "Please try again",
+        variant: "destructive" 
+      });
     },
   });
 

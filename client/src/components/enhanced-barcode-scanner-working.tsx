@@ -285,13 +285,20 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
         cleanup();
       };
 
-      captureBtn.addEventListener('click', captureHandler, { passive: false });
-      captureBtn.addEventListener('touchstart', captureHandler, { passive: false });
-      captureBtn.addEventListener('pointerdown', captureHandler, { passive: false });
+      // Fix button interactions
+      captureBtn.style.pointerEvents = 'auto';
+      captureBtn.style.zIndex = '10002';
+      
+      captureBtn.addEventListener('click', captureHandler);
+      captureBtn.addEventListener('touchend', captureHandler);
+      captureBtn.addEventListener('mousedown', captureHandler);
 
-      closeBtn.addEventListener('click', closeHandler, { passive: false });
-      closeBtn.addEventListener('touchstart', closeHandler, { passive: false });
-      closeBtn.addEventListener('pointerdown', closeHandler, { passive: false });
+      closeBtn.style.pointerEvents = 'auto';
+      closeBtn.style.zIndex = '10002';
+      
+      closeBtn.addEventListener('click', closeHandler);
+      closeBtn.addEventListener('touchend', closeHandler);
+      closeBtn.addEventListener('mousedown', closeHandler);
 
     } catch (error) {
       console.error('Camera access error:', error);

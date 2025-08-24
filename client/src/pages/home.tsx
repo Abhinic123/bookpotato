@@ -190,7 +190,7 @@ export default function Home() {
             <CardContent className="pt-4 pb-4 text-center">
               <div className="flex flex-col items-center space-y-1">
                 <Camera className="h-6 w-6 text-purple-600" />
-                <div className="text-sm font-semibold text-purple-700">Bulk Upload</div>
+                <div className="text-sm font-semibold text-purple-700">Bulk Upload (Experimental)</div>
                 <div className="text-xs text-purple-600">Photo Recognition</div>
               </div>
             </CardContent>
