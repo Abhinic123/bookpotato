@@ -54,9 +54,11 @@ export default function Browse() {
   }, 300);
 
   // Get current user
-  const { data: user } = useQuery({
+  const { data: userResponse } = useQuery({
     queryKey: ["/api/auth/me"],
   });
+
+  const user = (userResponse as any)?.user;
 
   const handleBorrowBook = (book: BookWithOwner) => {
     setSelectedBook(book);
@@ -132,8 +134,8 @@ export default function Browse() {
               <BookCard
                 key={book.id}
                 book={book}
-                onBorrow={book.ownerId !== user?.user?.id ? handleBorrowBook : undefined}
-                onEdit={book.ownerId === user?.user?.id ? handleEditBook : undefined}
+                onBorrow={book.ownerId !== user?.id ? handleBorrowBook : undefined}
+                onEdit={book.ownerId === user?.id ? handleEditBook : undefined}
                 variant="grid"
                 showOwner={true}
               />
