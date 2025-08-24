@@ -91,12 +91,13 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
       setIsProcessing(true);
       setUploadStatus("Opening camera...");
 
-      // Request camera access
+      // Request high-quality camera access
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { 
           facingMode: 'environment', // Use back camera if available
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          aspectRatio: 16/9
         } 
       });
 
@@ -105,85 +106,187 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
       video.srcObject = stream;
       video.autoplay = true;
       video.playsInline = true;
+      video.muted = true; // Prevent audio feedback
 
-      // Create capture button
+      // Wait for video to be ready
+      await new Promise<void>((resolve) => {
+        video.onloadedmetadata = () => {
+          video.play();
+          resolve();
+        };
+      });
+
+      // Create capture button with better styling
       const captureBtn = document.createElement('button');
-      captureBtn.innerText = 'Capture Barcode';
-      captureBtn.style.position = 'fixed';
-      captureBtn.style.bottom = '20px';
-      captureBtn.style.left = '50%';
-      captureBtn.style.transform = 'translateX(-50%)';
-      captureBtn.style.padding = '12px 24px';
-      captureBtn.style.backgroundColor = '#3b82f6';
-      captureBtn.style.color = 'white';
-      captureBtn.style.border = 'none';
-      captureBtn.style.borderRadius = '8px';
-      captureBtn.style.fontSize = '16px';
-      captureBtn.style.zIndex = '9999';
+      captureBtn.innerHTML = '📷 Capture Barcode';
+      captureBtn.style.cssText = `
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 16px 32px;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        cursor: pointer;
+        z-index: 10001;
+        user-select: none;
+        touch-action: manipulation;
+      `;
 
       // Create close button
       const closeBtn = document.createElement('button');
-      closeBtn.innerText = '×';
-      closeBtn.style.position = 'fixed';
-      closeBtn.style.top = '20px';
-      closeBtn.style.right = '20px';
-      closeBtn.style.padding = '8px 12px';
-      closeBtn.style.backgroundColor = 'rgba(0,0,0,0.5)';
-      closeBtn.style.color = 'white';
-      closeBtn.style.border = 'none';
-      closeBtn.style.borderRadius = '50%';
-      closeBtn.style.fontSize = '20px';
-      closeBtn.style.zIndex = '9999';
+      closeBtn.innerHTML = '✕';
+      closeBtn.style.cssText = `
+        position: fixed;
+        top: 30px;
+        right: 30px;
+        width: 50px;
+        height: 50px;
+        background: rgba(0,0,0,0.7);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 24px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        touch-action: manipulation;
+      `;
 
-      // Style video for fullscreen
-      video.style.position = 'fixed';
-      video.style.top = '0';
-      video.style.left = '0';
-      video.style.width = '100vw';
-      video.style.height = '100vh';
-      video.style.objectFit = 'cover';
-      video.style.zIndex = '9998';
-      video.style.backgroundColor = 'black';
+      // Create overlay for better UX
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: black;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
 
-      document.body.appendChild(video);
+      // Style video for high quality display
+      video.style.cssText = `
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: contrast(1.1) brightness(1.1);
+      `;
+
+      // Create viewfinder guide
+      const viewfinder = document.createElement('div');
+      viewfinder.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 280px;
+        height: 180px;
+        border: 3px solid #3b82f6;
+        border-radius: 12px;
+        box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+        z-index: 10000;
+        pointer-events: none;
+      `;
+
+      // Create instruction text
+      const instructions = document.createElement('div');
+      instructions.innerHTML = 'Position barcode within the blue frame';
+      instructions.style.cssText = `
+        position: fixed;
+        top: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+        color: white;
+        font-size: 18px;
+        font-weight: 600;
+        text-align: center;
+        z-index: 10000;
+        background: rgba(0,0,0,0.7);
+        padding: 12px 24px;
+        border-radius: 8px;
+        pointer-events: none;
+      `;
+
+      overlay.appendChild(video);
+      document.body.appendChild(overlay);
+      document.body.appendChild(viewfinder);
+      document.body.appendChild(instructions);
       document.body.appendChild(captureBtn);
       document.body.appendChild(closeBtn);
 
-      setUploadStatus("Camera ready - Position barcode in view and tap Capture");
+      setUploadStatus("Camera ready - Position barcode and tap capture");
+      setIsProcessing(false);
 
       const cleanup = () => {
         stream.getTracks().forEach(track => track.stop());
-        document.body.removeChild(video);
-        document.body.removeChild(captureBtn);
-        document.body.removeChild(closeBtn);
-        setIsProcessing(false);
+        if (overlay.parentNode) document.body.removeChild(overlay);
+        if (viewfinder.parentNode) document.body.removeChild(viewfinder);
+        if (instructions.parentNode) document.body.removeChild(instructions);
+        if (captureBtn.parentNode) document.body.removeChild(captureBtn);
+        if (closeBtn.parentNode) document.body.removeChild(closeBtn);
         setUploadStatus("");
       };
 
-      captureBtn.onclick = () => {
-        // Capture image from video
+      // Enhanced capture functionality
+      const handleCapture = () => {
+        setIsProcessing(true);
+        setUploadStatus("Capturing image...");
+        
+        // Create high-quality canvas
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const ctx = canvas.getContext('2d');
-        ctx?.drawImage(video, 0, 0);
         
-        // Convert to blob and process
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], 'barcode-capture.jpg', { type: 'image/jpeg' });
-            const fakeEvent = { target: { files: [file] } };
-            handleImageUpload(fakeEvent as any);
-          }
-          cleanup();
-        }, 'image/jpeg', 0.8);
+        if (ctx) {
+          // Apply image enhancements for better barcode reading
+          ctx.filter = 'contrast(1.2) brightness(1.1) saturate(0.8)';
+          ctx.drawImage(video, 0, 0);
+          
+          // Convert to high-quality blob
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const file = new File([blob], 'barcode-capture.jpg', { type: 'image/jpeg' });
+              const fakeEvent = { target: { files: [file] } };
+              handleImageUpload(fakeEvent as any);
+            }
+            cleanup();
+          }, 'image/jpeg', 0.95); // Higher quality
+        } else {
+          setError("Failed to capture image. Please try again.");
+          setIsProcessing(false);
+        }
       };
 
-      closeBtn.onclick = cleanup;
+      // Event listeners with touch support
+      captureBtn.addEventListener('click', handleCapture);
+      captureBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleCapture();
+      });
+
+      closeBtn.addEventListener('click', cleanup);
+      closeBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        cleanup();
+      });
 
     } catch (error) {
       console.error('Camera access error:', error);
-      setError("Camera access denied or not available. Please use 'Upload Barcode Image' instead.");
+      setError("Camera access denied or not available. Please allow camera permissions and try again.");
       setIsProcessing(false);
       setUploadStatus("");
     }
@@ -279,12 +382,19 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
                 ref={fileInputRef}
                 onChange={handleImageUpload}
                 accept="image/*"
+                capture="environment"
                 className="hidden"
               />
               
               <Button
                 variant="outline"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => {
+                  // Force camera input instead of gallery
+                  if (fileInputRef.current) {
+                    fileInputRef.current.setAttribute('capture', 'environment');
+                    fileInputRef.current.click();
+                  }
+                }}
                 disabled={isProcessing}
                 className="w-full"
               >
