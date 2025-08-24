@@ -184,7 +184,10 @@ export default function Home() {
             </CardContent>
           </Card>
           
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200" onClick={() => setShowBulkUploadModal(true)}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200" onClick={() => {
+            console.log("Bulk upload button clicked");
+            setShowBulkUploadModal(true);
+          }}>
             <CardContent className="pt-4 pb-4 text-center">
               <div className="flex flex-col items-center space-y-1">
                 <Camera className="h-6 w-6 text-purple-600" />
@@ -442,15 +445,28 @@ export default function Home() {
 
       {/* Bulk Upload Modal */}
       {showBulkUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <BulkBookUpload
-            onClose={() => setShowBulkUploadModal(false)}
-            onBooksAdded={() => {
-              setShowBulkUploadModal(false);
-              // Refresh data after bulk upload
-              window.location.reload();
-            }}
-          />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-auto">
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-white rounded-lg shadow-xl">
+            <BulkBookUpload
+              onClose={() => {
+                console.log("Closing bulk upload modal");
+                setShowBulkUploadModal(false);
+              }}
+              onBooksAdded={() => {
+                console.log("Books added successfully");
+                setShowBulkUploadModal(false);
+                // Refresh data after bulk upload
+                window.location.reload();
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Debug indicator to show modal state */}
+      {showBulkUploadModal && (
+        <div className="fixed top-4 right-4 bg-red-500 text-white p-2 rounded z-[60]">
+          Modal is OPEN
         </div>
       )}
     </div>
