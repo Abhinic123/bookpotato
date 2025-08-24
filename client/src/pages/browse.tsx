@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import BookCard from "@/components/book-card";
 import BorrowBookModal from "@/components/modals/borrow-book-modal";
-import AddBookModal from "@/components/modals/add-book-modal";
 import { debounce } from "@/lib/utils";
 import type { BookWithOwner } from "@shared/schema";
 
@@ -18,7 +17,6 @@ export default function Browse() {
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
   const [showBorrowModal, setShowBorrowModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedSociety, setSelectedSociety] = useState<any>(null);
 
   const { data: societies } = useQuery({
@@ -53,21 +51,9 @@ export default function Browse() {
     setSearchQuery(value);
   }, 300);
 
-  // Get current user
-  const { data: userResponse } = useQuery({
-    queryKey: ["/api/auth/me"],
-  });
-
-  const user = (userResponse as any)?.user;
-
   const handleBorrowBook = (book: BookWithOwner) => {
     setSelectedBook(book);
     setShowBorrowModal(true);
-  };
-
-  const handleEditBook = (book: BookWithOwner) => {
-    setSelectedBook(book);
-    setShowEditModal(true);
   };
 
   if (!currentSociety) {
@@ -130,30 +116,15 @@ export default function Browse() {
           </div>
         ) : books && (books as any[]).length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(books as any[]).map((book: BookWithOwner) => {
-              // Debug logging
-              console.log('🔍 Debug ownership check:', {
-                bookId: book.id,
-                bookTitle: book.title,
-                bookOwnerId: book.ownerId,
-                currentUserId: user?.id,
-                userObject: user,
-                isOwner: book.ownerId === user?.id,
-                shouldShowBorrow: book.ownerId !== user?.id,
-                shouldShowEdit: book.ownerId === user?.id
-              });
-              
-              return (
-                <BookCard
-                  key={book.id}
-                  book={book}
-                  onBorrow={book.ownerId !== user?.id ? handleBorrowBook : undefined}
-                  onEdit={book.ownerId === user?.id ? handleEditBook : undefined}
-                  variant="grid"
-                  showOwner={true}
-                />
-              );
-            })}
+            {(books as any[]).map((book: BookWithOwner) => (
+              <BookCard
+                key={book.id}
+                book={book}
+                onBorrow={handleBorrowBook}
+                variant="grid"
+                showOwner={true}
+              />
+            ))}
           </div>
         ) : (
           <Card>
@@ -176,12 +147,6 @@ export default function Browse() {
         book={selectedBook}
         open={showBorrowModal}
         onOpenChange={setShowBorrowModal}
-      />
-
-      <AddBookModal
-        editBook={selectedBook}
-        open={showEditModal}
-        onOpenChange={setShowEditModal}
       />
     </div>
   );
