@@ -176,13 +176,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           console.log(`Session saved successfully for user ${(req.user as any)?.id}, session ID: ${req.sessionID}, redirecting to home`);
           
-          // Force session cookie to be sent with redirect (unsigned since we don't have cookie-parser)
-          res.cookie('connect.sid', req.sessionID, {
+          // Clear any old session cookies first
+          res.clearCookie('connect.sid');
+          
+          // Set the new authenticated session cookie with proper format
+          const signedSessionId = `s:${req.sessionID}`;
+          res.cookie('connect.sid', signedSessionId, {
             httpOnly: true,
             secure: false,
             maxAge: 24 * 60 * 60 * 1000,
             sameSite: 'lax',
-            path: '/'
+            path: '/',
+            domain: undefined // Let browser determine domain
           });
           
           // Add cache control headers to ensure fresh session

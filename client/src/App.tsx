@@ -65,8 +65,19 @@ function Router() {
 
   // Debug session cookies on every auth check
   console.log('🔍 Router auth check - Cookies:', document.cookie);
+  const sessionCookie = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('connect.sid='));
+  console.log('🔍 Session cookie:', sessionCookie);
   console.log('🔍 Auth data:', authData);
   console.log('🔍 Auth error:', error);
+
+  // Force cookie cleanup if authentication fails repeatedly
+  if (error && !authData && document.cookie.includes('connect.sid=')) {
+    console.log('🧹 Clearing stale session cookies');
+    document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    window.location.reload();
+  }
 
   if (isLoading) {
     return (
