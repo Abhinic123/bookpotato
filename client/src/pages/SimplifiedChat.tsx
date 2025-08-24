@@ -37,8 +37,16 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
   const { data: societyMessages = [], refetch: refetchSocietyMessages } = useQuery({
     queryKey: [`/api/societies/${societyId}/messages`],
     queryFn: async () => {
-      const response = await fetch(`/api/societies/${societyId}/messages`);
-      if (!response.ok) return [];
+      const response = await fetch(`/api/societies/${societyId}/messages`, {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
+      if (!response.ok) {
+        console.error(`Failed to fetch society messages: ${response.status}`);
+        return [];
+      }
       return response.json();
     },
   });
@@ -47,8 +55,16 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
   const { data: societyMembers = [] } = useQuery({
     queryKey: [`/api/societies/${societyId}/members`],
     queryFn: async () => {
-      const response = await fetch(`/api/societies/${societyId}/members`);
-      if (!response.ok) return [];
+      const response = await fetch(`/api/societies/${societyId}/members`, {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
+      if (!response.ok) {
+        console.error(`Failed to fetch society members: ${response.status}`);
+        return [];
+      }
       return response.json();
     },
   });
@@ -57,8 +73,16 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
   const { data: directContacts = [] } = useQuery({
     queryKey: ["/api/direct-messages/contacts"],
     queryFn: async () => {
-      const response = await fetch("/api/direct-messages/contacts");
-      if (!response.ok) return [];
+      const response = await fetch("/api/direct-messages/contacts", {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
+      if (!response.ok) {
+        console.error(`Failed to fetch direct contacts: ${response.status}`);
+        return [];
+      }
       return response.json();
     },
   });
@@ -68,8 +92,16 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
     queryKey: [`/api/direct-messages/${selectedContact}`],
     queryFn: async () => {
       if (!selectedContact) return [];
-      const response = await fetch(`/api/direct-messages/${selectedContact}`);
-      if (!response.ok) return [];
+      const response = await fetch(`/api/direct-messages/${selectedContact}`, {
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
+      if (!response.ok) {
+        console.error(`Failed to fetch direct messages: ${response.status}`);
+        return [];
+      }
       return response.json();
     },
     enabled: !!selectedContact,
