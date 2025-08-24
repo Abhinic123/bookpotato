@@ -46,7 +46,7 @@ export default function ImprovedCameraScanner({ onScan, onClose, isOpen }: Impro
               const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
               
               try {
-                const result = await reader.decodeFromImageData(imageData);
+                const result = await reader.decodeFromCanvas(canvas);
                 const barcode = result.getText();
                 console.log('📱 Barcode detected:', barcode);
                 
@@ -67,7 +67,7 @@ export default function ImprovedCameraScanner({ onScan, onClose, isOpen }: Impro
                 const enhancedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 
                 try {
-                  const retryResult = await reader.decodeFromImageData(enhancedImageData);
+                  const retryResult = await reader.decodeFromCanvas(canvas);
                   const barcode = retryResult.getText();
                   console.log('📱 Barcode detected on retry:', barcode);
                   
