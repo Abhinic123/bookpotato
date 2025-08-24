@@ -17,8 +17,8 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'bookshare-secret-key-for-development',
-  resave: false,
-  saveUninitialized: false,
+  resave: true,
+  saveUninitialized: true,
   cookie: {
     secure: false,
     httpOnly: true,
