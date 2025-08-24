@@ -173,36 +173,58 @@ export default function Home() {
         </div>
         
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200" onClick={() => setShowAddBookModal(true)}>
-            <CardContent className="pt-6 text-center">
-              <div className="flex items-center justify-center space-x-2 mb-2">
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="flex flex-col items-center space-y-1">
                 <BookPlus className="h-6 w-6 text-blue-600" />
-                <div className="text-lg font-semibold text-blue-700">Add Book</div>
+                <div className="text-sm font-semibold text-blue-700">Add Book</div>
+                <div className="text-xs text-blue-600">Manual Entry</div>
               </div>
-              <div className="text-sm text-blue-600">Manual Entry</div>
             </CardContent>
           </Card>
           
           <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200" onClick={() => setShowBulkUploadModal(true)}>
-            <CardContent className="pt-6 text-center">
-              <div className="flex items-center justify-center space-x-2 mb-2">
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="flex flex-col items-center space-y-1">
                 <Camera className="h-6 w-6 text-purple-600" />
-                <div className="text-lg font-semibold text-purple-700">Bulk Upload</div>
+                <div className="text-sm font-semibold text-purple-700">Bulk Upload</div>
+                <div className="text-xs text-purple-600">Photo Recognition</div>
               </div>
-              <div className="text-sm text-purple-600">Photo Recognition</div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-3">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-green-50 to-emerald-50 border-green-200" onClick={() => navigate('/how-it-works')}>
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="flex flex-col items-center space-y-1">
+                <HelpCircle className="h-6 w-6 text-green-600" />
+                <div className="text-sm font-semibold text-green-700">How It Works</div>
+                <div className="text-xs text-green-600">Learn Platform</div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200" onClick={() => navigate(`/societies/${currentSociety?.id}/chat`)}>
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="flex flex-col items-center space-y-1">
+                <MessageCircle className="h-6 w-6 text-emerald-600" />
+                <div className="text-sm font-semibold text-emerald-700">Society Chat</div>
+                <div className="text-xs text-emerald-600">Connect & Message</div>
+              </div>
             </CardContent>
           </Card>
         </div>
         
         {/* Rewards Centre Button */}
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200" onClick={() => navigate('/buy-brocks')}>
-          <CardContent className="pt-6 text-center">
-            <div className="flex items-center justify-center space-x-2 mb-2">
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 mt-4" onClick={() => navigate('/buy-brocks')}>
+          <CardContent className="pt-4 pb-4 text-center">
+            <div className="flex flex-col items-center space-y-1">
               <Award className="h-6 w-6 text-amber-600" />
-              <div className="text-lg font-semibold text-amber-700">Rewards Centre</div>
+              <div className="text-sm font-semibold text-amber-700">Rewards Centre</div>
+              <div className="text-xs text-amber-600">Buy Brocks & Convert Credits</div>
             </div>
-            <div className="text-sm text-amber-600">Buy Brocks, Convert Credits & More</div>
           </CardContent>
         </Card>
       </div>

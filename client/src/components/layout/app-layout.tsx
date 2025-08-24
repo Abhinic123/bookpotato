@@ -82,7 +82,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white min-h-screen relative">
+    <div className="max-w-lg mx-auto bg-white min-h-screen relative overflow-x-hidden">
       {/* Header */}
       <header className="bg-white border-b border-gray-100 px-4 py-3 sticky top-0 z-30">
         <div className="flex items-center justify-between">
@@ -186,7 +186,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-30">
-        <div className="max-w-md mx-auto px-4 py-2">
+        <div className="max-w-lg mx-auto px-4 py-2">
           <div className="flex justify-around">
             {navigation.map((item) => (
               <Link key={item.name} href={item.path}>
