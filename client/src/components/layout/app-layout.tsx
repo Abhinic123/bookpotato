@@ -41,7 +41,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     enabled: !!authData?.user,
   });
 
-  const { data: userCredits = { balance: 0, totalEarned: 0 } } = useQuery({
+  const { data: userCredits } = useQuery({
     queryKey: ["/api/user/credits"],
     enabled: !!authData?.user,
   });

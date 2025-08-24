@@ -84,10 +84,8 @@ export default function EnhancedAuth() {
     },
     onSuccess: () => {
       toast({ title: "Success", description: "Logged in successfully!" });
-      // Force refresh to ensure proper session handling
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 500);
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      window.location.href = "/";
     },
     onError: (error: any) => {
       toast({ 
@@ -138,15 +136,8 @@ export default function EnhancedAuth() {
 
   const handleSocialLogin = (provider: string) => {
     try {
-      // Clear any existing session cookies first to prevent conflicts
-      console.log('🧹 Clearing stale cookies before OAuth');
-      document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=' + window.location.hostname;
-      document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      
-      // Force a brief delay to ensure cookie clearing completes
-      setTimeout(() => {
-        window.location.href = `/api/auth/${provider}`;
-      }, 100);
+      // Implement Google OAuth
+      window.location.href = `/api/auth/${provider}`;
     } catch (error) {
       toast({
         title: "Connection Error",

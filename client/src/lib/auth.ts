@@ -30,22 +30,7 @@ export async function logout(): Promise<void> {
   await apiRequest("POST", "/api/auth/logout");
 }
 
-export async function getCurrentUser() {
-  const response = await fetch("/api/auth/me", {
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-    }
-  });
-  
-  if (response.status === 401) {
-    return null;
-  }
-  
-  if (!response.ok) {
-    throw new Error("Failed to get current user");
-  }
-  
-  const data = await response.json();
-  return data.user;
+export async function getCurrentUser(): Promise<AuthResponse> {
+  const response = await apiRequest("GET", "/api/auth/me");
+  return response.json();
 }

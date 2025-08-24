@@ -153,22 +153,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/google/callback", 
     passport.authenticate("google", { failureRedirect: "/auth?error=oauth_failed" }),
     async (req, res) => {
-      console.log("Google OAuth callback - User:", req.user);
-      console.log("Session before setting userId:", req.session);
-      
-      // Set user ID in session
-      (req.session as any).userId = (req.user as any)?.id;
-      
-      console.log("Session after setting userId:", req.session);
-      console.log("Session ID:", req.sessionID);
-      
-      // Save session explicitly
+      // OAuth success - manually handle session and redirect
+      console.log("Google OAuth success:", req.user);
+      req.session.userId = (req.user as any)?.id;
       req.session.save((err) => {
         if (err) {
           console.error("Session save error:", err);
-        } else {
-          console.log("Session saved successfully");
+          return res.redirect("/auth?error=session");
         }
+        console.log("Session saved successfully, redirecting to home");
         res.redirect("/");
       });
     }
@@ -302,23 +295,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/me", async (req, res) => {
-    console.log("Auth check - Session ID:", req.sessionID);
-    console.log("Auth check - Session data:", req.session);
-    console.log("Auth check - User ID in session:", (req.session as any).userId);
-    
-    const userId = (req.session as any).userId;
-    if (!userId) {
-      console.log("No userId in session, returning 401");
+    if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const user = await storage.getUser(userId);
+    const user = await storage.getUser(req.session.userId);
     if (!user) {
-      console.log("User not found in database:", userId);
       return res.status(401).json({ message: "User not found" });
     }
 
-    console.log("User authenticated successfully:", user.name);
+    console.log(`🔍 User ${user.id} data:`, {
+      userNumber: user.userNumber,
+      name: user.name,
+      email: user.email
+    });
+
     res.json({ 
       user: { 
         id: user.id, 
@@ -336,8 +327,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Middleware to check authentication
   const requireAuth = async (req: any, res: any, next: any) => {
-    const userId = (req.session as any).userId;
-    if (!userId) {
+    if (!req.session.userId) {
       return res.status(401).json({ message: "Authentication required" });
     }
     next();

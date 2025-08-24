@@ -27,8 +27,6 @@ import Downloads from "@/pages/downloads";
 import MyWishlist from "@/pages/my-wishlist";
 import SocietyChatPage from "@/pages/SocietyChatPage";
 import ChatSelection from "@/pages/chat-selection";
-import AuthSuccess from "@/pages/auth-success";
-import AuthCallback from "@/pages/auth-callback";
 import AppLayout from "@/components/layout/app-layout";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -84,8 +82,7 @@ function Router() {
       <Switch>
         <Route path="/auth" component={EnhancedAuth} />
         <Route path="/downloads" component={Downloads} />
-        <Route path="/welcome" component={Welcome} />
-        <Route component={EnhancedAuth} />
+        <Route component={Welcome} />
       </Switch>
     );
   }

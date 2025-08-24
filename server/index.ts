@@ -16,16 +16,14 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Session configuration
 app.use(session({
-  secret: 'bookshare-secret-key-2024',
+  secret: process.env.SESSION_SECRET || 'bookshare-secret-key-for-development',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: false,
-    httpOnly: false, // Allow frontend access
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax'
-  },
-  name: 'bookshare.sid'
+    secure: false, // Set to true in production with HTTPS
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
 }));
 
 app.use((req, res, next) => {
