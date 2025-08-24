@@ -676,7 +676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // Get all books from user's societies (sorted by newest first)
+  // Get all books from user's societies (sorted by newest first) - excluding user's own for home page
   app.get("/api/books/all", requireAuth, async (req, res) => {
     try {
       // Get all societies the user is a member of
@@ -687,7 +687,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const society of userSocieties) {
         const societyBooks = await storage.getBooksBySociety(society.id);
         console.log(`📚 Society ${society.name} has ${societyBooks.length} books`);
-        // Filter out user's own books
+        // Filter out user's own books for home page (to show what they can borrow)
         const otherBooks = societyBooks.filter(book => book.ownerId !== req.session.userId!);
         allBooks.push(...otherBooks);
       }
@@ -720,15 +720,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         location 
       } = req.query;
 
-      // Get all books from user's societies, excluding user's own books
+      // Get ALL books from user's societies (including user's own books)
       const userSocieties = await storage.getSocietiesByUser(req.session.userId!);
       let allBooks: any[] = [];
       
       for (const society of userSocieties) {
         const societyBooks = await storage.getBooksBySociety(society.id);
-        // Filter out user's own books
-        const otherBooks = societyBooks.filter(book => book.ownerId !== req.session.userId!);
-        allBooks.push(...otherBooks);
+        // Include ALL books (user's own books + others)
+        allBooks.push(...societyBooks);
       }
 
       // Apply search filter

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import BookCard from "@/components/book-card";
 import BorrowBookModal from "@/components/modals/borrow-book-modal";
+import AddBookModal from "@/components/modals/add-book-modal";
 import { debounce } from "@/lib/utils";
 import type { BookWithOwner } from "@shared/schema";
 
@@ -17,6 +18,7 @@ export default function Browse() {
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
   const [showBorrowModal, setShowBorrowModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedSociety, setSelectedSociety] = useState<any>(null);
 
   const { data: societies } = useQuery({
@@ -51,9 +53,19 @@ export default function Browse() {
     setSearchQuery(value);
   }, 300);
 
+  // Get current user
+  const { data: user } = useQuery({
+    queryKey: ["/api/auth/me"],
+  });
+
   const handleBorrowBook = (book: BookWithOwner) => {
     setSelectedBook(book);
     setShowBorrowModal(true);
+  };
+
+  const handleEditBook = (book: BookWithOwner) => {
+    setSelectedBook(book);
+    setShowEditModal(true);
   };
 
   if (!currentSociety) {
@@ -120,7 +132,8 @@ export default function Browse() {
               <BookCard
                 key={book.id}
                 book={book}
-                onBorrow={handleBorrowBook}
+                onBorrow={book.ownerId !== user?.user?.id ? handleBorrowBook : undefined}
+                onEdit={book.ownerId === user?.user?.id ? handleEditBook : undefined}
                 variant="grid"
                 showOwner={true}
               />
@@ -147,6 +160,12 @@ export default function Browse() {
         book={selectedBook}
         open={showBorrowModal}
         onOpenChange={setShowBorrowModal}
+      />
+
+      <AddBookModal
+        editBook={selectedBook}
+        open={showEditModal}
+        onOpenChange={setShowEditModal}
       />
     </div>
   );
