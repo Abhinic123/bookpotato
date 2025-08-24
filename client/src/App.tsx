@@ -62,10 +62,17 @@ function Router() {
     queryKey: ["/api/auth/me"],
     queryFn: async () => getCurrentUser(),
     retry: false,
+    staleTime: 0, // Always fetch fresh data
   });
+
+  // Check for authentication success URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const isAuthenticated = urlParams.get('authenticated');
+  const sessionFromUrl = urlParams.get('session');
 
   // Debug session cookies on every auth check
   console.log('🔍 Router auth check - Cookies:', document.cookie);
+  console.log('🔍 URL params - authenticated:', isAuthenticated, 'session:', sessionFromUrl);
   const sessionCookie = document.cookie
     .split('; ')
     .find(row => row.startsWith('connect.sid='));
@@ -73,13 +80,11 @@ function Router() {
   console.log('🔍 Auth data:', authData);
   console.log('🔍 Auth error:', error);
 
-  // Don't interfere with auth-success page or if we're already on auth page
-  const currentPath = window.location.pathname;
-  if (error && !authData && document.cookie.includes('connect.sid=') && 
-      !currentPath.includes('/auth-success') && !currentPath.includes('/auth')) {
-    console.log('🧹 Clearing stale session cookies');
-    document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    window.location.reload();
+  // If we have authentication success but no auth data, force refresh
+  if (isAuthenticated && sessionFromUrl && !authData && !isLoading) {
+    console.log('🔄 Authentication detected, forcing refresh');
+    window.location.href = '/';
+    return null;
   }
 
   if (isLoading) {

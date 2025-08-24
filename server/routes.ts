@@ -176,8 +176,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           console.log(`Session saved successfully for user ${(req.user as any)?.id}, session ID: ${req.sessionID}, redirecting to home`);
           
-          // Redirect with authentication confirmation page that will handle cookie sync
-          res.redirect(`/auth-success?session=${req.sessionID}&user=${(req.user as any)?.id}`);
+          // Set session cookie directly in response
+          res.cookie('connect.sid', `s:${req.sessionID}`, {
+            httpOnly: false, // Allow frontend access for debugging
+            secure: false,
+            maxAge: 24 * 60 * 60 * 1000,
+            sameSite: 'lax',
+            path: '/'
+          });
+          
+          // Redirect directly to home with session info
+          res.redirect(`/?authenticated=true&session=${req.sessionID}`);
         });
       });
     }
