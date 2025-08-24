@@ -13,16 +13,14 @@ export default function AuthSuccess() {
     console.log('🔑 Auth success - Session ID:', sessionId, 'User ID:', userId);
 
     if (sessionId && userId) {
-      // Clear any existing cookies
-      document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      
-      // Force a reload to ensure the server-set cookie is used
+      // Wait a moment for session to be fully established, then redirect
       setTimeout(() => {
-        console.log('🔄 Reloading to sync authentication session');
+        console.log('🔄 Authentication complete, redirecting to home');
         window.location.href = '/';
-      }, 500);
+      }, 1000);
     } else {
       // No session info, redirect to auth
+      console.log('❌ No session info found, redirecting to auth');
       setLocation('/auth');
     }
   }, [setLocation]);

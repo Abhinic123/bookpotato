@@ -73,8 +73,10 @@ function Router() {
   console.log('🔍 Auth data:', authData);
   console.log('🔍 Auth error:', error);
 
-  // Force cookie cleanup if authentication fails repeatedly
-  if (error && !authData && document.cookie.includes('connect.sid=')) {
+  // Don't interfere with auth-success page or if we're already on auth page
+  const currentPath = window.location.pathname;
+  if (error && !authData && document.cookie.includes('connect.sid=') && 
+      !currentPath.includes('/auth-success') && !currentPath.includes('/auth')) {
     console.log('🧹 Clearing stale session cookies');
     document.cookie = 'connect.sid=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     window.location.reload();
@@ -100,7 +102,8 @@ function Router() {
         <Route path="/auth" component={EnhancedAuth} />
         <Route path="/auth-success" component={AuthSuccess} />
         <Route path="/downloads" component={Downloads} />
-        <Route component={Welcome} />
+        <Route path="/welcome" component={Welcome} />
+        <Route component={EnhancedAuth} />
       </Switch>
     );
   }
