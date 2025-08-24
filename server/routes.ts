@@ -3800,16 +3800,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { image } = req.body;
       
       if (!image) {
+        console.log("❌ No image provided in request");
         return res.status(400).json({ message: "Image is required" });
       }
 
       console.log("📸 Starting OpenAI image analysis...");
+      console.log("📊 Image data length:", image.length);
+      console.log("🔑 OpenAI API Key present:", !!process.env.OPENAI_API_KEY);
       
       if (!process.env.OPENAI_API_KEY) {
         console.error("❌ OPENAI_API_KEY is not set");
         return res.status(500).json({ message: "OpenAI API key not configured" });
       }
+
+      // Validate image format
+      if (!image.startsWith('/9j/') && !image.startsWith('iVBORw0KGgo')) {
+        console.log("❌ Invalid image format detected");
+        return res.status(400).json({ message: "Invalid image format. Please provide a valid JPEG or PNG image." });
+      }
       
+      console.log("🚀 Making OpenAI API request...");
       const response = await openai.chat.completions.create({
         model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
         messages: [
@@ -3840,27 +3850,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ],
         response_format: { type: "json_object" },
         max_tokens: 1500,
+        timeout: 30000, // 30 second timeout
       });
 
+      console.log("✅ OpenAI API response received");
       const result = JSON.parse(response.choices[0].message.content || '{"books": []}');
       console.log(`📚 Detected ${result.books?.length || 0} books from bookshelf image`);
       
+      // Log detected books for debugging
+      if (result.books && result.books.length > 0) {
+        console.log("📖 Detected books:", result.books.map((book: any) => book.title).join(', '));
+      }
+      
       res.json(result);
     } catch (error: any) {
-      console.error("Bookshelf analysis error:", error);
-      console.error("Error details:", error.response?.data || error.message);
+      console.error("🚨 Bookshelf analysis error:", error);
+      console.error("🔍 Error details:", {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        code: error.code,
+        stack: error.stack?.split('\n').slice(0, 3).join('\n')
+      });
       
       if (error.response?.status === 401) {
-        return res.status(500).json({ message: "OpenAI API authentication failed. Please check API key." });
+        return res.status(500).json({ message: "OpenAI API authentication failed. Please check API key configuration." });
       }
       
       if (error.response?.status === 429) {
-        return res.status(500).json({ message: "OpenAI API rate limit exceeded. Please try again later." });
+        return res.status(500).json({ message: "OpenAI API rate limit exceeded. Please try again in a few minutes." });
+      }
+      
+      if (error.code === 'ECONNRESET' || error.code === 'ENOTFOUND') {
+        return res.status(500).json({ message: "Network connectivity issue. Please check your internet connection and try again." });
+      }
+      
+      if (error.message?.includes('timeout')) {
+        return res.status(500).json({ message: "Request timeout. The image analysis is taking too long. Please try with a smaller image." });
       }
       
       res.status(500).json({ 
-        message: "Failed to analyze bookshelf image", 
-        error: error.message 
+        message: "Failed to analyze bookshelf image. Please try again or contact support.", 
+        error: error.message,
+        details: "Check console logs for more information"
       });
     }
   });
