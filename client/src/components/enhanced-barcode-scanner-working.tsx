@@ -136,6 +136,7 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
         z-index: 10001;
         user-select: none;
         touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
       `;
 
       // Create close button
@@ -271,18 +272,26 @@ export default function EnhancedBarcodeScanner({ onScan, onClose, isOpen }: Enha
         }
       };
 
-      // Event listeners with touch support
-      captureBtn.addEventListener('click', handleCapture);
-      captureBtn.addEventListener('touchend', (e) => {
+      // Event listeners with better touch support
+      const captureHandler = (e: Event) => {
         e.preventDefault();
+        e.stopPropagation();
         handleCapture();
-      });
-
-      closeBtn.addEventListener('click', cleanup);
-      closeBtn.addEventListener('touchend', (e) => {
+      };
+      
+      const closeHandler = (e: Event) => {
         e.preventDefault();
+        e.stopPropagation();
         cleanup();
-      });
+      };
+
+      captureBtn.addEventListener('click', captureHandler, { passive: false });
+      captureBtn.addEventListener('touchstart', captureHandler, { passive: false });
+      captureBtn.addEventListener('pointerdown', captureHandler, { passive: false });
+
+      closeBtn.addEventListener('click', closeHandler, { passive: false });
+      closeBtn.addEventListener('touchstart', closeHandler, { passive: false });
+      closeBtn.addEventListener('pointerdown', closeHandler, { passive: false });
 
     } catch (error) {
       console.error('Camera access error:', error);

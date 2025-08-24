@@ -52,6 +52,7 @@ export default function MyBooks() {
   };
 
   const handleEditBook = (book: any) => {
+    console.log('📝 Opening edit modal for book:', book);
     setEditingBook(book);
     setShowAddModal(true);
   };

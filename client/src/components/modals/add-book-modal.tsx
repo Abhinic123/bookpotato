@@ -116,9 +116,10 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
       return response.json();
     },
     onSuccess: () => {
+      const successMessage = editBook ? "Book updated successfully!" : "Book added to your library successfully!";
       toast({
         title: "Success",
-        description: "Book added to your library successfully!",
+        description: successMessage,
       });
       // Invalidate all book-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/books"] });

@@ -83,7 +83,7 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Credentials": "include"
+          "Accept": "application/json"
         },
         credentials: "include",
         body: JSON.stringify({ content, messageType: "text" }),
