@@ -153,51 +153,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/google/callback", 
     passport.authenticate("google", { failureRedirect: "/auth?error=oauth_failed" }),
     async (req, res) => {
-      // OAuth success - manually handle session and redirect
+      // OAuth success - simple session handling
       console.log("Google OAuth success:", req.user);
-      
-      // Regenerate session for security and ensure fresh session ID
-      req.session.regenerate((err) => {
-        if (err) {
-          console.error("Session regeneration error:", err);
-          return res.redirect("/auth?error=session_regeneration_failed");
-        }
-        
-        // Set user data in the regenerated session
-        req.session.userId = (req.user as any)?.id;
-        req.session.authenticated = true;
-        
-        // Explicitly save session before redirect
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            console.error("Session save error:", saveErr);
-            return res.redirect("/auth?error=session_save_failed");
-          }
-          
-          console.log(`Session saved successfully for user ${(req.user as any)?.id}, session ID: ${req.sessionID}, redirecting to home`);
-          
-          // Set multiple session cookie formats to ensure compatibility
-          res.cookie('connect.sid', `s:${req.sessionID}`, {
-            httpOnly: false, // Allow frontend access for debugging
-            secure: false,
-            maxAge: 24 * 60 * 60 * 1000,
-            sameSite: 'lax',
-            path: '/'
-          });
-          
-          // Also set with URL encoding
-          res.cookie('connect.sid', `s%3A${req.sessionID}`, {
-            httpOnly: false,
-            secure: false,
-            maxAge: 24 * 60 * 60 * 1000,
-            sameSite: 'lax',
-            path: '/'
-          });
-          
-          // Redirect to auth callback with session info
-          res.redirect(`/auth-callback?authenticated=true&session=${req.sessionID}`);
-        });
-      });
+      req.session.userId = (req.user as any)?.id;
+      res.redirect("/");
     }
   );
 
@@ -329,14 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/me", async (req, res) => {
-    console.log('🔍 /api/auth/me - Session check:', {
-      sessionId: req.sessionID,
-      userId: req.session.userId,
-      authenticated: req.session.authenticated,
-      hasSession: !!req.session
-    });
-    
-    if (!req.session.userId || !req.session.authenticated) {
+    if (!req.session.userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
@@ -344,12 +296,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!user) {
       return res.status(401).json({ message: "User not found" });
     }
-
-    console.log(`🔍 User ${user.id} data:`, {
-      userNumber: user.userNumber,
-      name: user.name,
-      email: user.email
-    });
 
     res.json({ 
       user: { 
@@ -368,21 +314,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Middleware to check authentication
   const requireAuth = async (req: any, res: any, next: any) => {
-    console.log('🔐 Auth check - Session:', {
-      sessionId: req.sessionID,
-      userId: req.session.userId,
-      authenticated: req.session.authenticated,
-      hasSession: !!req.session,
-      sessionData: JSON.stringify(req.session),
-      cookies: req.headers.cookie?.slice(0, 100) + '...'
-    });
-    
-    if (!req.session.userId || !req.session.authenticated) {
-      console.log('🔐 Auth failed - No userId or not authenticated in session');
+    if (!req.session.userId) {
       return res.status(401).json({ message: "Authentication required" });
     }
-    
-    console.log('🔐 Auth success - User ID:', req.session.userId);
     next();
   };
 
