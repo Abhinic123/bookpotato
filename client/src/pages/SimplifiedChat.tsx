@@ -78,21 +78,35 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
   // Send Society Message
   const sendSocietyMessage = useMutation({
     mutationFn: async (content: string) => {
+      console.log(`Sending society message to society ${societyId}:`, content);
       const response = await fetch(`/api/societies/${societyId}/messages`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Credentials": "include"
+        },
+        credentials: "include",
         body: JSON.stringify({ content, messageType: "text" }),
       });
-      if (!response.ok) throw new Error("Failed to send message");
+      
+      console.log("Society message response status:", response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Society message error:", response.status, errorText);
+        throw new Error(`Failed to send message: ${response.status} ${errorText}`);
+      }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Society message sent successfully:", data);
       setMessage("");
       refetchSocietyMessages();
       toast({ title: "Message sent!" });
     },
-    onError: () => {
-      toast({ title: "Failed to send message", variant: "destructive" });
+    onError: (error) => {
+      console.error("Society message mutation error:", error);
+      toast({ title: `Failed to send message: ${error.message}`, variant: "destructive" });
     },
   });
 
@@ -125,7 +139,20 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
   const handleSendMessage = () => {
     if (!message.trim()) return;
 
+    console.log("Attempting to send message:", {
+      activeTab,
+      message,
+      societyId,
+      selectedContact,
+      userId: currentUserId
+    });
+
     if (activeTab === "society") {
+      if (!societyId) {
+        console.error("No societyId available for society chat");
+        toast({ title: "Society not found", variant: "destructive" });
+        return;
+      }
       sendSocietyMessage.mutate(message);
     } else if (activeTab === "direct" && selectedContact) {
       sendDirectMessage.mutate({ receiverId: selectedContact, content: message });
@@ -245,7 +272,11 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                     disabled={!message.trim() || sendSocietyMessage.isPending}
                     size="icon"
                   >
-                    <Send className="h-4 w-4" />
+                    {sendSocietyMessage.isPending ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
               </div>
