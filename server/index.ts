@@ -17,11 +17,11 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'bookshare-secret-key-for-development',
-  resave: false,
-  saveUninitialized: false,
+  resave: true, // Changed to true to ensure session persistence
+  saveUninitialized: true, // Changed to true to create sessions even for unauthenticated users
   cookie: {
     secure: false, // Set to true in production with HTTPS
-    httpOnly: true,
+    httpOnly: false, // Changed to false to allow JavaScript access for debugging
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     sameSite: 'lax' // Add SameSite attribute for better session handling
   },
