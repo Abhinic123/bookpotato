@@ -185,8 +185,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             path: '/'
           });
           
-          // Redirect directly to home with session info
-          res.redirect(`/?authenticated=true&session=${req.sessionID}`);
+          // Redirect to auth callback with session info
+          res.redirect(`/auth-callback?authenticated=true&session=${req.sessionID}`);
         });
       });
     }
