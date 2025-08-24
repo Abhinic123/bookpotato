@@ -60,6 +60,18 @@ app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, '..', 'marketing-website.html'));
   });
 
+  // Serve downloads page BEFORE other routes to avoid conflicts
+  app.get('/downloads.html', (req, res) => {
+    res.setHeader('Content-Type', 'text/html');
+    res.sendFile(path.join(__dirname, '..', 'downloads.html'));
+  });
+
+  // Alternative route without .html extension
+  app.get('/downloads', (req, res) => {
+    res.setHeader('Content-Type', 'text/html');
+    res.sendFile(path.join(__dirname, '..', 'downloads.html'));
+  });
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
