@@ -155,14 +155,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     async (req, res) => {
       // OAuth success - manually handle session and redirect
       console.log("Google OAuth success:", req.user);
-      req.session.userId = (req.user as any)?.id;
-      req.session.save((err) => {
+      
+      // Regenerate session for security and ensure fresh session ID
+      req.session.regenerate((err) => {
         if (err) {
-          console.error("Session save error:", err);
-          return res.redirect("/auth?error=session");
+          console.error("Session regeneration error:", err);
+          return res.redirect("/auth?error=session_regeneration_failed");
         }
-        console.log("Session saved successfully, redirecting to home");
-        res.redirect("/");
+        
+        // Set user data in the regenerated session
+        req.session.userId = (req.user as any)?.id;
+        req.session.authenticated = true;
+        
+        // Explicitly save session before redirect
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Session save error:", saveErr);
+            return res.redirect("/auth?error=session_save_failed");
+          }
+          
+          console.log(`Session saved successfully for user ${(req.user as any)?.id}, session ID: ${req.sessionID}, redirecting to home`);
+          
+          // Add session cookie manually to ensure it's set properly
+          res.cookie('connect.sid', req.sessionID, {
+            httpOnly: false, // Allow JavaScript access for debugging
+            secure: false,   // Set to true in production with HTTPS
+            maxAge: 24 * 60 * 60 * 1000, // 24 hours
+            sameSite: 'lax'
+          });
+          
+          res.redirect("/");
+        });
       });
     }
   );
@@ -295,7 +318,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/auth/me", async (req, res) => {
-    if (!req.session.userId) {
+    console.log('🔍 /api/auth/me - Session check:', {
+      sessionId: req.sessionID,
+      userId: req.session.userId,
+      authenticated: req.session.authenticated,
+      hasSession: !!req.session
+    });
+    
+    if (!req.session.userId || !req.session.authenticated) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
@@ -330,12 +360,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log('🔐 Auth check - Session:', {
       sessionId: req.sessionID,
       userId: req.session.userId,
+      authenticated: req.session.authenticated,
       hasSession: !!req.session,
-      cookies: req.headers.cookie?.slice(0, 50) + '...'
+      sessionData: JSON.stringify(req.session),
+      cookies: req.headers.cookie?.slice(0, 100) + '...'
     });
     
-    if (!req.session.userId) {
-      console.log('🔐 Auth failed - No userId in session');
+    if (!req.session.userId || !req.session.authenticated) {
+      console.log('🔐 Auth failed - No userId or not authenticated in session');
       return res.status(401).json({ message: "Authentication required" });
     }
     
