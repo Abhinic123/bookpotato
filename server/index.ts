@@ -17,15 +17,17 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'bookshare-secret-key-for-development',
-  resave: true, // Changed to true to ensure session persistence
-  saveUninitialized: true, // Changed to true to create sessions even for unauthenticated users
+  resave: false, // Set back to false for better performance
+  saveUninitialized: false, // Set back to false for security
   cookie: {
     secure: false, // Set to true in production with HTTPS
-    httpOnly: false, // Changed to false to allow JavaScript access for debugging
+    httpOnly: true, // Set back to true for security
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax' // Add SameSite attribute for better session handling
+    sameSite: 'lax', // Add SameSite attribute for better session handling
+    path: '/' // Ensure cookie is available for all paths
   },
-  name: 'connect.sid' // Explicit session name
+  name: 'connect.sid', // Explicit session name
+  rolling: true // Refresh session on each request
 }));
 
 app.use((req, res, next) => {

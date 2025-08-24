@@ -63,6 +63,11 @@ function Router() {
     retry: false,
   });
 
+  // Debug session cookies on every auth check
+  console.log('🔍 Router auth check - Cookies:', document.cookie);
+  console.log('🔍 Auth data:', authData);
+  console.log('🔍 Auth error:', error);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary to-secondary">
