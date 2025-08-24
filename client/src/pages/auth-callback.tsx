@@ -21,22 +21,36 @@ export default function AuthCallback() {
   useEffect(() => {
     if (sessionId && authenticated) {
       console.log('🔄 Setting session cookie manually');
-      // Set the session cookie manually
+      // Set the session cookie manually with exact server format
+      document.cookie = `connect.sid=s%3A${sessionId}; path=/; max-age=86400; SameSite=Lax`;
+      
+      // Also try without URL encoding
       document.cookie = `connect.sid=s:${sessionId}; path=/; max-age=86400; SameSite=Lax`;
       
-      // Force refetch auth data
+      console.log('🍪 Cookie set, current cookies:', document.cookie);
+      
+      // Force refetch auth data after short delay
       setTimeout(() => {
+        console.log('🔄 Refetching auth data');
         refetch();
-      }, 500);
+      }, 1000);
     }
   }, [sessionId, authenticated, refetch]);
 
   useEffect(() => {
     if (authData?.user) {
       console.log('✅ Authentication successful, redirecting to home');
-      window.location.href = '/';
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 500);
+    } else if (!isLoading && sessionId && authenticated) {
+      // If we have session but no auth data after 5 seconds, force reload
+      setTimeout(() => {
+        console.log('⚠️ Auth data not received, forcing page reload');
+        window.location.href = '/';
+      }, 5000);
     }
-  }, [authData]);
+  }, [authData, isLoading, sessionId, authenticated]);
 
   // Show loading while processing
   return (
