@@ -24,6 +24,9 @@ export default function Home() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showAddBookModal, setShowAddBookModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+  
+  // Debug: Log modal state changes
+  console.log("Home component render - showBulkUploadModal:", showBulkUploadModal);
 
   const { data: societies } = useQuery({
     queryKey: ["/api/societies/my"],
@@ -469,6 +472,19 @@ export default function Home() {
           Modal is OPEN
         </div>
       )}
+      
+      {/* Temporary test button */}
+      <div className="fixed top-20 right-4 z-[60]">
+        <Button 
+          onClick={() => {
+            console.log("Test button clicked, current modal state:", showBulkUploadModal);
+            setShowBulkUploadModal(!showBulkUploadModal);
+          }}
+          className="bg-red-600 hover:bg-red-700 text-white"
+        >
+          Test Modal
+        </Button>
+      </div>
     </div>
   );
 }

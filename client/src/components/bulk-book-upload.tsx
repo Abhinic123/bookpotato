@@ -38,6 +38,9 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   
   const [step, setStep] = useState<'capture' | 'processing' | 'review' | 'uploading'>('capture');
+  
+  // Debug: Log component render
+  console.log("BulkBookUpload component rendered, step:", step, "user:", user);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [detectedBooks, setDetectedBooks] = useState<DetectedBook[]>([]);
   const [processingProgress, setProcessingProgress] = useState(0);
