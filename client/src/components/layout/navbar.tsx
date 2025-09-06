@@ -58,7 +58,7 @@ export default function Navbar({ user }: NavbarProps) {
                 onClick={() => navigate("/")}
                 className="text-xl font-bold text-blue-600 hover:text-blue-700"
               >
-                BookShare
+                BorrowBooks
               </button>
             </div>
 

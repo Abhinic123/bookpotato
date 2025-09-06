@@ -154,7 +154,7 @@ export default function EnhancedAuth() {
           <div className="flex justify-center mb-4">
             <BookOpen className="w-12 h-12 text-blue-600" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">BookShare</h1>
+          <h1 className="text-3xl font-bold text-gray-900">BorrowBooks</h1>
           <p className="text-gray-600 mt-2">Connect, Share, Read</p>
         </div>
 
@@ -260,7 +260,7 @@ export default function EnhancedAuth() {
             <TabsContent value="register" className="space-y-4 p-6">
               <CardHeader className="text-center p-0 mb-4">
                 <CardTitle>Create Account</CardTitle>
-                <CardDescription>Join the BookShare community</CardDescription>
+                <CardDescription>Join the BorrowBooks community</CardDescription>
               </CardHeader>
 
               <form onSubmit={registerForm.handleSubmit((data) => registerMutation.mutate(data))}>

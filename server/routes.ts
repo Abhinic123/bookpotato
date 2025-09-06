@@ -201,12 +201,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const msg = {
         to: email,
-        from: 'noreply@bookshare.app', // You may need to verify this sender address in SendGrid
-        subject: 'Password Reset - BookShare',
+        from: 'noreply@borrowbooks.app', // You may need to verify this sender address in SendGrid
+        subject: 'Password Reset - BorrowBooks',
         html: `
           <h2>Password Reset Request</h2>
           <p>Hi ${user.name},</p>
-          <p>You requested a password reset for your BookShare account.</p>
+          <p>You requested a password reset for your BorrowBooks account.</p>
           <p>Click the link below to reset your password:</p>
           <a href="${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}" 
              style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 16px 0;">
@@ -214,7 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           </a>
           <p>This link will expire in 1 hour.</p>
           <p>If you didn't request this reset, you can safely ignore this email.</p>
-          <p>Best regards,<br>The BookShare Team</p>
+          <p>Best regards,<br>The BorrowBooks Team</p>
         `,
       };
 
