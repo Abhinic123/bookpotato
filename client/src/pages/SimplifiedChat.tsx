@@ -281,20 +281,20 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                 </div>
               </ScrollArea>
 
-              <div className="p-4 border-t bg-white shrink-0">
+              <div className="p-4 border-t bg-white shrink-0 sticky bottom-0 z-50">
                 <div className="flex gap-2 items-center">
                   <Input
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Type your message..."
-                    className="flex-1 min-h-[40px]"
+                    className="flex-1 min-h-[40px] border-2 border-gray-300 focus:border-blue-500"
                   />
                   <Button 
                     onClick={handleSendMessage}
                     disabled={!message.trim() || sendSocietyMessage.isPending}
                     size="icon"
-                    className="h-[40px] w-[40px] shrink-0"
+                    className="h-[40px] w-[40px] shrink-0 bg-blue-600 hover:bg-blue-700"
                   >
                     {sendSocietyMessage.isPending ? (
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -409,24 +409,26 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                       </div>
                     </ScrollArea>
 
-                    <div className="p-4 border-t bg-white">
-                      <div className="flex gap-2 items-end">
-                        <div className="flex-1">
-                          <Input
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            placeholder="Type your message..."
-                            className="min-h-[40px]"
-                          />
-                        </div>
+                    <div className="p-4 border-t bg-white sticky bottom-0 z-50">
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          value={message}
+                          onChange={(e) => setMessage(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          placeholder="Type your message..."
+                          className="flex-1 min-h-[40px] border-2 border-gray-300 focus:border-green-500"
+                        />
                         <Button 
                           onClick={handleSendMessage}
                           disabled={!message.trim() || sendDirectMessage.isPending}
                           size="icon"
-                          className="h-[40px] w-[40px] shrink-0 z-30"
+                          className="h-[40px] w-[40px] shrink-0 bg-green-600 hover:bg-green-700"
                         >
-                          <Send className="h-4 w-4" />
+                          {sendDirectMessage.isPending ? (
+                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     </div>

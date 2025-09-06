@@ -195,14 +195,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Send email using SendGrid
-      const { MailService } = await import('@sendgrid/mail');
-      const sgMail = new MailService();
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+      const sgMail = require('@sendgrid/mail');
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
       const msg = {
         to: email,
-        from: 'noreply@borrowbooks.app', // You may need to verify this sender address in SendGrid
+        from: 'support@replit.com', // Use a verified SendGrid sender
         subject: 'Password Reset - BorrowBooks',
+        text: `Hi ${user.name},
+
+You requested a password reset for your BorrowBooks account.
+
+Click the link below to reset your password:
+${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}
+
+This link will expire in 1 hour.
+
+If you didn't request this reset, you can safely ignore this email.
+
+Best regards,
+The BorrowBooks Team`,
         html: `
           <h2>Password Reset Request</h2>
           <p>Hi ${user.name},</p>
@@ -219,12 +231,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       try {
-        await sgMail.send(msg);
-        console.log(`📧 Password reset email sent to ${email}`);
+        const result = await sgMail.send(msg);
+        console.log(`📧 Password reset email sent successfully to ${email}`, result[0].statusCode);
       } catch (sgError) {
-        console.error("SendGrid error:", sgError);
-        // For now, just log the error but don't fail the request
-        // In production, you might want to handle this differently
+        console.error("SendGrid error details:", sgError);
+        console.error("Full error:", JSON.stringify(sgError, null, 2));
+        throw new Error(`Email sending failed: ${sgError.message}`);
       }
 
       res.json({ message: "If an account exists with this email, you will receive reset instructions." });

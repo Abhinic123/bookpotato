@@ -70,7 +70,7 @@ function Router() {
           <div className="mb-6">
             <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto"></div>
           </div>
-          <h1 className="text-3xl font-bold mb-2">BookShare</h1>
+          <h1 className="text-3xl font-bold mb-2">BorrowBooks</h1>
           <p className="text-lg opacity-90">Community Library</p>
         </div>
       </div>
