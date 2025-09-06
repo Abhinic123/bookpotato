@@ -200,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const msg = {
         to: email,
-        from: 'noreply@bookshare.app', // Replace with your verified sender
+        from: 'noreply@bookshare.app', // You may need to verify this sender address in SendGrid
         subject: 'Password Reset - BookShare',
         html: `
           <h2>Password Reset Request</h2>
@@ -217,8 +217,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `,
       };
 
-      await sgMail.send(msg);
-      console.log(`📧 Password reset email sent to ${email}`);
+      try {
+        await sgMail.send(msg);
+        console.log(`📧 Password reset email sent to ${email}`);
+      } catch (sgError) {
+        console.error("SendGrid error:", sgError);
+        // For now, just log the error but don't fail the request
+        // In production, you might want to handle this differently
+      }
 
       res.json({ message: "If an account exists with this email, you will receive reset instructions." });
     } catch (error) {
