@@ -264,9 +264,19 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
     return (
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
-            Bulk Book Upload
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5" />
+              Bulk Book Upload
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0" 
+              onClick={onClose}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </CardTitle>
           <p className="text-muted-foreground">
             Take a photo of your bookshelf or upload an existing image. We'll automatically detect the books and help you add them.
@@ -326,9 +336,19 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
     return (
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            Analyzing Your Bookshelf...
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Analyzing Your Bookshelf...
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0" 
+              onClick={onClose}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -365,7 +385,17 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
               <Eye className="h-5 w-5" />
               Review Detected Books ({detectedBooks.length} found)
             </div>
-            <Badge variant="secondary">{selectedCount} selected</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{selectedCount} selected</Badge>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 w-6 p-0" 
+                onClick={onClose}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </CardTitle>
           <p className="text-muted-foreground">
             Review the detected books, edit details, and select which ones to add to your library.
@@ -520,9 +550,19 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
     return (
       <Card className="w-full max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            Adding Books to Your Library...
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Adding Books to Your Library...
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 w-6 p-0" 
+              onClick={onClose}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
