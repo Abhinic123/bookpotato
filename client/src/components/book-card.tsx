@@ -123,29 +123,42 @@ export default function BookCard({
           </div>
           
           <div className="flex-shrink-0 ml-2">
-            {book.isAvailable && onBorrow ? (
-              <Button 
-                onClick={() => onBorrow(book)}
-                size="sm"
-              >
-                Borrow
-              </Button>
-            ) : onEdit ? (
-              <Button 
-                onClick={() => onEdit(book)}
-                variant="outline"
-                size="sm"
-              >
-                Edit
-              </Button>
-            ) : (
-              <AvailabilityAlertButton
-                bookId={book.id}
-                bookTitle={book.title}
-                isAvailable={book.isAvailable}
-                size="sm"
-              />
-            )}
+            {(() => {
+              console.log(`📚 BookCard Debug - Book: ${book.title}, isAvailable: ${book.isAvailable}, onBorrow: ${!!onBorrow}, onEdit: ${!!onEdit}, ownerId: ${book.ownerId}`);
+              
+              if (book.isAvailable && onBorrow) {
+                console.log(`📚 Showing Borrow button for ${book.title}`);
+                return (
+                  <Button 
+                    onClick={() => onBorrow(book)}
+                    size="sm"
+                  >
+                    Borrow
+                  </Button>
+                );
+              } else if (onEdit) {
+                console.log(`📚 Showing Edit button for ${book.title}`);
+                return (
+                  <Button 
+                    onClick={() => onEdit(book)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Edit
+                  </Button>
+                );
+              } else {
+                console.log(`📚 Showing AvailabilityAlertButton for ${book.title}`);
+                return (
+                  <AvailabilityAlertButton
+                    bookId={book.id}
+                    bookTitle={book.title}
+                    isAvailable={book.isAvailable}
+                    size="sm"
+                  />
+                );
+              }
+            })()}
           </div>
         </div>
       </CardContent>
