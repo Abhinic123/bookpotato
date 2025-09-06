@@ -3818,7 +3818,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ],
         response_format: { type: "json_object" },
         max_tokens: 1500,
-        timeout: 30000, // 30 second timeout
       });
 
       console.log("✅ OpenAI API response received");
