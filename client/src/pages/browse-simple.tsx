@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { BookWithOwner } from "@shared/schema";
+import AvailabilityAlertButton from "@/components/availability-alert-button";
 
 export default function BrowseSimple() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -131,14 +132,23 @@ export default function BrowseSimple() {
                       ₹{book.dailyFee}/day
                     </span>
                   </div>
-                  {book.ownerId !== user?.id && (
+                  {book.ownerId !== user?.id && book.isAvailable && (
                     <Button 
                       size="sm" 
                       className="w-full"
-                      disabled={!book.isAvailable}
                     >
-                      {book.isAvailable ? "Borrow" : "Not Available"}
+                      Borrow
                     </Button>
+                  )}
+                  
+                  {book.ownerId !== user?.id && !book.isAvailable && (
+                    <AvailabilityAlertButton
+                      bookId={book.id}
+                      bookTitle={book.title}
+                      isAvailable={book.isAvailable}
+                      size="sm"
+                      className="w-full"
+                    />
                   )}
                 </CardContent>
               </Card>

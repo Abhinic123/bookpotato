@@ -34,6 +34,15 @@ export default function Browse() {
     queryKey: ["/api/societies/my"],
   });
 
+  const { data: user } = useQuery({
+    queryKey: ["/api/auth/me"],
+    queryFn: async () => {
+      const response = await fetch("/api/auth/me");
+      if (!response.ok) return null;
+      return response.json();
+    },
+  });
+
   const currentSociety = selectedSociety || societies?.[0];
 
   // Set default society when societies load
@@ -165,7 +174,10 @@ export default function Browse() {
               <BookCard
                 key={book.id}
                 book={book}
-                onBorrow={handleBorrowBook}
+                onBorrow={book.isAvailable && book.ownerId !== user?.user?.id ? handleBorrowBook : undefined}
+                onEdit={book.ownerId === user?.user?.id ? () => {
+                  console.log('Edit book:', book.id);
+                } : undefined}
                 showOwner={true}
               />
             ))}
