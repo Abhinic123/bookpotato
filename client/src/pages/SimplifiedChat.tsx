@@ -246,7 +246,9 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                       <p className="text-gray-500">Start the conversation with your society members!</p>
                     </div>
                   ) : (
-                    societyMessages.map((msg: any) => (
+                    societyMessages
+                      .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                      .map((msg: any) => (
                       <div key={msg.id} className={`flex gap-3 ${msg.sender_id === currentUserId ? 'justify-end' : ''}`}>
                         {msg.sender_id !== currentUserId && (
                           <Avatar className="w-8 h-8">
@@ -258,9 +260,9 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                         )}
                         
                         <div className={`max-w-[70%] ${msg.sender_id === currentUserId ? 'order-first' : ''}`}>
-                          {msg.sender_id !== currentUserId && (
-                            <p className="text-xs text-gray-500 mb-1">{msg.sender_name}</p>
-                          )}
+                          <p className={`text-xs mb-1 ${msg.sender_id === currentUserId ? 'text-blue-600 text-right' : 'text-gray-500'}`}>
+                            {msg.sender_name || 'Unknown User'}
+                          </p>
                           <div className={`p-3 rounded-lg ${
                             msg.sender_id === currentUserId 
                               ? 'bg-blue-500 text-white ml-auto' 
@@ -270,7 +272,7 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                             <p className={`text-xs mt-1 ${
                               msg.sender_id === currentUserId ? 'text-blue-100' : 'text-gray-500'
                             }`}>
-                              {formatDate(msg.created_at)}
+                              {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
                         </div>
@@ -374,7 +376,9 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                             <p className="text-gray-500">Start a private conversation!</p>
                           </div>
                         ) : (
-                          directMessages.map((msg: any) => (
+                          directMessages
+                            .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                            .map((msg: any) => (
                             <div key={msg.id} className={`flex gap-3 ${msg.sender_id === currentUserId ? 'justify-end' : ''}`}>
                               {msg.sender_id !== currentUserId && (
                                 <Avatar className="w-8 h-8">
@@ -386,9 +390,9 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                               )}
                               
                               <div className={`max-w-[70%] ${msg.sender_id === currentUserId ? 'order-first' : ''}`}>
-                                {msg.sender_id !== currentUserId && (
-                                  <p className="text-xs text-gray-500 mb-1">{msg.sender_name}</p>
-                                )}
+                                <p className={`text-xs mb-1 ${msg.sender_id === currentUserId ? 'text-green-600 text-right' : 'text-gray-500'}`}>
+                                  {msg.sender_name || 'Unknown User'}
+                                </p>
                                 <div className={`p-3 rounded-lg ${
                                   msg.sender_id === currentUserId 
                                     ? 'bg-green-500 text-white ml-auto' 
@@ -398,7 +402,7 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                                   <p className={`text-xs mt-1 ${
                                     msg.sender_id === currentUserId ? 'text-green-100' : 'text-gray-500'
                                   }`}>
-                                    {formatDate(msg.created_at)}
+                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                   </p>
                                 </div>
                               </div>
