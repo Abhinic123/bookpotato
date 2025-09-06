@@ -69,38 +69,51 @@ export default function BookCard({
             
             {/* Action Button for Grid View */}
             <div className="mt-auto">
-              {book.isAvailable && onBorrow ? (
-                <Button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onBorrow(book);
-                  }}
-                  size="sm"
-                  className="w-full"
-                >
-                  Borrow
-                </Button>
-              ) : onEdit ? (
-                <Button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(book);
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  Edit
-                </Button>
-              ) : (
-                <AvailabilityAlertButton
-                  bookId={book.id}
-                  bookTitle={book.title}
-                  isAvailable={book.isAvailable}
-                  size="sm"
-                  className="w-full"
-                />
-              )}
+              {(() => {
+                console.log(`📚 Grid Debug - Book: ${book.title}, isAvailable: ${book.isAvailable}, onBorrow: ${!!onBorrow}, onEdit: ${!!onEdit}, ownerId: ${book.ownerId}`);
+                
+                if (book.isAvailable && onBorrow) {
+                  console.log(`📚 Grid: Showing Borrow button for ${book.title}`);
+                  return (
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onBorrow(book);
+                      }}
+                      size="sm"
+                      className="w-full"
+                    >
+                      Borrow
+                    </Button>
+                  );
+                } else if (onEdit) {
+                  console.log(`📚 Grid: Showing Edit button for ${book.title}`);
+                  return (
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(book);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                    >
+                      Edit
+                    </Button>
+                  );
+                } else {
+                  console.log(`📚 Grid: Showing AvailabilityAlertButton for ${book.title}`);
+                  return (
+                    <AvailabilityAlertButton
+                      bookId={book.id}
+                      bookTitle={book.title}
+                      isAvailable={book.isAvailable}
+                      size="sm"
+                      className="w-full"
+                    />
+                  );
+                }
+              })()}
             </div>
           </div>
         </CardContent>
@@ -159,29 +172,42 @@ export default function BookCard({
           </div>
           
           <div className="flex-shrink-0 ml-2">
-            {book.isAvailable && onBorrow ? (
-              <Button 
-                onClick={() => onBorrow(book)}
-                size="sm"
-              >
-                Borrow
-              </Button>
-            ) : onEdit ? (
-              <Button 
-                onClick={() => onEdit(book)}
-                variant="outline"
-                size="sm"
-              >
-                Edit
-              </Button>
-            ) : (
-              <AvailabilityAlertButton
-                bookId={book.id}
-                bookTitle={book.title}
-                isAvailable={book.isAvailable}
-                size="sm"
-              />
-            )}
+            {(() => {
+              console.log(`📚 BookCard Debug - Book: ${book.title}, isAvailable: ${book.isAvailable}, onBorrow: ${!!onBorrow}, onEdit: ${!!onEdit}, ownerId: ${book.ownerId}`);
+              
+              if (book.isAvailable && onBorrow) {
+                console.log(`📚 Showing Borrow button for ${book.title}`);
+                return (
+                  <Button 
+                    onClick={() => onBorrow(book)}
+                    size="sm"
+                  >
+                    Borrow
+                  </Button>
+                );
+              } else if (onEdit) {
+                console.log(`📚 Showing Edit button for ${book.title}`);
+                return (
+                  <Button 
+                    onClick={() => onEdit(book)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Edit
+                  </Button>
+                );
+              } else {
+                console.log(`📚 Showing AvailabilityAlertButton for ${book.title}`);
+                return (
+                  <AvailabilityAlertButton
+                    bookId={book.id}
+                    bookTitle={book.title}
+                    isAvailable={book.isAvailable}
+                    size="sm"
+                  />
+                );
+              }
+            })()}
           </div>
         </div>
       </CardContent>
