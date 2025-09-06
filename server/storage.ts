@@ -1,6 +1,7 @@
 import { 
   users, societies, books, bookRentals, societyMembers, notifications, societyRequests, referralRewards, rentalExtensions, extensionRequests,
   userCredits, creditTransactions, referrals, userBadges, commissionFreePeriods, rewardSettings, brocksPackages,
+  availabilityAlerts,
   type User, type InsertUser, type Society, type InsertSociety, 
   type Book, type InsertBook, type BookRental, type InsertBookRental,
   type SocietyMember, type InsertSocietyMember, type Notification, type InsertNotification,
@@ -1560,6 +1561,119 @@ export class DatabaseStorage implements IStorage {
         .orderBy(rewardSettings.settingKey);
     } catch (error) {
       console.error('Error fetching all reward settings:', error);
+      throw error;
+    }
+  }
+
+  // Availability Alert Methods
+  async createAvailabilityAlert(userId: number, bookId: number): Promise<void> {
+    try {
+      // Check if alert already exists
+      const existing = await db
+        .select()
+        .from(availabilityAlerts)
+        .where(and(
+          eq(availabilityAlerts.userId, userId),
+          eq(availabilityAlerts.bookId, bookId),
+          eq(availabilityAlerts.isActive, true)
+        ));
+
+      if (existing.length === 0) {
+        await db.insert(availabilityAlerts).values({
+          userId,
+          bookId,
+          isActive: true
+        });
+      }
+    } catch (error) {
+      console.error('Error creating availability alert:', error);
+      throw error;
+    }
+  }
+
+  async removeAvailabilityAlert(userId: number, bookId: number): Promise<void> {
+    try {
+      await db
+        .update(availabilityAlerts)
+        .set({ isActive: false })
+        .where(and(
+          eq(availabilityAlerts.userId, userId),
+          eq(availabilityAlerts.bookId, bookId)
+        ));
+    } catch (error) {
+      console.error('Error removing availability alert:', error);
+      throw error;
+    }
+  }
+
+  async getUserAvailabilityAlerts(userId: number): Promise<any[]> {
+    try {
+      const alerts = await db
+        .select({
+          id: availabilityAlerts.id,
+          bookId: availabilityAlerts.bookId,
+          createdAt: availabilityAlerts.createdAt,
+          book: {
+            id: books.id,
+            title: books.title,
+            author: books.author,
+            isAvailable: books.isAvailable
+          }
+        })
+        .from(availabilityAlerts)
+        .leftJoin(books, eq(availabilityAlerts.bookId, books.id))
+        .where(and(
+          eq(availabilityAlerts.userId, userId),
+          eq(availabilityAlerts.isActive, true)
+        ));
+
+      return alerts;
+    } catch (error) {
+      console.error('Error fetching user availability alerts:', error);
+      throw error;
+    }
+  }
+
+  async checkAvailabilityAlert(userId: number, bookId: number): Promise<boolean> {
+    try {
+      const alert = await db
+        .select()
+        .from(availabilityAlerts)
+        .where(and(
+          eq(availabilityAlerts.userId, userId),
+          eq(availabilityAlerts.bookId, bookId),
+          eq(availabilityAlerts.isActive, true)
+        ));
+
+      return alert.length > 0;
+    } catch (error) {
+      console.error('Error checking availability alert:', error);
+      return false;
+    }
+  }
+
+  async getActiveAlertsForBook(bookId: number): Promise<any[]> {
+    try {
+      const alerts = await db
+        .select({
+          id: availabilityAlerts.id,
+          userId: availabilityAlerts.userId,
+          user: {
+            id: users.id,
+            name: users.name,
+            email: users.email
+          }
+        })
+        .from(availabilityAlerts)
+        .leftJoin(users, eq(availabilityAlerts.userId, users.id))
+        .where(and(
+          eq(availabilityAlerts.bookId, bookId),
+          eq(availabilityAlerts.isActive, true)
+        ));
+
+      return alerts;
+    } catch (error) {
+      console.error('Error fetching active alerts for book:', error);
       throw error;
     }
   }

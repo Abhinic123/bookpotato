@@ -4008,5 +4008,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Availability Alert Routes
+  
+  // Create availability alert
+  app.post("/api/books/:bookId/availability-alert", requireAuth, async (req, res) => {
+    try {
+      const bookId = parseInt(req.params.bookId);
+      const userId = req.session.userId!;
+
+      // Check if book exists and is not available
+      const book = await storage.getBook(bookId);
+      if (!book) {
+        return res.status(404).json({ message: "Book not found" });
+      }
+
+      if (book.isAvailable) {
+        return res.status(400).json({ message: "Book is currently available" });
+      }
+
+      // Create availability alert
+      await storage.createAvailabilityAlert(userId, bookId);
+
+      res.json({ message: "Availability alert created successfully" });
+    } catch (error) {
+      console.error("Error creating availability alert:", error);
+      res.status(500).json({ message: "Failed to create availability alert" });
+    }
+  });
+
+  // Remove availability alert
+  app.delete("/api/books/:bookId/availability-alert", requireAuth, async (req, res) => {
+    try {
+      const bookId = parseInt(req.params.bookId);
+      const userId = req.session.userId!;
+
+      await storage.removeAvailabilityAlert(userId, bookId);
+
+      res.json({ message: "Availability alert removed successfully" });
+    } catch (error) {
+      console.error("Error removing availability alert:", error);
+      res.status(500).json({ message: "Failed to remove availability alert" });
+    }
+  });
+
+  // Check if user has availability alert for a book
+  app.get("/api/books/:bookId/availability-alert", requireAuth, async (req, res) => {
+    try {
+      const bookId = parseInt(req.params.bookId);
+      const userId = req.session.userId!;
+
+      const hasAlert = await storage.checkAvailabilityAlert(userId, bookId);
+
+      res.json({ hasAlert });
+    } catch (error) {
+      console.error("Error checking availability alert:", error);
+      res.status(500).json({ message: "Failed to check availability alert" });
+    }
+  });
+
+  // Get user's availability alerts
+  app.get("/api/availability-alerts", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      const alerts = await storage.getUserAvailabilityAlerts(userId);
+
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error fetching user availability alerts:", error);
+      res.status(500).json({ message: "Failed to fetch availability alerts" });
+    }
+  });
+
   return httpServer;
 }

@@ -5,6 +5,7 @@ import { formatCurrency, getBookStatusColor, getBookStatusText } from "@/lib/uti
 import type { BookWithOwner } from "@shared/schema";
 import ShareButton from "@/components/social/share-button";
 import WishlistButton from "@/components/social/wishlist-button";
+import AvailabilityAlertButton from "@/components/availability-alert-button";
 
 interface BookCardProps {
   book: BookWithOwner;
@@ -138,9 +139,12 @@ export default function BookCard({
                 Edit
               </Button>
             ) : (
-              <Button disabled size="sm">
-                Unavailable
-              </Button>
+              <AvailabilityAlertButton
+                bookId={book.id}
+                bookTitle={book.title}
+                isAvailable={book.isAvailable}
+                size="sm"
+              />
             )}
           </div>
         </div>
