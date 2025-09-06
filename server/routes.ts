@@ -195,8 +195,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Send email using SendGrid
-      const sgMail = require('@sendgrid/mail');
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+      const { MailService } = await import('@sendgrid/mail');
+      const sgMail = new MailService();
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
       const msg = {
         to: email,

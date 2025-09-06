@@ -20,18 +20,19 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
   const { user } = useUser();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [message, setMessage] = useState("");
+  const [activeTab, setActiveTab] = useState("society");
+  const [selectedContact, setSelectedContact] = useState<number | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Get currentUserId safely
+  const currentUserId = user?.user?.id;
   
   if (!user?.user) {
     return <div className="flex items-center justify-center h-64">
       <p className="text-gray-500">Please login to access chat</p>
     </div>;
   }
-  
-  const currentUserId = user.user.id;
-  const [message, setMessage] = useState("");
-  const [activeTab, setActiveTab] = useState("society");
-  const [selectedContact, setSelectedContact] = useState<number | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Society Messages Query
   const { data: societyMessages = [], refetch: refetchSocietyMessages } = useQuery({
