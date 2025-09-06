@@ -168,6 +168,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
 
   // Authentication routes
+  // Forgot password route
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    try {
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        // Don't reveal if user exists or not for security
+        return res.json({ message: "If an account exists with this email, you will receive reset instructions." });
+      }
+
+      // Generate a reset token (simple approach - in production, use crypto.randomBytes)
+      const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const resetExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+      // Store reset token in user record
+      await storage.updateUser(user.id, {
+        resetToken,
+        resetTokenExpiry: resetExpiry,
+      });
+
+      // Send email using SendGrid
+      const sgMail = require('@sendgrid/mail');
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+      const msg = {
+        to: email,
+        from: 'noreply@bookshare.app', // Replace with your verified sender
+        subject: 'Password Reset - BookShare',
+        html: `
+          <h2>Password Reset Request</h2>
+          <p>Hi ${user.name},</p>
+          <p>You requested a password reset for your BookShare account.</p>
+          <p>Click the link below to reset your password:</p>
+          <a href="${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}" 
+             style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 16px 0;">
+             Reset Password
+          </a>
+          <p>This link will expire in 1 hour.</p>
+          <p>If you didn't request this reset, you can safely ignore this email.</p>
+          <p>Best regards,<br>The BookShare Team</p>
+        `,
+      };
+
+      await sgMail.send(msg);
+      console.log(`📧 Password reset email sent to ${email}`);
+
+      res.json({ message: "If an account exists with this email, you will receive reset instructions." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Failed to process request" });
+    }
+  });
+
   app.post("/api/auth/register", async (req, res) => {
     try {
       // Separate referral code from user data for processing
