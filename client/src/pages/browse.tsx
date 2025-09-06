@@ -60,6 +60,20 @@ export default function Browse() {
     setSearchQuery(value);
   }, 300);
 
+  // Filter books based on search query and selected genre
+  const filteredBooks = (books as any[])?.filter((book: BookWithOwner) => {
+    // Apply search filter
+    const matchesSearch = !searchQuery || 
+      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      book.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      book.genre?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // Apply genre filter
+    const matchesGenre = selectedGenre === "All" || book.genre === selectedGenre;
+
+    return matchesSearch && matchesGenre;
+  }) || [];
+
   const handleBorrowBook = (book: BookWithOwner) => {
     setSelectedBook(book);
     setShowBorrowModal(true);
@@ -123,9 +137,9 @@ export default function Browse() {
               </Card>
             ))}
           </div>
-        ) : books && (books as any[]).length > 0 ? (
+        ) : filteredBooks.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(books as any[]).map((book: BookWithOwner) => (
+            {filteredBooks.map((book: BookWithOwner) => (
               <BookCard
                 key={book.id}
                 book={book}
@@ -150,6 +164,20 @@ export default function Browse() {
                   ? "Try adjusting your search or filters"
                   : "No books have been added to this society yet"}
               </p>
+              {(searchQuery || selectedGenre !== "All") && (
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSelectedGenre("All");
+                    const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
+                    if (searchInput) searchInput.value = "";
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
