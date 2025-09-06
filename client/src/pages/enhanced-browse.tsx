@@ -103,6 +103,16 @@ export default function EnhancedBrowse() {
     queryKey: ["/api/societies/available"],
   });
 
+  // Get current user data
+  const { data: user } = useQuery({
+    queryKey: ["/api/auth/me"],
+    queryFn: async () => {
+      const response = await fetch("/api/auth/me");
+      if (!response.ok) return null;
+      return response.json();
+    },
+  });
+
   const updateFilter = (key: keyof Filters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
@@ -416,6 +426,14 @@ export default function EnhancedBrowse() {
                   book={book}
                   showOwner={true}
                   variant="grid"
+                  onBorrow={book.isAvailable && book.ownerId !== user?.user?.id ? () => {
+                    setSelectedBook(book);
+                    setShowBorrowModal(true);
+                  } : undefined}
+                  onEdit={book.ownerId === user?.user?.id ? () => {
+                    // TODO: Add edit functionality
+                    console.log('Edit book:', book.id);
+                  } : undefined}
                 />
               </div>
             ))}
@@ -437,7 +455,7 @@ export default function EnhancedBrowse() {
           setShowDetailsModal(false);
           setShowBorrowModal(true);
         }}
-        user={{ id: 1 }} // TODO: Get actual user data
+        user={user?.user}
       />
 
       {/* Borrow Book Modal */}
