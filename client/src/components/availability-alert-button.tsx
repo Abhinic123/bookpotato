@@ -39,9 +39,7 @@ export default function AvailabilityAlertButton({
   // Create alert mutation
   const createAlertMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/books/${bookId}/availability-alert`, {
-        method: "POST",
-      });
+      return apiRequest("POST", `/api/books/${bookId}/availability-alert`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/books/${bookId}/availability-alert`] });
@@ -62,9 +60,7 @@ export default function AvailabilityAlertButton({
   // Remove alert mutation
   const removeAlertMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/books/${bookId}/availability-alert`, {
-        method: "DELETE",
-      });
+      return apiRequest("DELETE", `/api/books/${bookId}/availability-alert`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/books/${bookId}/availability-alert`] });
