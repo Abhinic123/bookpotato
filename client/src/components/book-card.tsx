@@ -54,7 +54,7 @@ export default function BookCard({
           </div>
           
           {/* Book details below cover */}
-          <div className="p-3 flex-1">
+          <div className="p-3 flex-1 flex flex-col">
             <h3 className="font-semibold text-sm mb-1 line-clamp-2">
               {book.title}
             </h3>
@@ -62,10 +62,59 @@ export default function BookCard({
               by {book.author}
             </p>
             {showOwner && (
-              <p className="text-xs text-text-secondary">
+              <p className="text-xs text-text-secondary mb-2">
                 Owner: {book.owner.name}
               </p>
             )}
+            
+            {/* Action Button for Grid View */}
+            <div className="mt-auto">
+              {(() => {
+                console.log(`📚 Grid Debug - Book: ${book.title}, isAvailable: ${book.isAvailable}, onBorrow: ${!!onBorrow}, onEdit: ${!!onEdit}, ownerId: ${book.ownerId}`);
+                
+                if (book.isAvailable && onBorrow) {
+                  console.log(`📚 Grid: Showing Borrow button for ${book.title}`);
+                  return (
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onBorrow(book);
+                      }}
+                      size="sm"
+                      className="w-full"
+                    >
+                      Borrow
+                    </Button>
+                  );
+                } else if (onEdit) {
+                  console.log(`📚 Grid: Showing Edit button for ${book.title}`);
+                  return (
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(book);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                    >
+                      Edit
+                    </Button>
+                  );
+                } else {
+                  console.log(`📚 Grid: Showing AvailabilityAlertButton for ${book.title}`);
+                  return (
+                    <AvailabilityAlertButton
+                      bookId={book.id}
+                      bookTitle={book.title}
+                      isAvailable={book.isAvailable}
+                      size="sm"
+                      className="w-full"
+                    />
+                  );
+                }
+              })()}
+            </div>
           </div>
         </CardContent>
       </Card>
