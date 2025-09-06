@@ -385,6 +385,9 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                               )}
                               
                               <div className={`max-w-[70%] ${msg.sender_id === currentUserId ? 'order-first' : ''}`}>
+                                {msg.sender_id !== currentUserId && (
+                                  <p className="text-xs text-gray-500 mb-1">{msg.sender_name}</p>
+                                )}
                                 <div className={`p-3 rounded-lg ${
                                   msg.sender_id === currentUserId 
                                     ? 'bg-green-500 text-white ml-auto' 
