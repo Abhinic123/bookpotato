@@ -106,12 +106,12 @@ export default function AvailabilityAlertButton({
       ) : hasAlert ? (
         <>
           <BellOff className="h-4 w-4 mr-1" />
-          Cancel Alert
+          Cancel
         </>
       ) : (
         <>
           <Bell className="h-4 w-4 mr-1" />
-          Notify When Available
+          Notify Me
         </>
       )}
     </Button>
