@@ -97,21 +97,21 @@ export default function AvailabilityAlertButton({
     <Button
       onClick={handleClick}
       disabled={isLoading || isPending}
-      size={size}
+      size="sm"
       variant={hasAlert ? "default" : "outline"}
-      className={`${className} ${hasAlert ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}`}
+      className={`${className} ${hasAlert ? "bg-blue-600 hover:bg-blue-700 text-white" : ""} text-xs px-2 py-1 h-6`}
     >
       {isLoading || isPending ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Loader2 className="h-3 w-3 animate-spin" />
       ) : hasAlert ? (
         <>
-          <BellOff className="h-4 w-4 mr-1" />
+          <BellOff className="h-3 w-3 mr-1" />
           Cancel Alert
         </>
       ) : (
         <>
-          <Bell className="h-4 w-4 mr-1" />
-          Notify When Available
+          <Bell className="h-3 w-3 mr-1" />
+          Notify Me
         </>
       )}
     </Button>
