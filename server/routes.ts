@@ -195,8 +195,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Send email using SendGrid
-      const { MailService } = await import('@sendgrid/mail');
-      const sgMail = new MailService();
+      const sgMailModule = await import('@sendgrid/mail');
+      const sgMail = sgMailModule.default;
       sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
       const msg = {
@@ -234,10 +234,10 @@ The BorrowBooks Team`,
       try {
         const result = await sgMail.send(msg);
         console.log(`📧 Password reset email sent successfully to ${email}`, result[0].statusCode);
-      } catch (sgError) {
+      } catch (sgError: any) {
         console.error("SendGrid error details:", sgError);
         console.error("Full error:", JSON.stringify(sgError, null, 2));
-        throw new Error(`Email sending failed: ${sgError.message}`);
+        throw new Error(`Email sending failed: ${sgError?.message || 'Unknown error'}`);
       }
 
       res.json({ message: "If an account exists with this email, you will receive reset instructions." });
