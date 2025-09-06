@@ -15,7 +15,7 @@ import { useLocation } from "wouter";
 const welcomeScreens = [
   {
     id: 1,
-    title: "Welcome to BookShare",
+    title: "Welcome to BorrowBooks",
     subtitle: "Your Community Library Platform",
     description: "Connect with your neighbors and share books within your society. Discover new reads while building a stronger community.",
     icon: BookOpen,
