@@ -206,7 +206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const msg = {
         to: email,
-        from: 'noreply@borrowbooks.com', // Generic sender that might work
+        from: 'abhinic@gmail.com', // Use your verified email address
         subject: 'Password Reset - BorrowBooks',
         text: `Hi ${user.name},
 
