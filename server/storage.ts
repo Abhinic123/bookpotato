@@ -75,15 +75,6 @@ export interface IStorage {
   createMessage(message: any): Promise<any>;
   markMessagesAsRead(userId: number, otherUserId: number): Promise<void>;
   
-  // Enhanced Chat System
-  getSocietyMembers(societyId: number): Promise<any[]>;
-  getSocietyChatRooms(societyId: number): Promise<any[]>;
-  getSocietyMessages(societyId: number, limit?: number, offset?: number): Promise<any[]>;
-  getDirectMessageContacts(userId: number): Promise<any[]>;
-  getDirectMessages(userId: number, contactId: number): Promise<any[]>;
-  createSocietyMessage(societyId: number, senderId: number, content: string, messageType: string): Promise<any>;
-  createDirectMessage(senderId: number, receiverId: number, content: string, messageType: string): Promise<any>;
-  markDirectMessageAsRead(messageId: number): Promise<void>;
   
   // Advanced search
   searchBooksAdvanced(filters: any): Promise<BookWithOwner[]>;
@@ -159,7 +150,7 @@ export interface IStorage {
   getUnreadMessageCount(societyId: number, userId: number): Promise<number>;
   getSocietyMembers(societyId: number): Promise<any[]>;
   getDirectMessageContacts(userId: number): Promise<any[]>;
-  getSocietyChatRooms(userId: number): Promise<any[]>;
+  getSocietyChatRooms(societyId: number): Promise<any[]>;
   createChatRoom(societyId: number, name: string, createdBy: number): Promise<any>;
   getDirectMessages(userId: number, contactId: number): Promise<any[]>;
   createDirectMessage(senderId: number, receiverId: number, content: string, messageType?: string): Promise<any>;
@@ -1954,6 +1945,148 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error setting package popular status:', error);
       return false;
+    }
+  }
+
+  // Page Content Management methods
+  async getPageContent(pageKey: string): Promise<PageContent | undefined> {
+    const [content] = await db.select().from(pageContent).where(eq(pageContent.pageKey, pageKey));
+    return content || undefined;
+  }
+
+  async updatePageContent(pageKey: string, data: Partial<InsertPageContent>): Promise<PageContent> {
+    const [content] = await db
+      .insert(pageContent)
+      .values({ pageKey, ...data })
+      .onConflictDoUpdate({
+        target: pageContent.pageKey,
+        set: { ...data },
+      })
+      .returning();
+    return content;
+  }
+
+  async getAllPageContent(): Promise<PageContent[]> {
+    return await db.select().from(pageContent);
+  }
+
+  // Chat Status methods
+  async updateChatReadStatus(societyId: number, userId: number, messageId?: number): Promise<void> {
+    try {
+      await db.execute(sql`
+        INSERT INTO chat_read_status (society_id, user_id, last_read_message_id, last_read_at)
+        VALUES (${societyId}, ${userId}, ${messageId || null}, NOW())
+        ON CONFLICT (society_id, user_id) 
+        DO UPDATE SET 
+          last_read_message_id = EXCLUDED.last_read_message_id,
+          last_read_at = EXCLUDED.last_read_at
+      `);
+    } catch (error) {
+      console.error('Error updating chat read status:', error);
+    }
+  }
+
+  async getUnreadMessageCount(societyId: number, userId: number): Promise<number> {
+    try {
+      const readStatus = await this.getChatReadStatus(societyId, userId);
+      const lastReadMessageId = readStatus?.last_read_message_id || 0;
+      
+      const result = await db.execute(sql`
+        SELECT COUNT(*) as count FROM society_chats 
+        WHERE society_id = ${societyId} AND id > ${lastReadMessageId}
+      `);
+      return parseInt(result.rows?.[0]?.count || '0');
+    } catch (error) {
+      console.error('Error getting unread message count:', error);
+      return 0;
+    }
+  }
+
+  // Chat Room methods  
+  async getSocietyChatRooms(societyId: number): Promise<any[]> {
+    try {
+      const rooms = await db.execute(sql`
+        SELECT 
+          cr.*,
+          u.name as creator_name,
+          COUNT(sc.id) as message_count
+        FROM chat_rooms cr
+        LEFT JOIN users u ON cr.created_by = u.id
+        LEFT JOIN society_chats sc ON cr.id = sc.room_id
+        WHERE cr.society_id = ${societyId}
+        GROUP BY cr.id, u.name
+        ORDER BY cr.created_at ASC
+      `);
+      return rooms.rows || [];
+    } catch (error) {
+      console.error('Error fetching society chat rooms:', error);
+      return [];
+    }
+  }
+
+  async createChatRoom(societyId: number, name: string, createdBy: number): Promise<any> {
+    try {
+      const result = await db.execute(sql`
+        INSERT INTO chat_rooms (society_id, name, created_by, created_at)
+        VALUES (${societyId}, ${name}, ${createdBy}, NOW())
+        RETURNING *
+      `);
+      return result.rows?.[0] || null;
+    } catch (error) {
+      console.error('Error creating chat room:', error);
+      throw error;
+    }
+  }
+
+  // Brocks Application method
+  async applyBrocksToPayment(userId: number, offerType: 'rupees' | 'commission-free', brocksUsed: number, originalAmount: number): Promise<{ newAmount: number; brocksSpent: number }> {
+    try {
+      // Get current user credits
+      const userCredits = await this.getUserCredits(userId);
+      if (!userCredits || userCredits.balance < brocksUsed) {
+        throw new Error('Insufficient Brocks credits');
+      }
+
+      let newAmount = originalAmount;
+      let brocksSpent = 0;
+
+      if (offerType === 'rupees') {
+        // Get conversion rate
+        const conversionRateSetting = await this.getRewardSetting('credits_to_rupees_rate');
+        const conversionRate = parseInt(conversionRateSetting?.settingValue || '20');
+        
+        // Calculate rupees discount
+        const rupeesDiscount = Math.floor(brocksUsed / conversionRate);
+        newAmount = Math.max(0, originalAmount - rupeesDiscount);
+        brocksSpent = rupeesDiscount * conversionRate; // Only spend exact amount needed
+        
+        // Spend the credits using deductCredits
+        const success = await this.deductCredits(userId, brocksSpent, `Converted ${brocksSpent} Brocks to ₹${rupeesDiscount} discount`);
+        if (!success) {
+          throw new Error('Failed to deduct Brocks credits');
+        }
+      } else if (offerType === 'commission-free') {
+        // For commission-free, we don't reduce payment amount but give future benefits
+        const conversionRateSetting = await this.getRewardSetting('credits_to_commission_free_rate');
+        const conversionRate = parseInt(conversionRateSetting?.settingValue || '20');
+        
+        const commissionFreeDays = Math.floor(brocksUsed / conversionRate);
+        brocksSpent = commissionFreeDays * conversionRate;
+        
+        // Spend the credits using deductCredits
+        const success = await this.deductCredits(userId, brocksSpent, `Converted ${brocksSpent} Brocks to ${commissionFreeDays} commission-free days`);
+        if (!success) {
+          throw new Error('Failed to deduct Brocks credits');
+        }
+        
+        // TODO: Implement commission-free days tracking in user profile
+        newAmount = originalAmount; // Payment amount doesn't change for commission-free
+      }
+
+      return { newAmount, brocksSpent };
+    } catch (error) {
+      console.error('Error applying Brocks to payment:', error);
+      throw error;
     }
   }
 }
