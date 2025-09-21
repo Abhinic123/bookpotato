@@ -2021,8 +2021,8 @@ The BorrowBooks Team`,
       const dailyFee = parseFloat(book.dailyFee);
       const rentalFee = dailyFee * duration; // Amount lender should receive
       const platformFeeRate = settings.commissionRate / 100; // Convert percentage to decimal
-      const platformFee = rentalFee * platformFeeRate; // Platform commission on top
-      const lenderAmount = rentalFee; // Lender gets full rental amount
+      let platformFee = rentalFee * platformFeeRate; // Platform commission on top
+      let lenderAmount = rentalFee; // Lender gets full rental amount
       const securityDeposit = settings.securityDeposit;
       let totalAmount = rentalFee + platformFee + securityDeposit; // Borrower pays rental + commission + deposit
 

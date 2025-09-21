@@ -101,7 +101,6 @@ export interface IStorage {
   updateRentalExtensionPayment(extensionId: number, paymentId: string, status: string): Promise<void>;
   
   // Credits system
-  getUserCredits(userId: number): Promise<UserCredits | undefined>;
   createUserCredits(credits: InsertUserCredits): Promise<UserCredits>;
   updateUserCredits(userId: number, balance: number): Promise<void>;
   addCreditTransaction(transaction: InsertCreditTransaction): Promise<CreditTransaction>;
@@ -2046,57 +2045,6 @@ export class MemStorage implements IStorage {
     return await db.select().from(pageContent);
   }
 
-  async applyBrocksToPayment(userId: number, offerType: 'rupees' | 'commission-free', brocksUsed: number, originalAmount: number): Promise<{ newAmount: number; brocksSpent: number }> {
-    try {
-      // Get current user credits
-      const userCredits = await this.getUserCredits(userId);
-      if (!userCredits || userCredits.balance < brocksUsed) {
-        throw new Error('Insufficient Brocks credits');
-      }
-
-      let newAmount = originalAmount;
-      let brocksSpent = 0;
-
-      if (offerType === 'rupees') {
-        // Get conversion rate
-        const conversionRateSetting = await this.getRewardSetting('credits_to_rupees_rate');
-        const conversionRate = parseInt(conversionRateSetting?.settingValue || '20');
-        
-        // Calculate rupees discount
-        const rupeesDiscount = Math.floor(brocksUsed / conversionRate);
-        newAmount = Math.max(0, originalAmount - rupeesDiscount);
-        brocksSpent = rupeesDiscount * conversionRate; // Only spend exact amount needed
-        
-        // Spend the credits using deductCredits
-        const success = await this.deductCredits(userId, brocksSpent, `Converted ${brocksSpent} Brocks to ₹${rupeesDiscount} discount`);
-        if (!success) {
-          throw new Error('Failed to deduct Brocks credits');
-        }
-      } else if (offerType === 'commission-free') {
-        // For commission-free, we don't reduce payment amount but give future benefits
-        const conversionRateSetting = await this.getRewardSetting('credits_to_commission_free_rate');
-        const conversionRate = parseInt(conversionRateSetting?.settingValue || '20');
-        
-        const commissionFreeDays = Math.floor(brocksUsed / conversionRate);
-        brocksSpent = commissionFreeDays * conversionRate;
-        
-        // Spend the credits using deductCredits
-        const success = await this.deductCredits(userId, brocksSpent, `Converted ${brocksSpent} Brocks to ${commissionFreeDays} commission-free days`);
-        if (!success) {
-          throw new Error('Failed to deduct Brocks credits');
-        }
-        
-        // TODO: Implement commission-free days tracking in user profile
-        newAmount = originalAmount; // Payment amount doesn't change for commission-free
-      }
-
-      return { newAmount, brocksSpent };
-    } catch (error) {
-      console.error('Error applying Brocks to payment:', error);
-      throw error;
-    }
-  }
-
   // Society Chat Methods
   async getSocietyMessages(societyId: number, limit: number = 50, offset: number = 0): Promise<any[]> {
     try {
@@ -2184,37 +2132,6 @@ export class MemStorage implements IStorage {
   }
 
   // Direct Messages Methods
-  async getDirectMessages(userId1: number, userId2: number, limit: number = 50, offset: number = 0): Promise<any[]> {
-    try {
-      const messages = await db.execute(sql`
-        SELECT 
-          dm.id,
-          dm.sender_id,
-          dm.receiver_id,
-          dm.content,
-          dm.message_type,
-          dm.is_read,
-          dm.is_edited,
-          dm.edited_at,
-          dm.created_at,
-          sender.name as sender_name,
-          sender.profile_picture as sender_picture,
-          receiver.name as receiver_name,
-          receiver.profile_picture as receiver_picture
-        FROM direct_messages dm
-        JOIN users sender ON dm.sender_id = sender.id
-        JOIN users receiver ON dm.receiver_id = receiver.id
-        WHERE (dm.sender_id = ${userId1} AND dm.receiver_id = ${userId2})
-           OR (dm.sender_id = ${userId2} AND dm.receiver_id = ${userId1})
-        ORDER BY dm.created_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `);
-      return messages.rows || [];
-    } catch (error) {
-      console.error('Error fetching direct messages:', error);
-      return [];
-    }
-  }
 
   async createDirectMessage(senderId: number, receiverId: number, content: string, messageType: string = 'text'): Promise<any> {
     try {
@@ -2373,33 +2290,7 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async createSocietyMessage(societyId: number, senderId: number, content: string, messageType: string): Promise<any> {
-    try {
-      const result = await db.execute(sql`
-        INSERT INTO society_chats (society_id, sender_id, content, message_type, created_at)
-        VALUES (${societyId}, ${senderId}, ${content}, ${messageType}, NOW())
-        RETURNING *
-      `);
-      return result.rows?.[0] || null;
-    } catch (error) {
-      console.error('Error creating society message:', error);
-      throw error;
-    }
-  }
 
-  async createDirectMessage(senderId: number, receiverId: number, content: string, messageType: string = 'text'): Promise<any> {
-    try {
-      const result = await db.execute(sql`
-        INSERT INTO direct_messages (sender_id, receiver_id, content, message_type, is_read, created_at)
-        VALUES (${senderId}, ${receiverId}, ${content}, ${messageType}, FALSE, NOW())
-        RETURNING *
-      `);
-      return result.rows?.[0] || null;
-    } catch (error) {
-      console.error('Error creating direct message:', error);
-      throw error;
-    }
-  }
 
   async markDirectMessageAsRead(messageId: number): Promise<void> {
     try {
