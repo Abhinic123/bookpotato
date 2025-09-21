@@ -21,8 +21,7 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [message, setMessage] = useState("");
-  const [activeTab, setActiveTab] = useState("society");
-  const [selectedContact, setSelectedContact] = useState<number | null>(null);
+  // Only society chat is available now
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Get currentUserId safely
@@ -54,27 +53,7 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
     },
   });
 
-  // Direct Message Contacts Query
-  const { data: directContacts = [] } = useQuery({
-    queryKey: ["/api/direct-messages/contacts"],
-    queryFn: async () => {
-      const response = await fetch("/api/direct-messages/contacts");
-      if (!response.ok) return [];
-      return response.json();
-    },
-  });
-
-  // Direct Messages Query
-  const { data: directMessages = [], refetch: refetchDirectMessages } = useQuery({
-    queryKey: [`/api/direct-messages/${selectedContact}`],
-    queryFn: async () => {
-      if (!selectedContact) return [];
-      const response = await fetch(`/api/direct-messages/${selectedContact}`);
-      if (!response.ok) return [];
-      return response.json();
-    },
-    enabled: !!selectedContact,
-  });
+  // Direct Messages functionality removed for now
 
   // Send Society Message
   const sendSocietyMessage = useMutation({
@@ -115,71 +94,28 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
     },
   });
 
-  // Send Direct Message
-  const sendDirectMessage = useMutation({
-    mutationFn: async ({ receiverId, content }: { receiverId: number; content: string }) => {
-      console.log(`💬 Sending direct message to user ${receiverId}:`, content);
-      const response = await fetch("/api/direct-messages", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Accept": "application/json" 
-        },
-        credentials: "include",
-        body: JSON.stringify({ receiverId, content, messageType: "text" }),
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`💬 Direct message send failed:`, response.status, errorText);
-        throw new Error(`Failed to send message: ${response.status} ${errorText}`);
-      }
-      
-      const result = await response.json();
-      console.log(`💬 Direct message sent successfully:`, result);
-      return result;
-    },
-    onSuccess: () => {
-      setMessage("");
-      refetchDirectMessages();
-      toast({ title: "Message sent!" });
-    },
-    onError: (error: any) => {
-      console.error(`💬 Direct message error:`, error);
-      toast({ 
-        title: "Failed to send message", 
-        description: error.message || "Please try again",
-        variant: "destructive" 
-      });
-    },
-  });
+  // Direct Messages functionality removed for now
 
   // Auto scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [societyMessages, directMessages]);
+  }, [societyMessages]);
 
   const handleSendMessage = () => {
     if (!message.trim()) return;
 
-    console.log("Attempting to send message:", {
-      activeTab,
+    console.log("Attempting to send society message:", {
       message,
       societyId,
-      selectedContact,
       userId: currentUserId
     });
 
-    if (activeTab === "society") {
-      if (!societyId) {
-        console.error("No societyId available for society chat");
-        toast({ title: "Society not found", variant: "destructive" });
-        return;
-      }
-      sendSocietyMessage.mutate(message);
-    } else if (activeTab === "direct" && selectedContact) {
-      sendDirectMessage.mutate({ receiverId: selectedContact, content: message });
+    if (!societyId) {
+      console.error("No societyId available for society chat");
+      toast({ title: "Society not found", variant: "destructive" });
+      return;
     }
+    sendSocietyMessage.mutate(message);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -212,16 +148,12 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
 
   return (
     <div className="h-screen bg-white">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+      <Tabs value="society" className="h-full flex flex-col">
         <div className="border-b px-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="society" className="flex items-center gap-2">
               <Hash className="h-4 w-4" />
               Society Chat
-            </TabsTrigger>
-            <TabsTrigger value="direct" className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4" />
-              Direct Messages
             </TabsTrigger>
           </TabsList>
         </div>
@@ -305,147 +237,6 @@ export default function SimplifiedChat({ societyId, societyName }: SimplifiedCha
                     )}
                   </Button>
                 </div>
-              </div>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="direct" className="h-full m-0">
-            <div className="flex h-full">
-              {/* Contacts Sidebar */}
-              <div className="w-1/3 border-r">
-                <div className="p-4 border-b bg-green-50">
-                  <span className="font-semibold text-green-900 flex items-center gap-2">
-                    <MessageCircle className="h-5 w-5" />
-                    Direct Messages
-                  </span>
-                </div>
-                
-                <ScrollArea className="h-full">
-                  <div className="p-2">
-                    <div className="mb-4">
-                      <p className="text-xs font-medium text-gray-500 mb-2 px-2">SOCIETY MEMBERS</p>
-                      {societyMembers
-                        .filter((member: any) => member.id !== currentUserId)
-                        .map((member: any) => (
-                        <Button
-                          key={member.id}
-                          variant={selectedContact === member.id ? "secondary" : "ghost"}
-                          className="w-full justify-start p-2 h-auto mb-1"
-                          onClick={() => setSelectedContact(member.id)}
-                        >
-                          <div className="flex items-center gap-3 w-full">
-                            <Avatar className="w-8 h-8">
-                              <AvatarImage src={member.profile_picture} />
-                              <AvatarFallback className="text-xs">
-                                {getInitials(member.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 text-left">
-                              <p className="text-sm font-medium">{member.name}</p>
-                              {member.is_admin && (
-                                <Badge variant="outline" className="text-xs">Admin</Badge>
-                              )}
-                            </div>
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </ScrollArea>
-              </div>
-
-              {/* Chat Area */}
-              <div className="flex-1 flex flex-col">
-                {selectedContact ? (
-                  <>
-                    <div className="p-4 border-b bg-green-50">
-                      <div className="flex items-center gap-2">
-                        <MessageCircle className="h-5 w-5 text-green-600" />
-                        <span className="font-semibold text-green-900">
-                          {societyMembers.find((m: any) => m.id === selectedContact)?.name || 'Unknown'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <ScrollArea className="flex-1 p-4">
-                      <div className="space-y-4">
-                        {directMessages.length === 0 ? (
-                          <div className="text-center py-8">
-                            <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">No messages yet</h3>
-                            <p className="text-gray-500">Start a private conversation!</p>
-                          </div>
-                        ) : (
-                          directMessages
-                            .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-                            .map((msg: any) => (
-                            <div key={msg.id} className={`flex gap-3 ${msg.sender_id === currentUserId ? 'justify-end' : ''}`}>
-                              {msg.sender_id !== currentUserId && (
-                                <Avatar className="w-8 h-8">
-                                  <AvatarImage src={msg.sender_picture} />
-                                  <AvatarFallback className="text-xs">
-                                    {getInitials(msg.sender_name)}
-                                  </AvatarFallback>
-                                </Avatar>
-                              )}
-                              
-                              <div className={`max-w-[70%] ${msg.sender_id === currentUserId ? 'order-first' : ''}`}>
-                                <p className={`text-xs mb-1 ${msg.sender_id === currentUserId ? 'text-green-600 text-right' : 'text-gray-500'}`}>
-                                  {msg.sender_name || 'Unknown User'}
-                                </p>
-                                <div className={`p-3 rounded-lg ${
-                                  msg.sender_id === currentUserId 
-                                    ? 'bg-green-500 text-white ml-auto' 
-                                    : 'bg-gray-100 text-gray-900'
-                                }`}>
-                                  <p className="text-sm">{msg.content}</p>
-                                  <p className={`text-xs mt-1 ${
-                                    msg.sender_id === currentUserId ? 'text-green-100' : 'text-gray-500'
-                                  }`}>
-                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                        <div ref={messagesEndRef} />
-                      </div>
-                    </ScrollArea>
-
-                    <div className="p-4 border-t bg-white sticky bottom-0 z-50">
-                      <div className="flex gap-2 items-center">
-                        <Input
-                          value={message}
-                          onChange={(e) => setMessage(e.target.value)}
-                          onKeyPress={handleKeyPress}
-                          placeholder="Type your message..."
-                          className="flex-1 min-h-[40px] border-2 border-gray-300 focus:border-green-500"
-                        />
-                        <Button 
-                          onClick={handleSendMessage}
-                          disabled={!message.trim() || sendDirectMessage.isPending}
-                          size="icon"
-                          className="h-[40px] w-[40px] shrink-0 bg-green-600 hover:bg-green-700"
-                        >
-                          {sendDirectMessage.isPending ? (
-                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                          ) : (
-                            <Send className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center text-center p-8">
-                    <div>
-                      <MessageCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Conversation</h3>
-                      <p className="text-gray-500">Choose a society member to start a direct conversation</p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </TabsContent>
