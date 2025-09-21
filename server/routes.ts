@@ -382,6 +382,40 @@ The BorrowBooks Team`,
     }
   });
 
+  // Debug endpoint to check database connection and user data
+  app.get("/api/debug/user-check", async (req, res) => {
+    try {
+      const email = req.query.email as string || 'abhinic@gmail.com';
+      
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      
+      // Get total user count
+      const totalUsers = await db.select().from(users);
+      
+      res.json({
+        environment: process.env.NODE_ENV || 'unknown',
+        databaseUrl: process.env.DATABASE_URL ? 'SET' : 'NOT_SET',
+        userExists: !!user,
+        userData: user ? {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          passwordLength: user.password?.length || 0
+        } : null,
+        totalUsersInDB: totalUsers.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.json({
+        error: error.message,
+        environment: process.env.NODE_ENV || 'unknown',
+        databaseUrl: process.env.DATABASE_URL ? 'SET' : 'NOT_SET',
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
   app.post("/api/auth/logout", (req, res) => {
     req.session.destroy((err) => {
       if (err) {
