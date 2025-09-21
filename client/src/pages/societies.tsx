@@ -363,8 +363,8 @@ export default function Societies() {
         {(mySocieties as any[])?.map((society: any) => (
           <Card key={society.id}>
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
+                <div className="flex items-center space-x-3 min-w-0 flex-1">
                   <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center text-white font-bold">
                     <span>{getInitials(society.name)}</span>
                   </div>
@@ -388,23 +388,25 @@ export default function Societies() {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 min-w-0">
                   <Button 
                     size="sm" 
                     variant="outline"
                     onClick={() => setLocation(`/societies/${society.id}/chat`)}
-                    className="text-primary hover:text-primary"
+                    className="text-primary hover:text-primary whitespace-nowrap"
                   >
                     <MessageCircle className="h-4 w-4 mr-1" />
-                    Chat
+                    <span className="hidden sm:inline">Chat</span>
+                    <span className="sm:hidden">💬</span>
                   </Button>
                   <Button 
                     size="sm" 
                     variant="outline"
                     onClick={() => handleUnjoinSociety(society.id)}
-                    className="text-text-secondary hover:text-destructive"
+                    className="text-text-secondary hover:text-destructive whitespace-nowrap"
                   >
-                    Leave
+                    <span className="hidden sm:inline">Leave</span>
+                    <span className="sm:hidden">Exit</span>
                   </Button>
                 </div>
               </div>

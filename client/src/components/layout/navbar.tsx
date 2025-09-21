@@ -38,7 +38,7 @@ export default function Navbar({ user }: NavbarProps) {
     queryKey: ["/api/user/credits"],
   });
 
-  const unreadNotifications = notifications.filter((n: any) => !n.read).length;
+  const unreadNotifications = Array.isArray(notifications) ? notifications.filter((n: any) => !n.read).length : 0;
 
   const navItems = [
     { label: "Home", path: "/" },
@@ -76,17 +76,17 @@ export default function Navbar({ user }: NavbarProps) {
             </div>
 
             {/* Right Side Icons */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {/* Brocks Credits Display */}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate("/earnings")}
-                className="flex items-center space-x-1 px-2"
+                className="flex items-center space-x-1 px-1 sm:px-2"
               >
                 <Coins className="h-4 w-4 text-amber-600" />
                 <span className="text-sm font-medium text-amber-600">
-                  {userCredits?.balance || 0}
+                  {(userCredits as any)?.balance || 0}
                 </span>
               </Button>
 
@@ -108,12 +108,12 @@ export default function Navbar({ user }: NavbarProps) {
                 className="relative"
               >
                 <MessageCircle className="w-5 h-5" />
-                {unreadMessagesCount > 0 && (
+                {(unreadMessagesCount as number) > 0 && (
                   <Badge
                     variant="destructive"
                     className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0"
                   >
-                    {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
+                    {(unreadMessagesCount as number) > 9 ? "9+" : (unreadMessagesCount as number)}
                   </Badge>
                 )}
               </Button>
@@ -140,7 +140,7 @@ export default function Navbar({ user }: NavbarProps) {
               <Button
                 variant="ghost"
                 onClick={() => navigate("/settings")}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-1 sm:space-x-2 px-1 sm:px-3"
               >
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                   <User className="w-5 h-5 text-white" />
