@@ -147,29 +147,13 @@ export default function Home() {
               <div className="text-sm text-text-secondary">Available Books</div>
             </CardContent>
           </Card>
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate('/earnings')}>
-            <CardContent className="pt-6 text-center">
-              <div className="flex items-center justify-center space-x-1 mb-1">
-                <Coins className="h-5 w-5 text-amber-600" />
-                <div className="text-2xl font-bold text-amber-600">
-                  {(userCredits as any)?.balance || 0}
-                </div>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-green-50 to-emerald-50 border-green-200" onClick={() => navigate('/how-it-works')}>
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="flex flex-col items-center space-y-1">
+                <HelpCircle className="h-6 w-6 text-green-600" />
+                <div className="text-sm font-semibold text-green-700">How It Works</div>
+                <div className="text-xs text-green-600">Learn Platform</div>
               </div>
-              <div className="text-sm text-text-secondary">Brocks Credits</div>
-              {(userBadges as any[])?.length > 0 && (
-                <div className="mt-2 flex justify-center space-x-1">
-                  {(userBadges as any[]).slice(0, 3).map((badge: any, index: number) => (
-                    <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
-                      {badge.badgeType}
-                    </Badge>
-                  ))}
-                  {(userBadges as any[]).length > 3 && (
-                    <Badge variant="outline" className="text-xs px-2 py-1">
-                      +{(userBadges as any[]).length - 3}
-                    </Badge>
-                  )}
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
@@ -219,14 +203,30 @@ export default function Home() {
           </Card>
         </div>
         
-        {/* How It Works Button */}
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 mt-4" onClick={() => navigate('/how-it-works')}>
-          <CardContent className="pt-4 pb-4 text-center">
-            <div className="flex flex-col items-center space-y-1">
-              <HelpCircle className="h-6 w-6 text-green-600" />
-              <div className="text-sm font-semibold text-green-700">How It Works</div>
-              <div className="text-xs text-green-600">Learn Platform</div>
+        {/* Brocks Credits Button */}
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow mt-4" onClick={() => navigate('/earnings')}>
+          <CardContent className="pt-6 text-center">
+            <div className="flex items-center justify-center space-x-1 mb-1">
+              <Coins className="h-5 w-5 text-amber-600" />
+              <div className="text-2xl font-bold text-amber-600">
+                {(userCredits as any)?.balance || 0}
+              </div>
             </div>
+            <div className="text-sm text-text-secondary">Brocks Credits</div>
+            {(userBadges as any[])?.length > 0 && (
+              <div className="mt-2 flex justify-center space-x-1">
+                {(userBadges as any[]).slice(0, 3).map((badge: any, index: number) => (
+                  <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
+                    {badge.badgeType}
+                  </Badge>
+                ))}
+                {(userBadges as any[]).length > 3 && (
+                  <Badge variant="outline" className="text-xs px-2 py-1">
+                    +{(userBadges as any[]).length - 3}
+                  </Badge>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

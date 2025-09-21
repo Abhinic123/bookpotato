@@ -91,21 +91,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <h1 className="text-lg font-semibold text-text-primary">BorrowBooks</h1>
           </div>
           <div className="flex items-center space-x-1 sm:space-x-3 min-w-0">
-            <Link href="/rewards">
+            <Link href="/earnings">
               <Button variant="ghost" size="sm" className="flex items-center space-x-1 px-1 sm:px-2 shrink-0">
-                <Coins className="h-4 w-4 text-amber-600" />
-                <span className="text-sm font-medium text-amber-600 hidden xs:inline">
-                  {(userCredits as any)?.balance || 0}
-                </span>
-                <span className="text-xs font-medium text-amber-600 xs:hidden">
-                  {(userCredits as any)?.balance || 0}
-                </span>
-              </Button>
-            </Link>
-            <Link href="/earnings" className="hidden sm:block">
-              <Button variant="ghost" size="sm" className="flex items-center space-x-1 px-2">
                 <Wallet className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-600">Earnings</span>
+                <span className="text-sm font-medium text-green-600 hidden sm:inline">Earnings</span>
               </Button>
             </Link>
             <Link href="/notifications">
