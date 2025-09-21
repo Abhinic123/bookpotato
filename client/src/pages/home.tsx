@@ -198,12 +198,12 @@ export default function Home() {
         </div>
         
         <div className="grid grid-cols-2 gap-3">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-green-50 to-emerald-50 border-green-200" onClick={() => navigate('/how-it-works')}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200" onClick={() => navigate('/buy-brocks')}>
             <CardContent className="pt-4 pb-4 text-center">
               <div className="flex flex-col items-center space-y-1">
-                <HelpCircle className="h-6 w-6 text-green-600" />
-                <div className="text-sm font-semibold text-green-700">How It Works</div>
-                <div className="text-xs text-green-600">Learn Platform</div>
+                <Award className="h-6 w-6 text-amber-600" />
+                <div className="text-sm font-semibold text-amber-700">Buy Brocks</div>
+                <div className="text-xs text-amber-600">Purchase Credits</div>
               </div>
             </CardContent>
           </Card>
@@ -219,13 +219,13 @@ export default function Home() {
           </Card>
         </div>
         
-        {/* Rewards Centre Button */}
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200 mt-4" onClick={() => navigate('/buy-brocks')}>
+        {/* How It Works Button */}
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 mt-4" onClick={() => navigate('/how-it-works')}>
           <CardContent className="pt-4 pb-4 text-center">
             <div className="flex flex-col items-center space-y-1">
-              <Award className="h-6 w-6 text-amber-600" />
-              <div className="text-sm font-semibold text-amber-700">Rewards Centre</div>
-              <div className="text-xs text-amber-600">Buy Brocks & Convert Credits</div>
+              <HelpCircle className="h-6 w-6 text-green-600" />
+              <div className="text-sm font-semibold text-green-700">How It Works</div>
+              <div className="text-xs text-green-600">Learn Platform</div>
             </div>
           </CardContent>
         </Card>

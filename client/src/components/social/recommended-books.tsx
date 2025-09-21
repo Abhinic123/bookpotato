@@ -146,17 +146,37 @@ export default function RecommendedBooks() {
 
         <CardContent>
           <div className="space-y-4">
-            {/* Show demo preferred genres */}
+            {/* Show actual user preferences */}
             <div className="flex flex-wrap gap-2 mb-4">
-              <Badge className="bg-red-100 text-red-700 border-red-300">
-                ❤️ Business
-              </Badge>
-              <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-                👍 Self-Help
-              </Badge>
-              <Badge className="bg-blue-100 text-blue-700 border-blue-300">
-                👍 Mystery
-              </Badge>
+              {(userPreferences as any[])?.map((pref: any) => {
+                const getPreferenceEmoji = (level: number) => {
+                  switch(level) {
+                    case 5: return "❤️"; // Love
+                    case 4: return "👍"; // Like
+                    case 3: return "😐"; // Neutral
+                    case 2: return "👎"; // Dislike
+                    case 1: return "❌"; // Hate
+                    default: return "👍";
+                  }
+                };
+                
+                const getPreferenceColor = (level: number) => {
+                  switch(level) {
+                    case 5: return "bg-red-100 text-red-700 border-red-300"; // Love
+                    case 4: return "bg-blue-100 text-blue-700 border-blue-300"; // Like
+                    case 3: return "bg-gray-100 text-gray-700 border-gray-300"; // Neutral
+                    case 2: return "bg-orange-100 text-orange-700 border-orange-300"; // Dislike
+                    case 1: return "bg-red-100 text-red-700 border-red-300"; // Hate
+                    default: return "bg-blue-100 text-blue-700 border-blue-300";
+                  }
+                };
+                
+                return (
+                  <Badge key={pref.genre} className={getPreferenceColor(pref.preferenceLevel)}>
+                    {getPreferenceEmoji(pref.preferenceLevel)} {pref.genre}
+                  </Badge>
+                );
+              })}
             </div>
 
             {/* Recommended books based on preferences */}
@@ -213,7 +233,11 @@ export default function RecommendedBooks() {
             </div>
 
             <div className="text-center pt-4">
-              <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-50">
+              <Button 
+                variant="outline" 
+                className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                onClick={() => refetchRecommendations()}
+              >
                 View More Recommendations
               </Button>
             </div>

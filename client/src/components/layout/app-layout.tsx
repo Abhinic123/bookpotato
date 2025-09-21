@@ -90,36 +90,39 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <BookOpen className="h-6 w-6 text-primary" />
             <h1 className="text-lg font-semibold text-text-primary">BorrowBooks</h1>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-1 sm:space-x-3 min-w-0">
             <Link href="/rewards">
-              <Button variant="ghost" size="sm" className="flex items-center space-x-1 px-2">
+              <Button variant="ghost" size="sm" className="flex items-center space-x-1 px-1 sm:px-2 shrink-0">
                 <Coins className="h-4 w-4 text-amber-600" />
-                <span className="text-sm font-medium text-amber-600">
-                  {userCredits?.balance || 0}
+                <span className="text-sm font-medium text-amber-600 hidden xs:inline">
+                  {(userCredits as any)?.balance || 0}
+                </span>
+                <span className="text-xs font-medium text-amber-600 xs:hidden">
+                  {(userCredits as any)?.balance || 0}
                 </span>
               </Button>
             </Link>
-            <Link href="/earnings">
+            <Link href="/earnings" className="hidden sm:block">
               <Button variant="ghost" size="sm" className="flex items-center space-x-1 px-2">
                 <Wallet className="h-4 w-4 text-green-600" />
                 <span className="text-sm font-medium text-green-600">Earnings</span>
               </Button>
             </Link>
             <Link href="/notifications">
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="h-5 w-5 text-text-secondary" />
+              <Button variant="ghost" size="sm" className="relative p-1 sm:p-2 shrink-0">
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-text-secondary" />
                 {unreadCount > 0 && (
-                  <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                    {unreadCount}
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-xs">
+                    {unreadCount > 9 ? "9+" : unreadCount}
                   </Badge>
                 )}
               </Button>
             </Link>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="p-0">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                <Button variant="ghost" className="p-1 shrink-0">
+                  <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs sm:text-sm">
                       {authData?.user ? getInitials(authData.user.name) : "?"}
                     </AvatarFallback>
                   </Avatar>
