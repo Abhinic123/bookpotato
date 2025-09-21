@@ -99,8 +99,48 @@ export default function BuyBrocks() {
   const onSubmit = (data: BuyBrocksFormData) => {
     purchaseMutation.mutate(data);
   };
-
-  const selectedPkg = (brocksPackages as any[])?.find(pkg => pkg.id === selectedPackage);
+  
+  // Default packages in case API fails or no packages exist
+  const defaultPackages = [
+    {
+      id: "starter",
+      name: "Starter Pack",
+      brocks: 100,
+      bonus: 20,
+      price: "99",
+      popular: false
+    },
+    {
+      id: "value",
+      name: "Value Pack",
+      brocks: 250,
+      bonus: 75,
+      price: "199",
+      popular: true
+    },
+    {
+      id: "premium",
+      name: "Premium Pack",
+      brocks: 500,
+      bonus: 200,
+      price: "349",
+      popular: false
+    },
+    {
+      id: "ultimate",
+      name: "Ultimate Pack",
+      brocks: 1000,
+      bonus: 500,
+      price: "599",
+      popular: false
+    }
+  ];
+  
+  // Use API packages if available, otherwise fall back to defaults
+  const packages = (brocksPackages as any[])?.length > 0 ? brocksPackages : defaultPackages;
+  
+  // Get selected package details  
+  const selectedPkg = packages?.find((pkg: any) => pkg.id === selectedPackage);
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl">
@@ -155,7 +195,7 @@ export default function BuyBrocks() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {(brocksPackages as any[])?.map((pkg) => (
+              {packages?.map((pkg) => (
               <Card
                 key={pkg.id}
                 className={`relative cursor-pointer transition-all ${
