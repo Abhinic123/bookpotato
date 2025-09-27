@@ -192,8 +192,12 @@ export default function Home() {
           </div>
           <div>
             <h3 className="font-semibold">{currentSociety.name}</h3>
-            <p className="text-sm opacity-90">
-              {currentSociety?.memberCount || 0} members
+            <p 
+              className="text-sm opacity-90 cursor-pointer hover:opacity-100 transition-opacity" 
+              onClick={() => navigate(`/societies/${(currentSociety as any)?.id}/chat`)}
+              data-testid="current-society-members-count"
+            >
+              {(currentSociety as any)?.memberCount || 0} members
             </p>
           </div>
         </div>

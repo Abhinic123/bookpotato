@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -155,6 +155,8 @@ export default function Societies() {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{address: string; coordinates: [number, number]} | null>(null);
   const [selectedCity, setSelectedCity] = useState<string>("All Cities");
+  const [showMemberListModal, setShowMemberListModal] = useState(false);
+  const [selectedSocietyForMembers, setSelectedSocietyForMembers] = useState<SocietyWithStats | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -182,6 +184,22 @@ export default function Societies() {
   const { data: currentUser } = useQuery({
     queryKey: ["/api/auth/me"],
   });
+
+  // Fetch society members when modal is opened
+  const { data: societyMembers, isLoading: isLoadingMembers } = useQuery({
+    queryKey: [`/api/societies/${selectedSocietyForMembers?.id}/members`],
+    enabled: !!selectedSocietyForMembers?.id && showMemberListModal,
+  });
+
+  // Click handlers
+  const handleMemberCountClick = (society: SocietyWithStats) => {
+    setSelectedSocietyForMembers(society);
+    setShowMemberListModal(true);
+  };
+
+  const handleBookCountClick = (society: SocietyWithStats) => {
+    setLocation(`/browse?societyId=${society.id}`);
+  };
 
   // Get unique cities from available societies and filter societies by selected city
   const availableCities = availableSocieties ? 
@@ -395,11 +413,27 @@ export default function Societies() {
                       {society.name}
                     </h4>
                     <div className="flex items-center space-x-4 text-sm text-text-secondary">
-                      <span className="flex items-center">
+                      <span 
+                        className="flex items-center cursor-pointer hover:text-primary transition-colors" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleMemberCountClick(society);
+                        }}
+                        data-testid={`members-count-${society.id}`}
+                      >
                         <Users className="h-3 w-3 mr-1" />
                         {society.memberCount} members
                       </span>
-                      <span className="flex items-center">
+                      <span 
+                        className="flex items-center cursor-pointer hover:text-primary transition-colors" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleBookCountClick(society);
+                        }}
+                        data-testid={`books-count-${society.id}`}
+                      >
                         <Building2 className="h-3 w-3 mr-1" />
                         {society.bookCount} books
                       </span>
@@ -498,11 +532,27 @@ export default function Societies() {
                         <MapPin className="h-3 w-3 mr-1" />
                         {society.city}
                       </span>
-                      <span className="flex items-center">
+                      <span 
+                        className="flex items-center cursor-pointer hover:text-primary transition-colors" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleMemberCountClick(society);
+                        }}
+                        data-testid={`members-count-available-${society.id}`}
+                      >
                         <Users className="h-3 w-3 mr-1" />
                         {society.memberCount} members
                       </span>
-                      <span className="flex items-center">
+                      <span 
+                        className="flex items-center cursor-pointer hover:text-primary transition-colors" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleBookCountClick(society);
+                        }}
+                        data-testid={`books-count-available-${society.id}`}
+                      >
                         <Building2 className="h-3 w-3 mr-1" />
                         {society.bookCount} books
                       </span>
@@ -530,6 +580,64 @@ export default function Societies() {
       </div>
     );
   }
+
+  // Member List Modal Component
+  const renderMemberListModal = () => (
+    <Dialog open={showMemberListModal} onOpenChange={setShowMemberListModal}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            {selectedSocietyForMembers?.name} Members
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {isLoadingMembers ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+                  <div className="space-y-1">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse w-24"></div>
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-32"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : societyMembers && societyMembers.length > 0 ? (
+            <div className="max-h-96 overflow-y-auto space-y-3">
+              {societyMembers.map((member: any) => (
+                <div key={member.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    {getInitials(member.name)}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">{member.name}</p>
+                    <p className="text-xs text-gray-500">{member.email}</p>
+                    {member.is_admin && (
+                      <Badge variant="secondary" className="text-xs mt-1">Admin</Badge>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+              <p className="text-gray-500">No members found</p>
+            </div>
+          )}
+          {selectedSocietyForMembers && (
+            <div className="text-center pt-3 border-t">
+              <p className="text-sm text-gray-600">
+                Total: {selectedSocietyForMembers.memberCount} members
+              </p>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
     <div className="p-4 space-y-6">
@@ -754,6 +862,9 @@ export default function Societies() {
         onLocationSelect={handleLocationSelect}
         city={form.watch("city")}
       />
+
+      {/* Member List Modal */}
+      {renderMemberListModal()}
     </div>
   );
 }
