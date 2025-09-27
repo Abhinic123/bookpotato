@@ -1,10 +1,17 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
-import { Building2, ChevronRight, Clock, Coins, Gift, Award, Plus, HelpCircle, BookPlus, MessageCircle, Camera } from "lucide-react";
+import { Building2, ChevronRight, Clock, Coins, Gift, Award, Plus, HelpCircle, BookPlus, MessageCircle, Camera, X, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import BookCard from "@/components/book-card";
 import BorrowBookModal from "@/components/modals/borrow-book-modal";
 import BookDetailsModal from "@/components/book-details-modal";
@@ -17,6 +24,15 @@ import QuickShareWidget from "@/components/social/quick-share-widget";
 import { formatCurrency, formatDateRelative } from "@/lib/utils";
 import type { BookWithOwner, RentalWithDetails } from "@shared/schema";
 
+const profileCompletionSchema = z.object({
+  flatWing: z.string().min(1, "Flat and Wing Number is required"),
+  buildingName: z.string().min(1, "Building Name is required"),
+  detailedAddress: z.string().min(5, "Detailed Address must be at least 5 characters"),
+  city: z.string().min(1, "City is required"),
+});
+
+type ProfileCompletionData = z.infer<typeof profileCompletionSchema>;
+
 export default function Home() {
   const [location, navigate] = useLocation();
   const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
@@ -24,11 +40,19 @@ export default function Home() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showAddBookModal, setShowAddBookModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+  const [showProfileCompletion, setShowProfileCompletion] = useState(true);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
 
 
   const { data: societies } = useQuery({
     queryKey: ["/api/societies/my"],
+  });
+
+  // Get current user to check if profile completion is needed
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/me"],
   });
 
   const { data: userStats } = useQuery({
@@ -64,6 +88,45 @@ export default function Home() {
 
   const { data: userBadges } = useQuery({
     queryKey: ["/api/user/badges"],
+  });
+
+  // Profile completion form
+  const profileForm = useForm<ProfileCompletionData>({
+    resolver: zodResolver(profileCompletionSchema),
+    defaultValues: {
+      flatWing: "",
+      buildingName: "",
+      detailedAddress: "",
+      city: "",
+    },
+  });
+
+  // Check if user needs profile completion (Google OAuth user missing address)
+  const needsProfileCompletion = currentUser && 
+    (!(currentUser as any).flatWing || !(currentUser as any).buildingName || !(currentUser as any).detailedAddress || !(currentUser as any).city) &&
+    showProfileCompletion;
+
+  // Profile completion mutation
+  const profileCompletionMutation = useMutation({
+    mutationFn: async (data: ProfileCompletionData) => {
+      const response = await apiRequest("PATCH", "/api/auth/profile", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Profile Updated",
+        description: "Your address information has been updated successfully!",
+      });
+      setShowProfileCompletion(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      });
+    },
   });
 
   // Filter recent books (sort by most recent and limit to 3)
@@ -192,7 +255,7 @@ export default function Home() {
             </CardContent>
           </Card>
           
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200" onClick={() => navigate(`/societies/${currentSociety?.id}/chat`)}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200" onClick={() => navigate(`/societies/${(currentSociety as any)?.id}/chat`)}>
             <CardContent className="pt-4 pb-4 text-center">
               <div className="flex flex-col items-center space-y-1">
                 <MessageCircle className="h-6 w-6 text-emerald-600" />
@@ -202,6 +265,105 @@ export default function Home() {
             </CardContent>
           </Card>
         </div>
+        
+        {/* Profile Completion Notification */}
+        {needsProfileCompletion && (
+          <Card className="mt-4 border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
+            <CardContent className="pt-4">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 mt-1 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-amber-800">Complete Your Profile</h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowProfileCompletion(false)}
+                      className="text-amber-600 hover:text-amber-800 p-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="text-sm text-amber-700 mb-4">
+                    Please update your personal information here to make sure that you can borrow books seamlessly!
+                  </p>
+                  
+                  <form onSubmit={profileForm.handleSubmit((data) => profileCompletionMutation.mutate(data))} className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="flatWing" className="text-xs font-medium text-amber-800">Flat and Wing Number</Label>
+                        <Input
+                          id="flatWing"
+                          placeholder="e.g., A-301"
+                          {...profileForm.register("flatWing")}
+                          className="mt-1 border-amber-200 focus:border-amber-400"
+                        />
+                        {profileForm.formState.errors.flatWing && (
+                          <p className="text-xs text-red-600 mt-1">
+                            {profileForm.formState.errors.flatWing.message}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="buildingName" className="text-xs font-medium text-amber-800">Building Name</Label>
+                        <Input
+                          id="buildingName"
+                          placeholder="e.g., Crystal Tower"
+                          {...profileForm.register("buildingName")}
+                          className="mt-1 border-amber-200 focus:border-amber-400"
+                        />
+                        {profileForm.formState.errors.buildingName && (
+                          <p className="text-xs text-red-600 mt-1">
+                            {profileForm.formState.errors.buildingName.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="detailedAddress" className="text-xs font-medium text-amber-800">Detailed Address</Label>
+                      <Input
+                        id="detailedAddress"
+                        placeholder="e.g., Behind Metro Station, Near Park"
+                        {...profileForm.register("detailedAddress")}
+                        className="mt-1 border-amber-200 focus:border-amber-400"
+                      />
+                      {profileForm.formState.errors.detailedAddress && (
+                        <p className="text-xs text-red-600 mt-1">
+                          {profileForm.formState.errors.detailedAddress.message}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="city" className="text-xs font-medium text-amber-800">City</Label>
+                      <Input
+                        id="city"
+                        placeholder="e.g., Mumbai"
+                        {...profileForm.register("city")}
+                        className="mt-1 border-amber-200 focus:border-amber-400"
+                      />
+                      {profileForm.formState.errors.city && (
+                        <p className="text-xs text-red-600 mt-1">
+                          {profileForm.formState.errors.city.message}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                      disabled={profileCompletionMutation.isPending}
+                    >
+                      {profileCompletionMutation.isPending ? "Updating..." : "Update Profile"}
+                    </Button>
+                  </form>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         
         {/* Brocks Credits Button */}
         <Card className="cursor-pointer hover:shadow-lg transition-shadow mt-4" onClick={() => navigate('/earnings')}>

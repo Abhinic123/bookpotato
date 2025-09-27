@@ -447,13 +447,47 @@ The BorrowBooks Team`,
         name: user.name, 
         email: user.email, 
         phone: user.phone, 
-        address: user.address,
+        flatWing: user.flatWing,
+        buildingName: user.buildingName,
+        detailedAddress: user.detailedAddress,
+        city: user.city,
         profilePicture: user.profilePicture,
         userNumber: user.userNumber,
         totalReferrals: user.totalReferrals,
         isAdmin: user.isAdmin || false
       }
     });
+  });
+
+  // Profile update route
+  app.patch("/api/auth/profile", async (req, res) => {
+    try {
+      if (!req.session.userId) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+
+      const { flatWing, buildingName, detailedAddress, city } = req.body;
+      
+      // Validate input data
+      if (!flatWing || !buildingName || !detailedAddress || !city) {
+        return res.status(400).json({ 
+          message: "All address fields are required: flatWing, buildingName, detailedAddress, city" 
+        });
+      }
+
+      // Update user profile
+      const updatedUser = await storage.updateUser(req.session.userId, {
+        flatWing,
+        buildingName,
+        detailedAddress,
+        city,
+      });
+
+      res.json({ message: "Profile updated successfully", user: updatedUser });
+    } catch (error) {
+      console.error("Profile update error:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
   });
 
   // Middleware to check authentication
