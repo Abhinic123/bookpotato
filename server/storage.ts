@@ -1738,6 +1738,14 @@ export class DatabaseStorage implements IStorage {
           });
       }
 
+      // Create credit transaction record for earning
+      await this.addCreditTransaction({
+        userId,
+        amount: credits, // positive for earning
+        type: 'earning',
+        description: reason
+      });
+
       console.log(`🎁 Awarded ${credits} Brocks credits to user ${userId} for: ${reason}`);
     } catch (error) {
       console.error('Error awarding credits:', error);
@@ -1776,6 +1784,14 @@ export class DatabaseStorage implements IStorage {
           updatedAt: new Date()
         })
         .where(eq(userCredits.userId, userId));
+
+      // Create credit transaction record for spending
+      await this.addCreditTransaction({
+        userId,
+        amount: -credits, // negative for spending
+        type: 'spending',
+        description: reason
+      });
 
       console.log(`💸 Successfully deducted ${credits} Brocks credits from user ${userId} for: ${reason}`);
       return true;
