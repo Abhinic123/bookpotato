@@ -66,7 +66,7 @@ export default function Home() {
 
   // Get society members when popup is shown
   const { data: societyMembers, isLoading: membersLoading, error: membersError } = useQuery({
-    queryKey: ["/api/societies", currentSociety?.id, "members"],
+    queryKey: [`/api/societies/${currentSociety?.id}/members`],
     enabled: showMembersPopup && !!currentSociety?.id,
     refetchOnWindowFocus: false,
     staleTime: 0, // Always refetch to avoid cache issues
