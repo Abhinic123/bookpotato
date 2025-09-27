@@ -162,8 +162,8 @@ export default function AdminPanel() {
 
       brocksForm.reset({
         // New reward settings
-        credits_per_book_upload: parseInt(settingsMap['credits_per_book_upload'] || '1'),
-        credits_per_referral: parseInt(settingsMap['credits_per_referral'] || '5'),
+        credits_per_book_upload: parseInt(settingsMap['credits_per_book_upload'] || '2'),
+        credits_per_referral: parseInt(settingsMap['credits_per_referral'] || '10'),
         credits_per_borrow: parseInt(settingsMap['credits_per_borrow'] || '5'),
         credits_per_lend: parseInt(settingsMap['credits_per_lend'] || '5'),
         

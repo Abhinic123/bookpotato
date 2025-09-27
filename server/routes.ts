@@ -298,7 +298,7 @@ The BorrowBooks Team`,
           if (referrer) {
             // Award credits to referrer
             const creditsPerReferralSetting = await storage.getRewardSetting('credits_per_referral');
-            const creditsPerReferral = parseInt(creditsPerReferralSetting?.settingValue || '5');
+            const creditsPerReferral = parseInt(creditsPerReferralSetting?.settingValue || '10');
             
             if (creditsPerReferral > 0) {
               await storage.awardCredits(referrer.id, creditsPerReferral, `Referral: ${user.name} joined`);
@@ -984,7 +984,7 @@ The BorrowBooks Team`,
       
       // Award Brocks credits for book upload
       const creditsPerUploadSetting = await storage.getRewardSetting('credits_per_book_upload');
-      const creditsPerUpload = parseInt(creditsPerUploadSetting?.settingValue || '1');
+      const creditsPerUpload = parseInt(creditsPerUploadSetting?.settingValue || '2');
       
       if (creditsPerUpload > 0) {
         await storage.awardCredits(req.session.userId!, creditsPerUpload, "Book upload");
@@ -4106,7 +4106,7 @@ The BorrowBooks Team`,
       // Award Brocks credits for book uploads
       if (addedCount > 0) {
         const creditsPerUpload = await storage.getRewardSetting('credits_per_upload');
-        const creditsAmount = parseInt(creditsPerUpload?.settingValue || '1') * addedCount;
+        const creditsAmount = parseInt(creditsPerUpload?.settingValue || '2') * addedCount;
         
         try {
           await storage.awardCredits(userId, creditsAmount, `Uploaded ${addedCount} books via bulk upload`);
