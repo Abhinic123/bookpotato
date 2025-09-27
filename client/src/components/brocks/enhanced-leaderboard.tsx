@@ -115,9 +115,9 @@ export default function EnhancedLeaderboard({ leaderboard }: EnhancedLeaderboard
                   : 'border-gray-200 bg-gray-50'
               }`}
             >
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
                 {/* Rank Position */}
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center sm:items-center">
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${getPositionBadge(user.rank)}`}>
                     {user.rank <= 3 ? getRankIcon(user.rank) : user.rank}
                   </div>
@@ -129,12 +129,12 @@ export default function EnhancedLeaderboard({ leaderboard }: EnhancedLeaderboard
                 </div>
 
                 {/* User Info */}
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h4 className="font-semibold text-gray-900 text-lg">{user.name}</h4>
-                    <div className="flex items-center space-x-1">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
+                    <h4 className="font-semibold text-gray-900 text-lg truncate">{user.name}</h4>
+                    <div className="flex items-center space-x-1 flex-shrink-0">
                       <span className="text-lg">{brocksRank.icon}</span>
-                      <Badge className={brocksRank.color}>
+                      <Badge className={`${brocksRank.color} text-xs`}>
                         {brocksRank.name}
                       </Badge>
                     </div>
@@ -142,8 +142,8 @@ export default function EnhancedLeaderboard({ leaderboard }: EnhancedLeaderboard
                   
                   <p className="text-sm text-gray-600 mb-2">{brocksRank.description}</p>
                   
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                  <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center space-x-4 justify-center sm:justify-start">
                       <div className="text-center">
                         <div className="text-xl font-bold text-amber-600">{user.credits.toLocaleString()}</div>
                         <div className="text-xs text-gray-500">Current Brocks</div>
@@ -156,9 +156,9 @@ export default function EnhancedLeaderboard({ leaderboard }: EnhancedLeaderboard
                     
                     {/* Progress to Next Rank */}
                     {user.credits < 10000 && (
-                      <div className="text-right">
+                      <div className="text-center sm:text-right flex-shrink-0">
                         <div className="text-xs text-gray-500 mb-1">Next Rank Progress</div>
-                        <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden mx-auto sm:mx-0">
                           <div 
                             className="h-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all"
                             style={{
