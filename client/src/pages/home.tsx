@@ -22,7 +22,7 @@ import EnhancedLeaderboard from "@/components/brocks/enhanced-leaderboard";
 import FeedbackButton from "@/components/feedback-button";
 import RecommendedBooks from "@/components/social/recommended-books";
 import QuickShareWidget from "@/components/social/quick-share-widget";
-import { formatCurrency, formatDateRelative } from "@/lib/utils";
+import { formatDateRelative } from "@/lib/utils";
 import type { BookWithOwner, RentalWithDetails } from "@shared/schema";
 
 const profileCompletionSchema = z.object({
@@ -605,21 +605,6 @@ export default function Home() {
         )}
       </div>
 
-      {/* Earnings Summary */}
-      {(userStats as any)?.totalEarnings && (userStats as any).totalEarnings > 0 && (
-        <div className="p-4">
-          <Card className="gradient-secondary text-white">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold mb-1">
-                  {formatCurrency((userStats as any).totalEarnings)}
-                </div>
-                <div className="text-sm opacity-90">Total Earnings</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
 
       <BorrowBookModal
