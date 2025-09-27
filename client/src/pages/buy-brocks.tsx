@@ -313,7 +313,13 @@ export default function BuyBrocks() {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={purchaseMutation.isPending}
+                    disabled={purchaseMutation.isPending || !selectedPackage}
+                    onClick={() => {
+                      console.log("🔘 Button clicked! Selected package:", selectedPackage);
+                      console.log("📋 Form values:", form.getValues());
+                      console.log("❌ Form errors:", form.formState.errors);
+                      console.log("✅ Form is valid:", form.formState.isValid);
+                    }}
                   >
                     {purchaseMutation.isPending ? (
                       "Processing Payment..."
