@@ -285,12 +285,12 @@ export default function Home() {
         </div>
         
         <div className="grid grid-cols-2 gap-3">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200" onClick={() => navigate('/buy-brocks')}>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-green-50 to-emerald-50 border-green-200" onClick={() => navigate('/earnings')}>
             <CardContent className="pt-4 pb-4 text-center">
               <div className="flex flex-col items-center space-y-1">
-                <Award className="h-6 w-6 text-amber-600" />
-                <div className="text-sm font-semibold text-amber-700">Buy Brocks</div>
-                <div className="text-xs text-amber-600">Purchase Credits</div>
+                <Coins className="h-6 w-6 text-green-600" />
+                <div className="text-sm font-semibold text-green-700">My Earnings</div>
+                <div className="text-xs text-green-600">View Income</div>
               </div>
             </CardContent>
           </Card>
@@ -405,32 +405,42 @@ export default function Home() {
           </Card>
         )}
         
-        {/* Brocks Credits Button */}
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow mt-4" onClick={() => navigate('/earnings')}>
-          <CardContent className="pt-6 text-center">
-            <div className="flex items-center justify-center space-x-1 mb-1">
-              <Coins className="h-5 w-5 text-amber-600" />
-              <div className="text-2xl font-bold text-amber-600">
-                {(userCredits as any)?.balance || 0}
+        {/* My Brocks */}
+        <div className="p-4">
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Coins className="h-4 w-4 text-amber-600" />
+                  <span className="text-sm font-medium">My Brocks: {(userCredits as any)?.balance || 0}</span>
+                </div>
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  className="text-xs text-primary p-0 h-auto"
+                  onClick={() => navigate('/brocks-info')}
+                  data-testid="brocks-info-link"
+                >
+                  Brocks: What and How to Earn
+                </Button>
               </div>
-            </div>
-            <div className="text-sm text-text-secondary">Brocks Credits</div>
-            {(userBadges as any[])?.length > 0 && (
-              <div className="mt-2 flex justify-center space-x-1">
-                {(userBadges as any[]).slice(0, 3).map((badge: any, index: number) => (
-                  <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
-                    {badge.badgeType}
-                  </Badge>
-                ))}
-                {(userBadges as any[]).length > 3 && (
-                  <Badge variant="outline" className="text-xs px-2 py-1">
-                    +{(userBadges as any[]).length - 3}
-                  </Badge>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              {(userBadges as any[])?.length > 0 && (
+                <div className="mt-2 flex space-x-1">
+                  {(userBadges as any[]).slice(0, 3).map((badge: any, index: number) => (
+                    <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
+                      {badge.badgeType}
+                    </Badge>
+                  ))}
+                  {(userBadges as any[]).length > 3 && (
+                    <Badge variant="outline" className="text-xs px-2 py-1">
+                      +{(userBadges as any[]).length - 3}
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Recent Rewards */}
