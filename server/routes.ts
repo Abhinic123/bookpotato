@@ -63,7 +63,10 @@ passport.use(new GoogleStrategy({
         email: profile.emails?.[0]?.value || '',
         phone: '0000000000', // Default phone for OAuth users
         password: 'oauth-user', // OAuth users don't need password
-        address: ''
+        flatWing: 'Not provided',
+        buildingName: 'Not provided',
+        detailedAddress: 'Not provided',
+        city: 'Not provided'
       };
       user = await storage.createUser(userData);
     }
