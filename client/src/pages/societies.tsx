@@ -154,6 +154,7 @@ export default function Societies() {
   const [mergeData, setMergeData] = useState<MergeData | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{address: string; coordinates: [number, number]} | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string>("All Cities");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
@@ -176,6 +177,15 @@ export default function Societies() {
   const { data: availableSocieties, isLoading: isLoadingAvailable } = useQuery({
     queryKey: ["/api/societies/available"],
   });
+
+  // Get unique cities from available societies and filter societies by selected city
+  const availableCities = availableSocieties ? 
+    ["All Cities", ...Array.from(new Set((availableSocieties as SocietyWithStats[]).map(s => s.city).filter(Boolean)))] : ["All Cities"];
+  
+  const filteredSocieties = availableSocieties ? 
+    (availableSocieties as SocietyWithStats[]).filter(society => 
+      selectedCity === "All Cities" || society.city === selectedCity
+    ) : [];
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateSocietyFormData) => {
@@ -459,7 +469,7 @@ export default function Societies() {
 
     return (
       <div className="space-y-3">
-        {(availableSocieties as SocietyWithStats[])?.map((society: SocietyWithStats) => (
+        {filteredSocieties?.map((society: SocietyWithStats) => (
           <Card key={society.id}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -472,6 +482,10 @@ export default function Societies() {
                       {society.name}
                     </h4>
                     <div className="flex items-center space-x-4 text-sm text-text-secondary">
+                      <span className="flex items-center">
+                        <MapPin className="h-3 w-3 mr-1" />
+                        {society.city}
+                      </span>
                       <span className="flex items-center">
                         <Users className="h-3 w-3 mr-1" />
                         {society.memberCount} members
@@ -521,10 +535,28 @@ export default function Societies() {
       </div>
 
       <Tabs defaultValue="my-societies" className="w-full">
-        <TabsList>
-          <TabsTrigger value="my-societies">My Societies</TabsTrigger>
-          <TabsTrigger value="available">Available to Join</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <TabsList>
+            <TabsTrigger value="my-societies">My Societies</TabsTrigger>
+            <TabsTrigger value="available">Available to Join</TabsTrigger>
+          </TabsList>
+          
+          <div className="flex items-center space-x-2">
+            <MapPin className="h-4 w-4 text-gray-500" />
+            <Select value={selectedCity} onValueChange={setSelectedCity}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Select city" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableCities.map((city) => (
+                  <SelectItem key={city} value={city}>
+                    {city}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         <TabsContent value="my-societies" className="space-y-4">
           {renderMySocieties()}
