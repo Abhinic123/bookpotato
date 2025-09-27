@@ -504,11 +504,22 @@ The BorrowBooks Team`,
   // User profile endpoints
   app.put("/api/user/profile", requireAuth, async (req, res) => {
     try {
-      const { name, email, phone, address } = req.body;
+      const { name, email, phone, flatWing, buildingName, detailedAddress, city } = req.body;
       const userId = req.session.userId!;
       
-      // In a real app, you'd update the user in the database
-      // For now, we'll just return success
+      console.log('Updating profile for user:', userId, 'with data:', { name, email, phone, flatWing, buildingName, detailedAddress, city });
+      
+      // Update the user in the database
+      await storage.updateUser(userId, {
+        name,
+        email,
+        phone,
+        flatWing,
+        buildingName,
+        detailedAddress,
+        city
+      });
+      
       res.json({ message: "Profile updated successfully" });
     } catch (error) {
       console.error("Update profile error:", error);
@@ -3327,8 +3338,8 @@ The BorrowBooks Team`,
           userId,
           genre: pref.genre,
           preferenceLevel: pref.preferenceLevel,
-          createdAt: new Date(),
-          updatedAt: new Date()
+          preferenceScore: pref.preferenceLevel || 3, // Use preferenceLevel as score, default to 3
+          createdAt: new Date()
         }));
         
         await db.insert(userGenrePreferences).values(preferencesToInsert);
