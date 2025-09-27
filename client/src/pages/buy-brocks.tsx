@@ -45,7 +45,7 @@ export default function BuyBrocks() {
     queryKey: ["/api/brocks-packages"],
   });
   const queryClient = useQueryClient();
-  const [selectedPackage, setSelectedPackage] = useState<string>("");
+  const [selectedPackage, setSelectedPackage] = useState<string | number>("");
 
   // Fetch user credits
   const { data: userCredits } = useQuery({
@@ -97,6 +97,8 @@ export default function BuyBrocks() {
   });
 
   const onSubmit = (data: BuyBrocksFormData) => {
+    console.log("🛒 Form submitted with data:", data);
+    console.log("📦 Selected package:", selectedPkg);
     purchaseMutation.mutate(data);
   };
   
@@ -140,7 +142,7 @@ export default function BuyBrocks() {
   const packages = (brocksPackages as any[])?.length > 0 ? brocksPackages : defaultPackages;
   
   // Get selected package details  
-  const selectedPkg = packages?.find((pkg: any) => pkg.id === selectedPackage);
+  const selectedPkg = packages?.find((pkg: any) => pkg.id == selectedPackage);
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl">
@@ -199,13 +201,13 @@ export default function BuyBrocks() {
               <Card
                 key={pkg.id}
                 className={`relative cursor-pointer transition-all ${
-                  selectedPackage === pkg.id
+                  selectedPackage == pkg.id
                     ? "ring-2 ring-primary border-primary"
                     : "hover:shadow-md"
                 } ${pkg.popular ? "border-amber-400" : ""}`}
                 onClick={() => {
                   setSelectedPackage(pkg.id);
-                  form.setValue("package", pkg.id);
+                  form.setValue("package", pkg.id.toString());
                 }}
               >
                 {pkg.popular && (
@@ -233,7 +235,7 @@ export default function BuyBrocks() {
                   <div className="text-sm text-text-secondary">
                     ≈ ₹{(parseFloat(pkg.price) / (pkg.brocks + pkg.bonus)).toFixed(2)} per Brock
                   </div>
-                  {selectedPackage === pkg.id && (
+                  {selectedPackage == pkg.id && (
                     <div className="flex justify-center">
                       <Check className="h-6 w-6 text-primary" />
                     </div>
