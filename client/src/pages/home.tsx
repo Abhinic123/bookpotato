@@ -65,9 +65,12 @@ export default function Home() {
   const currentSociety = (societies as any[])?.[0];
 
   // Get society members when popup is shown
-  const { data: societyMembers } = useQuery({
+  const { data: societyMembers, isLoading: membersLoading, error: membersError } = useQuery({
     queryKey: ["/api/societies", currentSociety?.id, "members"],
     enabled: showMembersPopup && !!currentSociety?.id,
+    refetchOnWindowFocus: false,
+    staleTime: 0, // Always refetch to avoid cache issues
+    retry: 1,
   });
 
   const { data: societyStats } = useQuery({
@@ -635,7 +638,16 @@ export default function Home() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 max-h-80 overflow-y-auto">
-            {societyMembers && (societyMembers as any[]).length > 0 ? (
+            {membersLoading ? (
+              <div className="text-center py-8 text-gray-500">
+                <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                <p>Loading members...</p>
+              </div>
+            ) : membersError ? (
+              <div className="text-center py-8 text-red-500">
+                <p>Error loading members</p>
+              </div>
+            ) : societyMembers && (societyMembers as any[]).length > 0 ? (
               (societyMembers as any[]).map((member: any, index: number) => (
                 <div key={member.id || index} className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
