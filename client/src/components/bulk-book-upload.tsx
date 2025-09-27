@@ -110,7 +110,7 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
         author: book.author,
         genre: book.genre || "Fiction",
         description: book.description || "",
-        dailyFee: "25.00",
+        dailyFee: "10.00",
         condition: "Good",
         selected: true,
         isbnLoading: false,

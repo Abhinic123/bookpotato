@@ -104,7 +104,10 @@ export default function Home() {
 
   // Check if user needs profile completion (Google OAuth user missing address)
   const needsProfileCompletion = currentUser && 
-    (!(currentUser as any).flatWing || !(currentUser as any).buildingName || !(currentUser as any).detailedAddress || !(currentUser as any).city) &&
+    (!(currentUser as any).flatWing || (currentUser as any).flatWing === 'Not provided' || 
+     !(currentUser as any).buildingName || (currentUser as any).buildingName === 'Not provided' || 
+     !(currentUser as any).detailedAddress || (currentUser as any).detailedAddress === 'Not provided' || 
+     !(currentUser as any).city || (currentUser as any).city === 'Not provided') &&
     showProfileCompletion;
 
   // Profile completion mutation
@@ -306,6 +309,46 @@ export default function Home() {
           </Card>
         </div>
         
+        {/* My Brocks */}
+        <Card className="bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200 shadow-md">
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center shadow-sm">
+                  <Coins className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <span className="text-lg font-bold text-amber-800">My Brocks: {(userCredits as any)?.balance || 0}</span>
+                  <p className="text-xs text-amber-600">Virtual Currency</p>
+                </div>
+              </div>
+              <Button 
+                variant="link" 
+                size="sm" 
+                className="text-xs text-amber-700 hover:text-amber-900 p-0 h-auto font-medium"
+                onClick={() => navigate('/brocks-info')}
+                data-testid="brocks-info-link"
+              >
+                Brocks: What and How to Earn
+              </Button>
+            </div>
+            {(userBadges as any[])?.length > 0 && (
+              <div className="mt-3 flex space-x-1">
+                {(userBadges as any[]).slice(0, 3).map((badge: any, index: number) => (
+                  <Badge key={index} variant="secondary" className="text-xs px-2 py-1 bg-amber-100 text-amber-800">
+                    {badge.badgeType}
+                  </Badge>
+                ))}
+                {(userBadges as any[]).length > 3 && (
+                  <Badge variant="outline" className="text-xs px-2 py-1 border-amber-300 text-amber-700">
+                    +{(userBadges as any[]).length - 3}
+                  </Badge>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
         {/* Profile Completion Notification */}
         {needsProfileCompletion && (
           <Card className="mt-4 border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50">
@@ -404,43 +447,6 @@ export default function Home() {
             </CardContent>
           </Card>
         )}
-        
-        {/* My Brocks */}
-        <div className="p-4">
-          <Card>
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Coins className="h-4 w-4 text-amber-600" />
-                  <span className="text-sm font-medium">My Brocks: {(userCredits as any)?.balance || 0}</span>
-                </div>
-                <Button 
-                  variant="link" 
-                  size="sm" 
-                  className="text-xs text-primary p-0 h-auto"
-                  onClick={() => navigate('/brocks-info')}
-                  data-testid="brocks-info-link"
-                >
-                  Brocks: What and How to Earn
-                </Button>
-              </div>
-              {(userBadges as any[])?.length > 0 && (
-                <div className="mt-2 flex space-x-1">
-                  {(userBadges as any[]).slice(0, 3).map((badge: any, index: number) => (
-                    <Badge key={index} variant="secondary" className="text-xs px-2 py-1">
-                      {badge.badgeType}
-                    </Badge>
-                  ))}
-                  {(userBadges as any[]).length > 3 && (
-                    <Badge variant="outline" className="text-xs px-2 py-1">
-                      +{(userBadges as any[]).length - 3}
-                    </Badge>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
       {/* Recent Rewards */}
@@ -474,32 +480,6 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Climb the Leaderboard Section */}
-      {brocksLeaderboard && (brocksLeaderboard as any[])?.length > 0 && (
-        <div className="p-4">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-text-primary flex items-center space-x-2">
-                  <Award className="w-5 h-5 text-amber-500" />
-                  <span>Climb the Leaderboard</span>
-                </h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => navigate('/leaderboard')}
-                  className="text-primary"
-                  data-testid="leaderboard-view-all"
-                >
-                  View Full <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-              <EnhancedLeaderboard leaderboard={(brocksLeaderboard as any[])?.slice(0, 5) || []} />
             </CardContent>
           </Card>
         </div>
@@ -604,6 +584,32 @@ export default function Home() {
           </Card>
         )}
       </div>
+
+      {/* Climb the Leaderboard Section */}
+      {brocksLeaderboard && (brocksLeaderboard as any[])?.length > 0 && (
+        <div className="p-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-text-primary flex items-center space-x-2">
+                  <Award className="w-5 h-5 text-amber-500" />
+                  <span>Climb the Leaderboard</span>
+                </h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate('/leaderboard')}
+                  className="text-primary"
+                  data-testid="leaderboard-view-all"
+                >
+                  View Full <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+              <EnhancedLeaderboard leaderboard={(brocksLeaderboard as any[])?.slice(0, 5) || []} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
 
 
