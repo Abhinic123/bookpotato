@@ -33,7 +33,9 @@ const registerSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  address: z.string().min(5, "Address must be at least 5 characters"),
+  flatWing: z.string().min(1, "Flat and Wing Number is required"),
+  buildingName: z.string().min(1, "Building Name is required"),
+  detailedAddress: z.string().min(5, "Detailed Address must be at least 5 characters"),
   city: z.string().min(1, "Please select a city"),
   referredBy: z.string().optional(),
 });
@@ -330,15 +332,46 @@ export default function EnhancedAuth() {
                   </div>
 
                   <div>
-                    <Label htmlFor="address">Address</Label>
+                    <Label htmlFor="flatWing">Flat and Wing Number</Label>
                     <Input
-                      id="address"
-                      {...registerForm.register("address")}
+                      id="flatWing"
+                      placeholder="e.g., A-301"
+                      {...registerForm.register("flatWing")}
                       className="mt-1"
                     />
-                    {registerForm.formState.errors.address && (
+                    {registerForm.formState.errors.flatWing && (
                       <p className="text-sm text-red-600 mt-1">
-                        {registerForm.formState.errors.address.message}
+                        {registerForm.formState.errors.flatWing.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="buildingName">Building Name</Label>
+                    <Input
+                      id="buildingName"
+                      placeholder="e.g., Crystal Tower"
+                      {...registerForm.register("buildingName")}
+                      className="mt-1"
+                    />
+                    {registerForm.formState.errors.buildingName && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {registerForm.formState.errors.buildingName.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="detailedAddress">Detailed Address</Label>
+                    <Input
+                      id="detailedAddress"
+                      placeholder="e.g., Behind Metro Station, Near Park"
+                      {...registerForm.register("detailedAddress")}
+                      className="mt-1"
+                    />
+                    {registerForm.formState.errors.detailedAddress && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {registerForm.formState.errors.detailedAddress.message}
                       </p>
                     )}
                   </div>

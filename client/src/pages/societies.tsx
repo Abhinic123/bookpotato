@@ -178,6 +178,11 @@ export default function Societies() {
     queryKey: ["/api/societies/available"],
   });
 
+  // Get current user data to use their city as default
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/auth/me"],
+  });
+
   // Get unique cities from available societies and filter societies by selected city
   const availableCities = availableSocieties ? 
     ["All Cities", ...Array.from(new Set((availableSocieties as SocietyWithStats[]).map(s => s.city).filter(Boolean)))] : ["All Cities"];
@@ -186,6 +191,13 @@ export default function Societies() {
     (availableSocieties as SocietyWithStats[]).filter(society => 
       selectedCity === "All Cities" || society.city === selectedCity
     ) : [];
+
+  // Set default city to user's city when data loads
+  React.useEffect(() => {
+    if (currentUser?.city && availableCities.includes(currentUser.city) && selectedCity === "All Cities") {
+      setSelectedCity(currentUser.city);
+    }
+  }, [currentUser?.city, availableCities, selectedCity]);
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateSocietyFormData) => {
