@@ -9,6 +9,8 @@ import BookCard from "@/components/book-card";
 import GenrePreferencesModal from "./genre-preferences-modal";
 import WishlistButton from "./wishlist-button";
 import ShareButton from "./share-button";
+import BookDetailsModal from "@/components/book-details-modal";
+import type { BookWithOwner } from "@shared/schema";
 
 interface Book {
   id: number;
@@ -22,6 +24,8 @@ interface Book {
 
 export default function RecommendedBooks() {
   const [showPreferences, setShowPreferences] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // Check if user has set preferences
   const { data: userPreferences } = useQuery({
@@ -37,6 +41,11 @@ export default function RecommendedBooks() {
     refetchOnWindowFocus: false,
   });
   
+  const handleViewBookDetails = (book: any) => {
+    setSelectedBook(book);
+    setShowDetailsModal(true);
+  };
+
   // Demo books data to show the social features working
   const demoBooks: Book[] = [
     {
@@ -188,7 +197,7 @@ export default function RecommendedBooks() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Card className="hover:shadow-lg transition-shadow duration-200">
+                  <Card className="hover:shadow-lg transition-shadow duration-200 cursor-pointer" onClick={() => handleViewBookDetails(book)}>
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-3">
                         <div className="w-12 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded flex items-center justify-center flex-shrink-0">
@@ -204,7 +213,7 @@ export default function RecommendedBooks() {
                             <span className="text-sm font-semibold text-green-600">
                               ₹{book.dailyFee}/day
                             </span>
-                            <div className="flex items-center space-x-1">
+                            <div className="flex items-center space-x-1" onClick={(e) => e.stopPropagation()}>
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -249,6 +258,19 @@ export default function RecommendedBooks() {
         isOpen={showPreferences}
         onClose={() => setShowPreferences(false)}
         isFirstTime={false}
+      />
+
+      <BookDetailsModal
+        book={selectedBook}
+        open={showDetailsModal}
+        onOpenChange={(open) => {
+          setShowDetailsModal(open);
+          if (!open) setSelectedBook(null);
+        }}
+        user={{ id: 1 }} // TODO: Get actual user data
+        onEdit={() => {
+          // TODO: Handle edit functionality
+        }}
       />
     </>
   );
