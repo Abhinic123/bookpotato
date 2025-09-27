@@ -11,6 +11,8 @@ import { Link } from "wouter";
 interface EarningsData {
   totalEarned: number;
   totalSpent: number;
+  moneySpent: number;
+  brocksSpent: number;
   lentRentals: Array<{
     id: number;
     bookTitle: string;
@@ -26,6 +28,8 @@ interface EarningsData {
     bookTitle: string;
     lenderName: string;
     amount: number;
+    paymentMethod: string;
+    brocksAmount: number;
     status: string;
     startDate: string;
     endDate: string;
@@ -459,52 +463,139 @@ export default function EarningsPage() {
           <TrendingDown className="h-5 w-5 mr-2 text-red-600" />
           Spending ({earningsData?.borrowedRentals?.length || 0})
         </h3>
-        <div className="space-y-4">
-          {earningsData?.borrowedRentals?.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6 text-center">
-                <TrendingDown className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Spending Yet</h3>
-                <p className="text-gray-600">Browse books to start borrowing!</p>
-              </CardContent>
-            </Card>
-          ) : (
-            earningsData?.borrowedRentals?.map((rental) => (
-              <Card key={rental.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 mb-1">
-                        {rental.bookTitle}
-                      </h4>
-                      <p className="text-sm text-gray-600 mb-2">
-                        Lent by {rental.lenderName}
-                      </p>
-                      <div className="flex items-center space-x-2 text-sm text-gray-500">
-                        <Calendar className="h-4 w-4" />
-                        <span>
-                          {new Date(rental.startDate).toLocaleDateString()} - {" "}
-                          {rental.actualReturnDate 
-                            ? new Date(rental.actualReturnDate).toLocaleDateString()
-                            : new Date(rental.endDate).toLocaleDateString()
-                          }
-                        </span>
+        
+        {earningsData?.borrowedRentals?.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <TrendingDown className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Spending Yet</h3>
+              <p className="text-gray-600">Browse books to start borrowing!</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            {/* Money Spending Subsection */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-md font-medium text-red-600 flex items-center">
+                  <Wallet className="h-4 w-4 mr-2" />
+                  Money ({earningsData?.borrowedRentals?.filter(r => r.paymentMethod !== 'brocks')?.length || 0})
+                </h4>
+                <div className="text-lg font-semibold text-red-600">
+                  -{formatCurrency(earningsData?.moneySpent || 0)}
+                </div>
+              </div>
+              <div className="space-y-3">
+                {earningsData?.borrowedRentals?.filter(rental => rental.paymentMethod !== 'brocks')?.map((rental) => (
+                  <Card key={rental.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900 mb-1">
+                            {rental.bookTitle}
+                          </h4>
+                          <p className="text-sm text-gray-600 mb-2">
+                            Lent by {rental.lenderName}
+                          </p>
+                          <div className="flex items-center space-x-2 text-sm text-gray-500">
+                            <Calendar className="h-4 w-4" />
+                            <span>
+                              {new Date(rental.startDate).toLocaleDateString()} - {" "}
+                              {rental.actualReturnDate 
+                                ? new Date(rental.actualReturnDate).toLocaleDateString()
+                                : new Date(rental.endDate).toLocaleDateString()
+                              }
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-semibold text-red-600 mb-1">
+                            -{formatCurrency(rental.amount)}
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                              Money
+                            </Badge>
+                            <Badge className={getStatusColor(rental.status)}>
+                              {getStatusText(rental.status)}
+                            </Badge>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-semibold text-red-600 mb-1">
-                        -{formatCurrency(rental.amount)}
-                      </div>
-                      <Badge className={getStatusColor(rental.status)}>
-                        {getStatusText(rental.status)}
-                      </Badge>
-                    </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {earningsData?.borrowedRentals?.filter(rental => rental.paymentMethod !== 'brocks')?.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">
+                    <p className="text-sm">No money transactions yet</p>
                   </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+                )}
+              </div>
+            </div>
+
+            {/* Brocks Spending Subsection */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-md font-medium text-amber-600 flex items-center">
+                  <Coins className="h-4 w-4 mr-2" />
+                  Brocks ({earningsData?.borrowedRentals?.filter(r => r.paymentMethod === 'brocks')?.length || 0})
+                </h4>
+                <div className="text-lg font-semibold text-amber-600">
+                  -{earningsData?.brocksSpent || 0} Brocks
+                </div>
+              </div>
+              <div className="space-y-3">
+                {earningsData?.borrowedRentals?.filter(rental => rental.paymentMethod === 'brocks')?.map((rental) => (
+                  <Card key={rental.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900 mb-1">
+                            {rental.bookTitle}
+                          </h4>
+                          <p className="text-sm text-gray-600 mb-2">
+                            Lent by {rental.lenderName}
+                          </p>
+                          <div className="flex items-center space-x-2 text-sm text-gray-500">
+                            <Calendar className="h-4 w-4" />
+                            <span>
+                              {new Date(rental.startDate).toLocaleDateString()} - {" "}
+                              {rental.actualReturnDate 
+                                ? new Date(rental.actualReturnDate).toLocaleDateString()
+                                : new Date(rental.endDate).toLocaleDateString()
+                              }
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-semibold text-amber-600 mb-1">
+                            -{rental.brocksAmount} Brocks
+                          </div>
+                          <div className="text-xs text-gray-500 mb-2">
+                            (≈ {formatCurrency(rental.amount)})
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                              Brocks
+                            </Badge>
+                            <Badge className={getStatusColor(rental.status)}>
+                              {getStatusText(rental.status)}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {earningsData?.borrowedRentals?.filter(rental => rental.paymentMethod === 'brocks')?.length === 0 && (
+                  <div className="text-center py-4 text-gray-500">
+                    <p className="text-sm">No Brocks transactions yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
             </div>
           </TabsContent>

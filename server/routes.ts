@@ -1819,9 +1819,22 @@ The BorrowBooks Team`,
       const totalEarned = lentRentals
         .reduce((sum, rental) => sum + parseFloat(rental.lenderAmount || '0'), 0);
       
-      // Calculate spending from regular rentals
-      const totalSpent = borrowedRentals
+      // Calculate spending from regular rentals, separated by payment method
+      const moneySpent = borrowedRentals
+        .filter(rental => !rental.paymentMethod || rental.paymentMethod === 'money')
         .reduce((sum, rental) => sum + parseFloat(rental.totalAmount || '0'), 0);
+      
+      const brocksSpentRupees = borrowedRentals
+        .filter(rental => rental.paymentMethod === 'brocks')
+        .reduce((sum, rental) => sum + parseFloat(rental.totalAmount || '0'), 0);
+      
+      // Convert brocks rupee amounts back to actual brocks using conversion rate
+      const rupeesPerCreditSetting = await storage.getRewardSetting('rupees_per_credit_conversion');
+      const rupeesPerCredit = parseFloat(rupeesPerCreditSetting?.settingValue || '0.1'); // 0.1 means 10 Brocks = 1 Rupee
+      const creditsToRupeesRate = 1 / rupeesPerCredit; // Convert to Brocks per Rupee
+      const brocksSpent = Math.round(brocksSpentRupees * creditsToRupeesRate);
+      
+      const totalSpent = moneySpent + brocksSpentRupees;
 
       // Add extension earnings for lent books
       const extensionEarnings = await db
@@ -1847,12 +1860,15 @@ The BorrowBooks Team`,
 
       const finalTotalEarned = totalEarned + parseFloat(extensionEarnings[0]?.total || '0');
       const finalTotalSpent = totalSpent + parseFloat(extensionSpending[0]?.total || '0');
+      const finalMoneySpent = moneySpent + parseFloat(extensionSpending[0]?.total || '0'); // Extensions are always money
       
-      console.log(`💰 Earnings API - Total earned: ${finalTotalEarned} (rental: ${totalEarned} + extensions: ${parseFloat(extensionEarnings[0]?.total || '0')}), Total spent: ${finalTotalSpent} (rental: ${totalSpent} + extensions: ${parseFloat(extensionSpending[0]?.total || '0')})`);
+      console.log(`💰 Earnings API - Total earned: ${finalTotalEarned}, Money spent: ${finalMoneySpent}, Brocks spent: ${brocksSpent}, Total spent: ${finalTotalSpent}`);
       
       res.json({
         totalEarned: finalTotalEarned,
         totalSpent: finalTotalSpent,
+        moneySpent: finalMoneySpent,
+        brocksSpent: brocksSpent,
         lentRentals: lentRentals.map(rental => ({
           id: rental.id,
           bookTitle: rental.book.title,
@@ -1868,6 +1884,10 @@ The BorrowBooks Team`,
           bookTitle: rental.book.title,
           lenderName: rental.lender.name,
           amount: parseFloat(rental.totalAmount || '0'),
+          paymentMethod: rental.paymentMethod || 'money',
+          brocksAmount: rental.paymentMethod === 'brocks' 
+            ? Math.round(parseFloat(rental.totalAmount || '0') * creditsToRupeesRate)
+            : 0,
           status: rental.status,
           startDate: rental.startDate,
           endDate: rental.endDate,
@@ -2159,6 +2179,7 @@ The BorrowBooks Team`,
         securityDeposit: securityDeposit.toString(),
         status: 'active',
         paymentStatus: 'completed', // Simulated payment success
+        paymentMethod: paymentMethod, // Store whether payment was made with 'money' or 'brocks'
       };
 
       const rental = await storage.createRental(rentalData);

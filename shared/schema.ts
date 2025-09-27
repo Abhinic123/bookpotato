@@ -83,6 +83,7 @@ export const bookRentals = pgTable("book_rentals", {
   securityDeposit: decimal("security_deposit", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull(), // 'active', 'returned', 'overdue'
   paymentStatus: text("payment_status").notNull(), // 'pending', 'completed', 'refunded'
+  paymentMethod: text("payment_method").notNull().default("money"), // 'money', 'brocks'
   paymentId: text("payment_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
