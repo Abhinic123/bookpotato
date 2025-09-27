@@ -2193,15 +2193,33 @@ The BorrowBooks Team`,
         }
       }
       
-      // Create notification for lender
+      // Get borrower and owner details for collection instructions
+      const borrower = await storage.getUser(req.session.userId!);
+      const owner = await storage.getUser(book.ownerId);
+      
+      if (!borrower || !owner) {
+        return res.status(500).json({ message: "User details not found" });
+      }
+
+      // Create notification for lender with borrower collection details
       await storage.createNotification({
         userId: book.ownerId,
-        title: "Book Borrowed",
-        message: `Your book "${book.title}" has been borrowed`,
+        title: "Book Borrowed - Collection Pending",
+        message: `Your book "${book.title}" has been borrowed by ${borrower.name}. They will collect it from ${owner.flatWing}, ${owner.buildingName}. Contact: ${borrower.phone || 'No phone provided'}`,
         type: "rental"
       });
 
-      res.json(rental);
+      // Return rental data with owner collection details
+      res.json({
+        rental,
+        collectionInfo: {
+          ownerName: owner.name,
+          flatWing: owner.flatWing,
+          buildingName: owner.buildingName,
+          detailedAddress: owner.detailedAddress,
+          phone: owner.phone
+        }
+      });
     } catch (error) {
       console.error("Borrow book error:", error);
       res.status(400).json({ message: "Failed to borrow book" });

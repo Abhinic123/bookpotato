@@ -104,10 +104,10 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
 
   // Calculate Brocks cost using admin-configured conversion rate
   const brocksCost = rentalCost && conversionRates ? {
-    rentalFee: Math.round(parseFloat(rentalCost.rentalFee) * parseFloat(conversionRates.creditsToRupeesRate || '10')),
-    platformFee: Math.round(parseFloat(rentalCost.platformFee) * parseFloat(conversionRates.creditsToRupeesRate || '10')),
-    securityDeposit: Math.round(parseFloat(rentalCost.securityDeposit) * parseFloat(conversionRates.creditsToRupeesRate || '10')),
-    totalAmount: Math.round(parseFloat(rentalCost.totalAmount) * parseFloat(conversionRates.creditsToRupeesRate || '10')),
+    rentalFee: Math.round(parseFloat(rentalCost.rentalFee) * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
+    platformFee: Math.round(parseFloat(rentalCost.platformFee) * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
+    securityDeposit: Math.round(parseFloat(rentalCost.securityDeposit) * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
+    totalAmount: Math.round(parseFloat(rentalCost.totalAmount) * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
   } : null;
 
   // Apply Brocks discount if available
@@ -128,11 +128,24 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      const { collectionInfo } = data || {};
+      
+      // Show collection instructions with owner's address details with safe fallbacks
+      let instructionsMessage = "Book borrowed successfully!";
+      
+      if (collectionInfo && collectionInfo.flatWing && collectionInfo.buildingName) {
+        instructionsMessage = `Please go to ${collectionInfo.flatWing}, ${collectionInfo.buildingName} to collect the book. In case you want to call, the phone number is ${collectionInfo.phone || 'not provided'}`;
+      } else {
+        instructionsMessage = "Book borrowed successfully! Please contact the owner for collection details.";
+      }
+
       toast({
-        title: "Success",
-        description: "Book borrowed successfully! Payment processed.",
+        title: "Book Borrowed Successfully! 📚",
+        description: instructionsMessage,
+        duration: 8000, // Show longer for collection instructions
       });
+      
       queryClient.invalidateQueries({ queryKey: ["/api/books"] });
       queryClient.invalidateQueries({ queryKey: ["/api/rentals"] });
       form.reset();
@@ -320,8 +333,8 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                       <div>
                         <p className="font-medium text-sm">Use Brocks Credits</p>
                         <p className="text-xs text-amber-700">
-                          {userCredits?.balance > 0 
-                            ? `You have ${userCredits.balance} Brocks • Convert to rupees or get commission-free days`
+                          {(userCredits as any)?.balance > 0 
+                            ? `You have ${(userCredits as any).balance} Brocks • Convert to rupees or get commission-free days`
                             : 'Earn Brocks through book uploads, referrals, and transactions'
                           }
                         </p>
@@ -334,7 +347,7 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                       onClick={() => setShowBrocksModal(true)}
                       className="border-amber-300 text-amber-700 hover:bg-amber-100"
                     >
-                      {userCredits?.balance > 0 ? 'View Offers' : 'Learn More'}
+                      {(userCredits as any)?.balance > 0 ? 'View Offers' : 'Learn More'}
                     </Button>
                   </div>
                 </div>
@@ -396,22 +409,22 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                           </Label>
                         </div>
                         <div className={`flex items-center space-x-3 p-3 border rounded-xl ${
-                          (userCredits?.balance || 0) >= (brocksCost?.totalAmount || 0)
+                          ((userCredits as any)?.balance || 0) >= (brocksCost?.totalAmount || 0)
                             ? 'border-amber-300 bg-amber-50' 
                             : 'border-gray-300 bg-gray-50 opacity-50'
                         }`}>
                           <RadioGroupItem 
                             value="brocks" 
                             id="brocks" 
-                            disabled={(userCredits?.balance || 0) < (brocksCost?.totalAmount || 0)}
+                            disabled={((userCredits as any)?.balance || 0) < (brocksCost?.totalAmount || 0)}
                           />
                           <Coins className="h-5 w-5 text-amber-600" />
                           <Label htmlFor="brocks" className="flex-1">
                             <div>
                               <span>Pay with Brocks</span>
                               <div className="text-xs text-gray-600">
-                                Balance: {userCredits?.balance || 0} Brocks
-                                {(userCredits?.balance || 0) < (brocksCost?.totalAmount || 0) && (
+                                Balance: {(userCredits as any)?.balance || 0} Brocks
+                                {((userCredits as any)?.balance || 0) < (brocksCost?.totalAmount || 0) && (
                                   <span className="text-red-600 ml-1">(Insufficient)</span>
                                 )}
                               </div>
@@ -428,7 +441,7 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
               <Button 
                 type="submit" 
                 className="w-full"
-                disabled={borrowMutation.isPending || !rentalCost || (watchedPaymentMethod === 'brocks' && (userCredits?.balance || 0) < (brocksCost?.totalAmount || 0))}
+                disabled={borrowMutation.isPending || !rentalCost || (watchedPaymentMethod === 'brocks' && ((userCredits as any)?.balance || 0) < (brocksCost?.totalAmount || 0))}
               >
                 {borrowMutation.isPending ? "Processing..." : 
                   watchedPaymentMethod === 'brocks' 
