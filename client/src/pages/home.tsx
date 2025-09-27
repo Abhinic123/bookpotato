@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
-import { Building2, ChevronRight, Clock, Coins, Gift, Award, Plus, HelpCircle, BookPlus, MessageCircle, Camera, X, AlertCircle } from "lucide-react";
+import { Building2, ChevronRight, Clock, Coins, Gift, Award, Plus, HelpCircle, BookPlus, MessageCircle, Camera, X, AlertCircle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import BookCard from "@/components/book-card";
 import BorrowBookModal from "@/components/modals/borrow-book-modal";
 import BookDetailsModal from "@/components/book-details-modal";
@@ -241,7 +242,42 @@ export default function Home() {
             <CardContent className="pt-4 pb-4 text-center">
               <div className="flex flex-col items-center space-y-1">
                 <Camera className="h-6 w-6 text-purple-600" />
-                <div className="text-sm font-semibold text-purple-700">Bulk Upload (Experimental)</div>
+                <div className="flex items-center space-x-1">
+                  <div className="text-sm font-semibold text-purple-700">Bulk Upload (Experimental)</div>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-4 w-4 p-0 text-purple-600 hover:text-purple-800"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                          }}
+                          data-testid="bulk-upload-info"
+                        >
+                          <Info className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-xs">
+                        <div className="space-y-2 text-sm">
+                          <p className="font-semibold">How to take the perfect bookshelf photo:</p>
+                          <ul className="list-disc list-inside space-y-1 text-xs">
+                            <li>Position camera straight on to bookshelf</li>
+                            <li>Ensure book spines are clearly visible</li>
+                            <li>Use good lighting (avoid shadows)</li>
+                            <li>Keep camera steady to avoid blur</li>
+                            <li>Fill frame with books, avoid empty space</li>
+                            <li>Take photo from 2-3 feet away</li>
+                          </ul>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            💡 Tip: Portrait mode works better than landscape
+                          </p>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <div className="text-xs text-purple-600">Photo Recognition</div>
               </div>
             </CardContent>
