@@ -24,7 +24,10 @@ const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
-  address: z.string().min(5, "Address must be at least 5 characters"),
+  flatWing: z.string().min(1, "Flat and Wing Number is required"),
+  buildingName: z.string().min(1, "Building Name is required"),
+  detailedAddress: z.string().min(5, "Detailed Address must be at least 5 characters"),
+  city: z.string().min(1, "Please select a city"),
 });
 
 const passwordSchema = z.object({
@@ -76,7 +79,10 @@ export default function EnhancedProfile() {
       name: "",
       email: "",
       phone: "",
-      address: "",
+      flatWing: "",
+      buildingName: "",
+      detailedAddress: "",
+      city: "",
     },
   });
 
@@ -89,7 +95,10 @@ export default function EnhancedProfile() {
         name: userData?.name || "",
         email: userData?.email || "",
         phone: userData?.phone || "",
-        address: userData?.address || "",
+        flatWing: userData?.flatWing || "",
+        buildingName: userData?.buildingName || "",
+        detailedAddress: userData?.detailedAddress || "",
+        city: userData?.city || "",
       });
     }
   }, [user, profileForm]);
@@ -417,16 +426,64 @@ export default function EnhancedProfile() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="flatWing">Flat and Wing Number</Label>
+                    <Input
+                      id="flatWing"
+                      placeholder="e.g., A-301"
+                      {...profileForm.register("flatWing")}
+                      className="mt-1"
+                    />
+                    {profileForm.formState.errors.flatWing && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {profileForm.formState.errors.flatWing.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="buildingName">Building Name</Label>
+                    <Input
+                      id="buildingName"
+                      placeholder="e.g., Crystal Tower"
+                      {...profileForm.register("buildingName")}
+                      className="mt-1"
+                    />
+                    {profileForm.formState.errors.buildingName && (
+                      <p className="text-sm text-red-600 mt-1">
+                        {profileForm.formState.errors.buildingName.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
                 <div>
-                  <Label htmlFor="address">Home Address</Label>
+                  <Label htmlFor="detailedAddress">Detailed Address</Label>
                   <Input
-                    id="address"
-                    {...profileForm.register("address")}
+                    id="detailedAddress"
+                    placeholder="e.g., Behind Metro Station, Near Park"
+                    {...profileForm.register("detailedAddress")}
                     className="mt-1"
                   />
-                  {profileForm.formState.errors.address && (
+                  {profileForm.formState.errors.detailedAddress && (
                     <p className="text-sm text-red-600 mt-1">
-                      {profileForm.formState.errors.address.message}
+                      {profileForm.formState.errors.detailedAddress.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    placeholder="e.g., Mumbai"
+                    {...profileForm.register("city")}
+                    className="mt-1"
+                  />
+                  {profileForm.formState.errors.city && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {profileForm.formState.errors.city.message}
                     </p>
                   )}
                 </div>
