@@ -320,20 +320,20 @@ export default function Home() {
         {/* My Brocks */}
         <Card className="bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200 shadow-md">
           <CardContent className="pt-5 pb-5">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center shadow-sm">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
                   <Coins className="h-5 w-5 text-white" />
                 </div>
-                <div>
-                  <span className="text-lg font-bold text-amber-800">My Brocks: {(userCredits as any)?.balance || 0}</span>
+                <div className="min-w-0 flex-1">
+                  <span className="text-base sm:text-lg font-bold text-amber-800 block">My Brocks: {(userCredits as any)?.balance || 0}</span>
                   <p className="text-xs text-amber-600">Virtual Currency</p>
                 </div>
               </div>
               <Button 
                 variant="link" 
                 size="sm" 
-                className="text-xs text-amber-700 hover:text-amber-900 p-0 h-auto font-medium"
+                className="text-xs text-amber-700 hover:text-amber-900 p-0 h-auto font-medium self-start sm:self-auto flex-shrink-0"
                 onClick={() => navigate('/brocks-info')}
                 data-testid="brocks-info-link"
               >
