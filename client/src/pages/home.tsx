@@ -13,6 +13,7 @@ import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import BookCard from "@/components/book-card";
 import BorrowBookModal from "@/components/modals/borrow-book-modal";
 import BookDetailsModal from "@/components/book-details-modal";
@@ -42,6 +43,7 @@ export default function Home() {
   const [showAddBookModal, setShowAddBookModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [showProfileCompletion, setShowProfileCompletion] = useState(true);
+  const [showMembersPopup, setShowMembersPopup] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -49,6 +51,12 @@ export default function Home() {
 
   const { data: societies } = useQuery({
     queryKey: ["/api/societies/my"],
+  });
+
+  // Get society members when popup is shown
+  const { data: societyMembers } = useQuery({
+    queryKey: ["/api/societies", currentSociety?.id, "members"],
+    enabled: showMembersPopup && !!currentSociety?.id,
   });
 
   // Get current user to check if profile completion is needed
@@ -198,7 +206,7 @@ export default function Home() {
             <h3 className="font-semibold">{currentSociety.name}</h3>
             <p 
               className="text-sm opacity-90 cursor-pointer hover:opacity-100 transition-opacity" 
-              onClick={() => navigate(`/societies/${(currentSociety as any)?.id}/chat`)}
+              onClick={() => setShowMembersPopup(true)}
               data-testid="current-society-members-count"
             >
               {(currentSociety as any)?.memberCount || 0} members
@@ -617,6 +625,41 @@ export default function Home() {
         </div>
       )}
 
+      {/* Members Popup */}
+      <Dialog open={showMembersPopup} onOpenChange={setShowMembersPopup}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{currentSociety?.name} Members</DialogTitle>
+            <DialogDescription>
+              All members in your society
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-80 overflow-y-auto">
+            {societyMembers && (societyMembers as any[]).length > 0 ? (
+              (societyMembers as any[]).map((member: any, index: number) => (
+                <div key={member.id || index} className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-semibold text-blue-600">
+                      {member.name?.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm">{member.name || 'Unknown User'}</div>
+                    <div className="text-xs text-gray-500">
+                      {member.isActive !== false ? 'Active Member' : 'Inactive'}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Building2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p>No members found</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
