@@ -1829,15 +1829,20 @@ The BorrowBooks Team`,
       const borrowedRentals = await storage.getRentalsByBorrower(userId);
       console.log(`💰 Earnings API - User ${userId} - Borrowed rentals:`, borrowedRentals.length);
       
-      // Calculate earnings from regular rentals
-      const totalEarned = lentRentals
+      // Get all credit transactions for Brocks earnings/spending
+      const creditTransactions = await storage.getCreditTransactions(userId);
+      console.log(`💰 Earnings API - User ${userId} - Credit transactions:`, creditTransactions.length);
+      
+      // Calculate money earnings from regular rentals
+      const moneyEarned = lentRentals
         .reduce((sum, rental) => sum + parseFloat(rental.lenderAmount || '0'), 0);
       
-      // Calculate spending from regular rentals, separated by payment method
+      // Calculate money spending from regular rentals
       const moneySpent = borrowedRentals
         .filter(rental => !rental.paymentMethod || rental.paymentMethod === 'money')
         .reduce((sum, rental) => sum + parseFloat(rental.totalAmount || '0'), 0);
       
+      // Calculate brocks spending from rental payments
       const brocksSpentRupees = borrowedRentals
         .filter(rental => rental.paymentMethod === 'brocks')
         .reduce((sum, rental) => sum + parseFloat(rental.totalAmount || '0'), 0);
@@ -1846,11 +1851,20 @@ The BorrowBooks Team`,
       const rupeesPerCreditSetting = await storage.getRewardSetting('rupees_per_credit_conversion');
       const rupeesPerCredit = parseFloat(rupeesPerCreditSetting?.settingValue || '0.1'); // 0.1 means 10 Brocks = 1 Rupee
       const creditsToRupeesRate = 1 / rupeesPerCredit; // Convert to Brocks per Rupee
-      const brocksSpent = Math.round(brocksSpentRupees * creditsToRupeesRate);
+      const brocksSpentFromRentals = Math.round(brocksSpentRupees * creditsToRupeesRate);
       
-      const totalSpent = moneySpent + brocksSpentRupees;
+      // Calculate brocks earnings and spending from credit transactions
+      const brocksEarned = creditTransactions
+        .filter(tx => tx.amount > 0)
+        .reduce((sum, tx) => sum + tx.amount, 0);
+      
+      const brocksSpentFromTransactions = Math.abs(creditTransactions
+        .filter(tx => tx.amount < 0)
+        .reduce((sum, tx) => sum + tx.amount, 0));
+      
+      const totalBrocksSpent = brocksSpentFromRentals + brocksSpentFromTransactions;
 
-      // Add extension earnings for lent books
+      // Add extension earnings for lent books (money only)
       const extensionEarnings = await db
         .select({ 
           total: sql<string>`COALESCE(SUM(CAST(${rentalExtensions.lenderEarnings} AS DECIMAL)), 0)` 
@@ -1861,7 +1875,7 @@ The BorrowBooks Team`,
           eq(rentalExtensions.paymentStatus, 'completed')
         ));
 
-      // Add extension spending for borrowed books
+      // Add extension spending for borrowed books (money only)
       const extensionSpending = await db
         .select({ 
           total: sql<string>`COALESCE(SUM(CAST(${rentalExtensions.extensionFee} AS DECIMAL)), 0)` 
@@ -1872,17 +1886,75 @@ The BorrowBooks Team`,
           eq(rentalExtensions.paymentStatus, 'completed')
         ));
 
-      const finalTotalEarned = totalEarned + parseFloat(extensionEarnings[0]?.total || '0');
-      const finalTotalSpent = totalSpent + parseFloat(extensionSpending[0]?.total || '0');
-      const finalMoneySpent = moneySpent + parseFloat(extensionSpending[0]?.total || '0'); // Extensions are always money
+      const finalMoneyEarned = moneyEarned + parseFloat(extensionEarnings[0]?.total || '0');
+      const finalMoneySpent = moneySpent + parseFloat(extensionSpending[0]?.total || '0');
       
-      console.log(`💰 Earnings API - Total earned: ${finalTotalEarned}, Money spent: ${finalMoneySpent}, Brocks spent: ${brocksSpent}, Total spent: ${finalTotalSpent}`);
+      // Legacy values for backwards compatibility
+      const totalEarned = finalMoneyEarned;
+      const totalSpent = finalMoneySpent + brocksSpentRupees;
+      
+      console.log(`💰 Earnings API - Money: earned ${finalMoneyEarned}, spent ${finalMoneySpent}. Brocks: earned ${brocksEarned}, spent ${totalBrocksSpent}`);
+      
+      // Separate brocks earning transactions by type
+      const brocksEarningTransactions = creditTransactions
+        .filter(tx => tx.amount > 0)
+        .map(tx => ({
+          id: tx.id,
+          amount: tx.amount,
+          type: tx.type,
+          description: tx.description,
+          createdAt: tx.createdAt
+        }));
+      
+      // Separate brocks spending transactions (rentals + other spending)
+      const brocksSpendingTransactions = [
+        // Spending from credit transactions
+        ...creditTransactions
+          .filter(tx => tx.amount < 0)
+          .map(tx => ({
+            id: tx.id,
+            amount: Math.abs(tx.amount),
+            type: tx.type,
+            description: tx.description,
+            createdAt: tx.createdAt,
+            source: 'transaction'
+          })),
+        // Spending from rental payments with brocks
+        ...borrowedRentals
+          .filter(rental => rental.paymentMethod === 'brocks')
+          .map(rental => ({
+            id: rental.id,
+            amount: Math.round(parseFloat(rental.totalAmount || '0') * creditsToRupeesRate),
+            type: 'rental_payment',
+            description: `Paid for "${rental.book.title}" rental`,
+            createdAt: rental.startDate,
+            source: 'rental',
+            bookTitle: rental.book.title,
+            lenderName: rental.lender.name
+          }))
+      ];
       
       res.json({
-        totalEarned: finalTotalEarned,
-        totalSpent: finalTotalSpent,
+        // Legacy fields for backwards compatibility
+        totalEarned,
+        totalSpent,
         moneySpent: finalMoneySpent,
-        brocksSpent: brocksSpent,
+        brocksSpent: totalBrocksSpent,
+        
+        // New separated data
+        money: {
+          earned: finalMoneyEarned,
+          spent: finalMoneySpent,
+          netWorth: finalMoneyEarned - finalMoneySpent
+        },
+        brocks: {
+          earned: brocksEarned,
+          spent: totalBrocksSpent,
+          netWorth: brocksEarned - totalBrocksSpent,
+          earningTransactions: brocksEarningTransactions,
+          spendingTransactions: brocksSpendingTransactions
+        },
+        
         lentRentals: lentRentals.map(rental => ({
           id: rental.id,
           bookTitle: rental.book.title,
