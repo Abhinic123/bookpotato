@@ -201,8 +201,22 @@ export default function RecommendedBooks() {
                   <Card className="hover:shadow-lg transition-shadow duration-200 cursor-pointer" onClick={() => handleViewBookDetails(book)}>
                     <CardContent className="p-4">
                       <div className="flex items-start space-x-3">
-                        <div className="w-12 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded flex items-center justify-center flex-shrink-0">
-                          <BookOpen className="w-6 h-6 text-white" />
+                        <div className="w-12 h-16 flex-shrink-0">
+                          {book.imageUrl || book.coverImageUrl ? (
+                            <img 
+                              src={book.imageUrl?.replace(/&amp;/g, '&') || book.coverImageUrl?.replace(/&amp;/g, '&')} 
+                              alt={book.title}
+                              className="w-12 h-16 object-cover rounded shadow-sm"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                target.nextElementSibling!.style.display = 'flex';
+                              }}
+                            />
+                          ) : null}
+                          <div className={`w-12 h-16 bg-gradient-to-br from-blue-400 to-purple-500 rounded flex items-center justify-center ${book.imageUrl || book.coverImageUrl ? 'hidden' : ''}`}>
+                            <BookOpen className="w-6 h-6 text-white" />
+                          </div>
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-sm truncate">{book.title}</h3>
