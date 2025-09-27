@@ -18,20 +18,25 @@ interface GenrePreferencesModalProps {
 const GENRES = [
   { name: "Fiction", emoji: "📚", description: "Novels, stories, imaginative literature" },
   { name: "Non-Fiction", emoji: "📖", description: "Real-world topics, educational content" },
+  { name: "Educational Textbook", emoji: "🎓", description: "Academic books, study materials, textbooks" },
+  { name: "Science", emoji: "🧪", description: "Scientific topics, research, STEM subjects" },
+  { name: "Technology & Engineering", emoji: "⚙️", description: "Engineering, technical subjects, innovation" },
   { name: "Mystery", emoji: "🔍", description: "Suspense, detective stories, thrillers" },
   { name: "Romance", emoji: "💝", description: "Love stories, romantic fiction" },
   { name: "Science Fiction", emoji: "🚀", description: "Futuristic, space, technology themes" },
   { name: "Fantasy", emoji: "🧙", description: "Magic, mythical creatures, otherworldly" },
-  { name: "Biography", emoji: "👤", description: "Life stories of real people" },
+  { name: "Biography & Autobiography", emoji: "👤", description: "Life stories of real people" },
   { name: "History", emoji: "🏛️", description: "Historical events, past civilizations" },
   { name: "Self-Help", emoji: "💪", description: "Personal development, motivation" },
-  { name: "Business", emoji: "💼", description: "Entrepreneurship, management, finance" },
+  { name: "Business & Economics", emoji: "💼", description: "Entrepreneurship, management, finance" },
   { name: "Health", emoji: "🏥", description: "Wellness, medical, fitness topics" },
   { name: "Cooking", emoji: "👨‍🍳", description: "Recipes, culinary arts, food culture" },
   { name: "Travel", emoji: "✈️", description: "Adventures, destinations, cultures" },
   { name: "Art", emoji: "🎨", description: "Visual arts, creativity, design" },
   { name: "Technology", emoji: "💻", description: "Programming, digital trends, innovation" },
   { name: "Philosophy", emoji: "🤔", description: "Deep thinking, life questions, ethics" },
+  { name: "Juvenile Fiction", emoji: "👶", description: "Children's fiction, young reader stories" },
+  { name: "Juvenile Nonfiction", emoji: "🧒", description: "Educational books for children" },
 ];
 
 export default function GenrePreferencesModal({ isOpen, onClose, isFirstTime = false }: GenrePreferencesModalProps) {
