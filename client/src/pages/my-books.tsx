@@ -347,9 +347,17 @@ export default function MyBooks() {
             <CardContent className="p-4">
               <div className="flex items-start space-x-3">
                 <div className="w-12 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded flex items-center justify-center flex-shrink-0">
-                  <span className="text-xs text-purple-600 font-medium text-center px-1">
-                    {book.title.substring(0, 3)}
-                  </span>
+                  {book.coverImageUrl || book.imageUrl ? (
+                    <img 
+                      src={book.coverImageUrl || book.imageUrl} 
+                      alt={book.title}
+                      className="w-full h-full object-cover rounded"
+                    />
+                  ) : (
+                    <span className="text-xs text-purple-600 font-medium text-center px-1">
+                      {book.title.substring(0, 3)}
+                    </span>
+                  )}
                 </div>
                 
                 <div className="flex-1 min-w-0">

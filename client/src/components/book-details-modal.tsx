@@ -48,9 +48,17 @@ export default function BookDetailsModal({
         <div className="space-y-4 overflow-y-auto flex-1 pr-2">
           {/* Book Cover */}
           <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden">
-            <span className="text-lg font-bold text-blue-800 text-center px-4">
-              {book.title}
-            </span>
+            {book.coverImageUrl || book.imageUrl ? (
+              <img 
+                src={book.coverImageUrl || book.imageUrl} 
+                alt={book.title}
+                className="w-full h-full object-cover rounded-lg"
+              />
+            ) : (
+              <span className="text-lg font-bold text-blue-800 text-center px-4">
+                {book.title}
+              </span>
+            )}
           </div>
           
           {/* Title and Author */}
