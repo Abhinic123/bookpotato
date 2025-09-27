@@ -10,6 +10,7 @@ import GenrePreferencesModal from "./genre-preferences-modal";
 import WishlistButton from "./wishlist-button";
 import ShareButton from "./share-button";
 import BookDetailsModal from "@/components/book-details-modal";
+import BorrowBookModal from "@/components/modals/borrow-book-modal";
 import type { BookWithOwner } from "@shared/schema";
 
 interface Book {
@@ -26,7 +27,13 @@ export default function RecommendedBooks() {
   const [showPreferences, setShowPreferences] = useState(false);
   const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showBorrowModal, setShowBorrowModal] = useState(false);
   const [showAllRecommendations, setShowAllRecommendations] = useState(false);
+
+  // Get current user data
+  const { data: user } = useQuery({
+    queryKey: ["/api/auth/me"],
+  });
 
   // Check if user has set preferences
   const { data: userPreferences } = useQuery({
@@ -45,6 +52,11 @@ export default function RecommendedBooks() {
   const handleViewBookDetails = (book: any) => {
     setSelectedBook(book);
     setShowDetailsModal(true);
+  };
+
+  const handleBorrowBook = (book: BookWithOwner) => {
+    setSelectedBook(book);
+    setShowBorrowModal(true);
   };
 
   // Demo books data to show the social features working
@@ -301,11 +313,24 @@ export default function RecommendedBooks() {
           setShowDetailsModal(open);
           if (!open) setSelectedBook(null);
         }}
-        user={{ id: 1 }} // TODO: Get actual user data
+        user={(user as any)?.user}
+        onBorrow={handleBorrowBook}
         onEdit={() => {
           // TODO: Handle edit functionality
         }}
       />
+
+      {selectedBook && (
+        <BorrowBookModal
+          isOpen={showBorrowModal}
+          onClose={() => {
+            setShowBorrowModal(false);
+            setSelectedBook(null);
+          }}
+          book={selectedBook}
+          borrower={(user as any)?.user}
+        />
+      )}
     </>
   );
 }
