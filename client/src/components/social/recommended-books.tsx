@@ -26,6 +26,7 @@ export default function RecommendedBooks() {
   const [showPreferences, setShowPreferences] = useState(false);
   const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showAllRecommendations, setShowAllRecommendations] = useState(false);
 
   // Check if user has set preferences
   const { data: userPreferences } = useQuery({
@@ -190,7 +191,7 @@ export default function RecommendedBooks() {
 
             {/* Recommended books based on preferences */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(recommendedBooks as any[]).slice(0, 4).map((book: any, index: number) => (
+              {(recommendedBooks as any[]).slice(0, showAllRecommendations ? (recommendedBooks as any[]).length : 4).map((book: any, index: number) => (
                 <motion.div
                   key={book.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -242,13 +243,31 @@ export default function RecommendedBooks() {
             </div>
 
             <div className="text-center pt-4">
-              <Button 
-                variant="outline" 
-                className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                onClick={() => refetchRecommendations()}
-              >
-                View More Recommendations
-              </Button>
+              {!showAllRecommendations && (recommendedBooks as any[]).length > 4 ? (
+                <Button 
+                  variant="outline" 
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                  onClick={() => setShowAllRecommendations(true)}
+                >
+                  View More Recommendations ({(recommendedBooks as any[]).length - 4} more)
+                </Button>
+              ) : showAllRecommendations ? (
+                <Button 
+                  variant="outline" 
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                  onClick={() => setShowAllRecommendations(false)}
+                >
+                  Show Less
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                  onClick={() => refetchRecommendations()}
+                >
+                  Refresh Recommendations
+                </Button>
+              )}
             </div>
           </div>
         </CardContent>
