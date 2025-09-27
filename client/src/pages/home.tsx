@@ -433,6 +433,32 @@ export default function Home() {
         </div>
       )}
 
+      {/* Climb the Leaderboard Section */}
+      {brocksLeaderboard && (brocksLeaderboard as any[])?.length > 0 && (
+        <div className="p-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-text-primary flex items-center space-x-2">
+                  <Award className="w-5 h-5 text-amber-500" />
+                  <span>Climb the Leaderboard</span>
+                </h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate('/leaderboard')}
+                  className="text-primary"
+                  data-testid="leaderboard-view-all"
+                >
+                  View Full <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+              <EnhancedLeaderboard leaderboard={(brocksLeaderboard as any[])?.slice(0, 5) || []} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Due Soon Section */}
       {dueSoonRentals.length > 0 && (
         <div className="p-4">
@@ -549,12 +575,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Enhanced Brocks Leaderboard */}
-      {brocksLeaderboard && (brocksLeaderboard as any[]).length > 0 && (
-        <div className="p-4">
-          <EnhancedLeaderboard leaderboard={brocksLeaderboard as any[]} />
-        </div>
-      )}
 
       <BorrowBookModal
         book={selectedBook}

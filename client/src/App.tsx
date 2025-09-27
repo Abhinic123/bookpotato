@@ -25,6 +25,7 @@ import BuyBrocksPage from "@/pages/buy-brocks";
 import HowItWorks from "@/pages/how-it-works";
 import Downloads from "@/pages/downloads";
 import MyWishlist from "@/pages/my-wishlist";
+import LeaderboardPage from "@/pages/leaderboard";
 import SocietyChatPage from "@/pages/SocietyChatPage";
 import ChatSelection from "@/pages/chat-selection";
 import AppLayout from "@/components/layout/app-layout";
@@ -48,6 +49,7 @@ function AuthenticatedApp() {
         <Route path="/how-it-works" component={HowItWorks} />
         <Route path="/downloads" component={Downloads} />
         <Route path="/my-wishlist" component={MyWishlist} />
+        <Route path="/leaderboard" component={LeaderboardPage} />
         <Route path="/chat" component={ChatSelection} />
         <Route path="/societies/:societyId/chat" component={SocietyChatPage} />
         <Route component={NotFound} />
