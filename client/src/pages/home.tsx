@@ -53,12 +53,6 @@ export default function Home() {
     queryKey: ["/api/societies/my"],
   });
 
-  // Get society members when popup is shown
-  const { data: societyMembers } = useQuery({
-    queryKey: ["/api/societies", currentSociety?.id, "members"],
-    enabled: showMembersPopup && !!currentSociety?.id,
-  });
-
   // Get current user to check if profile completion is needed
   const { data: currentUser } = useQuery({
     queryKey: ["/api/auth/me"],
@@ -69,6 +63,12 @@ export default function Home() {
   });
 
   const currentSociety = (societies as any[])?.[0];
+
+  // Get society members when popup is shown
+  const { data: societyMembers } = useQuery({
+    queryKey: ["/api/societies", currentSociety?.id, "members"],
+    enabled: showMembersPopup && !!currentSociety?.id,
+  });
 
   const { data: societyStats } = useQuery({
     queryKey: ["/api/societies", currentSociety?.id, "stats"],
