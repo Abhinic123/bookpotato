@@ -38,7 +38,7 @@ export default function RecommendedBooks() {
   // Get recommended books based on preferences
   const { data: recommendedBooks = [], refetch: refetchRecommendations } = useQuery({
     queryKey: ["/api/books/recommended"],
-    enabled: hasPreferences,
+    enabled: !!hasPreferences,
     refetchOnWindowFocus: false,
   });
   
@@ -210,7 +210,8 @@ export default function RecommendedBooks() {
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.style.display = 'none';
-                                target.nextElementSibling!.style.display = 'flex';
+                                const nextEl = target.nextElementSibling as HTMLElement;
+                                if (nextEl) nextEl.style.display = 'flex';
                               }}
                             />
                           ) : null}
