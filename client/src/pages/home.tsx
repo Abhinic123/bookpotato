@@ -371,77 +371,13 @@ export default function Home() {
                     Please update your personal information here to make sure that you can borrow books seamlessly!
                   </p>
                   
-                  <form onSubmit={profileForm.handleSubmit((data) => profileCompletionMutation.mutate(data))} className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label htmlFor="flatWing" className="text-xs font-medium text-amber-800">Flat and Wing Number</Label>
-                        <Input
-                          id="flatWing"
-                          placeholder="e.g., A-301"
-                          {...profileForm.register("flatWing")}
-                          className="mt-1 border-amber-200 focus:border-amber-400"
-                        />
-                        {profileForm.formState.errors.flatWing && (
-                          <p className="text-xs text-red-600 mt-1">
-                            {profileForm.formState.errors.flatWing.message}
-                          </p>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="buildingName" className="text-xs font-medium text-amber-800">Building Name</Label>
-                        <Input
-                          id="buildingName"
-                          placeholder="e.g., Crystal Tower"
-                          {...profileForm.register("buildingName")}
-                          className="mt-1 border-amber-200 focus:border-amber-400"
-                        />
-                        {profileForm.formState.errors.buildingName && (
-                          <p className="text-xs text-red-600 mt-1">
-                            {profileForm.formState.errors.buildingName.message}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="detailedAddress" className="text-xs font-medium text-amber-800">Detailed Address</Label>
-                      <Input
-                        id="detailedAddress"
-                        placeholder="e.g., Behind Metro Station, Near Park"
-                        {...profileForm.register("detailedAddress")}
-                        className="mt-1 border-amber-200 focus:border-amber-400"
-                      />
-                      {profileForm.formState.errors.detailedAddress && (
-                        <p className="text-xs text-red-600 mt-1">
-                          {profileForm.formState.errors.detailedAddress.message}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="city" className="text-xs font-medium text-amber-800">City</Label>
-                      <Input
-                        id="city"
-                        placeholder="e.g., Mumbai"
-                        {...profileForm.register("city")}
-                        className="mt-1 border-amber-200 focus:border-amber-400"
-                      />
-                      {profileForm.formState.errors.city && (
-                        <p className="text-xs text-red-600 mt-1">
-                          {profileForm.formState.errors.city.message}
-                        </p>
-                      )}
-                    </div>
-                    
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-amber-600 hover:bg-amber-700 text-white"
-                      disabled={profileCompletionMutation.isPending}
-                    >
-                      {profileCompletionMutation.isPending ? "Updating..." : "Update Profile"}
-                    </Button>
-                  </form>
+                  <Button 
+                    onClick={() => navigate('/profile')}
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                    data-testid="complete-profile-button"
+                  >
+                    Update Profile
+                  </Button>
                 </div>
               </div>
             </CardContent>
