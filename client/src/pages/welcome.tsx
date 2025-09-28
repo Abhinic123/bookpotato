@@ -12,7 +12,9 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import communityImage from '@assets/Screen1_1759047490095.png';
-import societyImage from '@assets/Screen2_1759048930380.png';
+import societyImage from '@assets/Screen2_1759048146370.png';
+import booksImage from '@assets/Screen3_1759048153491.png';
+import earningsImage from '@assets/Screen4_1759048161935.png';
 
 const welcomeScreens = [
   {
@@ -46,13 +48,11 @@ const welcomeScreens = [
     icon: Users,
     gradient: "from-purple-500 to-pink-500",
     illustration: (
-      <div className="w-full h-64 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <img 
-          src={societyImage} 
-          alt="Person joining society with buildings in background" 
-          className="w-full h-full object-cover"
-        />
-      </div>
+      <img 
+        src={societyImage} 
+        alt="Join your society" 
+        className="w-32 h-24 mx-auto object-contain"
+      />
     )
   },
   {
@@ -63,21 +63,11 @@ const welcomeScreens = [
     icon: MapPin,
     gradient: "from-green-500 to-teal-500",
     illustration: (
-      <svg viewBox="0 0 200 150" className="w-32 h-24 mx-auto">
-        <defs>
-          <linearGradient id="mapGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#10B981" />
-            <stop offset="100%" stopColor="#14B8A6" />
-          </linearGradient>
-        </defs>
-        <circle cx="100" cy="75" r="60" fill="url(#mapGradient)" opacity="0.3" />
-        <path d="M100 45 Q110 55 100 75 Q90 55 100 45" fill="#EF4444" />
-        <circle cx="100" cy="55" r="4" fill="#FFFFFF" />
-        <rect x="80" y="90" width="12" height="16" fill="#3B82F6" />
-        <rect x="108" y="85" width="12" height="20" fill="#8B5CF6" />
-        <rect x="136" y="95" width="10" height="15" fill="#10B981" />
-        <path d="M70 110 Q100 90 130 110" stroke="#6B7280" strokeWidth="2" fill="none" strokeDasharray="3,3" />
-      </svg>
+      <img 
+        src={booksImage} 
+        alt="Discover local books" 
+        className="w-32 h-24 mx-auto object-contain"
+      />
     )
   },
   {
@@ -88,24 +78,11 @@ const welcomeScreens = [
     icon: Star,
     gradient: "from-orange-500 to-red-500",
     illustration: (
-      <svg viewBox="0 0 200 150" className="w-32 h-24 mx-auto">
-        <defs>
-          <linearGradient id="coinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#F59E0B" />
-            <stop offset="100%" stopColor="#EF4444" />
-          </linearGradient>
-        </defs>
-        <rect x="60" y="70" width="30" height="40" rx="2" fill="#3B82F6" />
-        <rect x="110" y="60" width="30" height="50" rx="2" fill="#8B5CF6" />
-        <circle cx="75" cy="50" r="12" fill="url(#coinGradient)" />
-        <text x="75" y="55" textAnchor="middle" fill="#FFFFFF" fontSize="8" fontWeight="bold">₹</text>
-        <circle cx="125" cy="40" r="12" fill="url(#coinGradient)" />
-        <text x="125" y="45" textAnchor="middle" fill="#FFFFFF" fontSize="8" fontWeight="bold">₹</text>
-        <circle cx="160" cy="85" r="10" fill="#F59E0B" />
-        <text x="160" y="89" textAnchor="middle" fill="#FFFFFF" fontSize="6" fontWeight="bold">₹</text>
-        <path d="M75 62 L75 68" stroke="#F59E0B" strokeWidth="2" />
-        <path d="M125 52 L125 58" stroke="#F59E0B" strokeWidth="2" />
-      </svg>
+      <img 
+        src={earningsImage} 
+        alt="Earn while sharing" 
+        className="w-32 h-24 mx-auto object-contain"
+      />
     )
   }
 ];
