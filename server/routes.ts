@@ -8,7 +8,7 @@ import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRent
 import { userGenrePreferences, wishlists, bookReviews, books, feedbackTable } from "@shared/schema";
 import { z } from "zod";
 import { db, pool } from "./db";
-import { sql, eq, and, inArray, not } from "drizzle-orm";
+import { sql, eq, and, inArray, not, desc } from "drizzle-orm";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import OpenAI from "openai";
@@ -1736,6 +1736,38 @@ Submitted on: ${new Date().toLocaleString()}
     } catch (error) {
       console.error("Submit feedback error:", error);
       res.status(500).json({ message: "Failed to submit feedback" });
+    }
+  });
+
+  // Get all feedback for admin panel
+  app.get("/api/admin/feedback", requireAuth, async (req, res) => {
+    try {
+      const userId = req.session.userId!;
+      
+      // Check if user is admin
+      const user = await storage.getUserById(userId);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      // Fetch all feedback with user details
+      const feedback = await db
+        .select({
+          id: feedbackTable.id,
+          category: feedbackTable.category,
+          feedback: feedbackTable.feedback,
+          createdAt: feedbackTable.createdAt,
+          userName: users.name,
+          userEmail: users.email,
+        })
+        .from(feedbackTable)
+        .leftJoin(users, eq(feedbackTable.userId, users.id))
+        .orderBy(desc(feedbackTable.createdAt));
+
+      res.json(feedback);
+    } catch (error) {
+      console.error("Get feedback error:", error);
+      res.status(500).json({ message: "Failed to fetch feedback" });
     }
   });
 
