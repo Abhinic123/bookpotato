@@ -197,11 +197,11 @@ export default function Welcome() {
             </div>
 
             {/* Community Illustration */}
-            <div className="w-full h-48 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+            <div className="w-full h-64 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
               <img 
                 src={communityImage} 
                 alt="Community reading together" 
-                className="w-full h-full object-contain p-4"
+                className="w-full h-full object-cover"
               />
             </div>
           </div>
