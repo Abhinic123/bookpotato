@@ -207,9 +207,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sgMail = sgMailModule.default;
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
+      const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@bookshare.com';
+      
       const msg = {
         to: email,
-        from: 'abhinic@gmail.com', // Use your verified email address
+        from: fromEmail,
         subject: 'Password Reset - BorrowBooks',
         text: `Hi ${user.name},
 
@@ -257,8 +259,18 @@ The BorrowBooks Team`,
         console.error("📧 Error response:", sgError.response?.body);
         console.error("📧 Full error object:", JSON.stringify(sgError, null, 2));
         
-        // Don't throw the error, just log it - still return success to user
-        console.log(`📧 Email failed but continuing with success response`);
+        // Return proper error message for debugging
+        if (sgError.code === 403 && sgError.response?.body?.errors?.[0]?.message?.includes('verified Sender Identity')) {
+          return res.status(500).json({ 
+            message: "Email service configuration error. Please contact support.",
+            details: "The sender email address needs to be verified in SendGrid." 
+          });
+        }
+        
+        return res.status(500).json({ 
+          message: "Failed to send reset email. Please try again or contact support.",
+          details: sgError.message 
+        });
       }
 
       res.json({ message: "If an account exists with this email, you will receive reset instructions." });
