@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import communityImage from '@assets/Screen1_1759047490095.png';
+import societyImage from '@assets/Screen2_1759048930380.png';
 
 const welcomeScreens = [
   {
@@ -45,23 +46,13 @@ const welcomeScreens = [
     icon: Users,
     gradient: "from-purple-500 to-pink-500",
     illustration: (
-      <svg viewBox="0 0 200 150" className="w-32 h-24 mx-auto">
-        <defs>
-          <linearGradient id="buildingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#8B5CF6" />
-            <stop offset="100%" stopColor="#EC4899" />
-          </linearGradient>
-        </defs>
-        <rect x="40" y="60" width="40" height="70" fill="url(#buildingGradient)" />
-        <rect x="90" y="40" width="50" height="90" fill="#7C3AED" />
-        <rect x="150" y="70" width="35" height="60" fill="#A855F7" />
-        <circle cx="60" cy="35" r="8" fill="#FDE68A" />
-        <circle cx="115" cy="15" r="8" fill="#FDE68A" />
-        <circle cx="167" cy="45" r="8" fill="#FDE68A" />
-        <rect x="50" y="80" width="8" height="12" fill="#FEF3C7" />
-        <rect x="100" y="60" width="8" height="12" fill="#FEF3C7" />
-        <rect x="160" y="90" width="8" height="12" fill="#FEF3C7" />
-      </svg>
+      <div className="w-full h-64 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <img 
+          src={societyImage} 
+          alt="Person joining society with buildings in background" 
+          className="w-full h-full object-cover"
+        />
+      </div>
     )
   },
   {
