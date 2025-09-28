@@ -1661,6 +1661,12 @@ The BorrowBooks Team`,
         return res.status(400).json({ message: "Category and feedback are required" });
       }
       
+      // Get user details for email notification
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
       // Save feedback to database
       const feedbackEntry = await db.insert(feedbackTable).values({
         userId,
@@ -1673,6 +1679,58 @@ The BorrowBooks Team`,
         category,
         feedback: feedback.trim(),
       });
+
+      // Send email notification to admin
+      try {
+        if (process.env.SENDGRID_API_KEY) {
+          const sgMailModule = await import('@sendgrid/mail');
+          const sgMail = sgMailModule.default;
+          sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+          const adminEmail = 'justbored0812@gmail.com';
+          const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'borrowbooks.info@gmail.com';
+          
+          const msg = {
+            to: adminEmail,
+            from: fromEmail,
+            subject: `New Feedback: ${category} - BorrowBooks`,
+            text: `
+New feedback received on BorrowBooks:
+
+From: ${user.name} (${user.email})
+Category: ${category}
+Feedback ID: ${feedbackEntry[0].id}
+
+Message:
+${feedback.trim()}
+
+Submitted on: ${new Date().toLocaleString()}
+            `,
+            html: `
+              <h2>New Feedback Received</h2>
+              <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 16px 0;">
+                <p><strong>From:</strong> ${user.name} (${user.email})</p>
+                <p><strong>Category:</strong> ${category}</p>
+                <p><strong>Feedback ID:</strong> ${feedbackEntry[0].id}</p>
+                <p><strong>Submitted on:</strong> ${new Date().toLocaleString()}</p>
+              </div>
+              <h3>Message:</h3>
+              <div style="background-color: #ffffff; padding: 16px; border-left: 4px solid #3b82f6; margin: 16px 0;">
+                ${feedback.trim().replace(/\n/g, '<br>')}
+              </div>
+              <p style="color: #6b7280; font-size: 14px;">
+                View all feedback in the admin panel: <a href="${process.env.FRONTEND_URL || 'http://localhost:5000'}/admin">Admin Panel</a>
+              </p>
+            `,
+          };
+
+          await sgMail.send(msg);
+          console.log(`📧 Feedback notification email sent to ${adminEmail} for feedback ID ${feedbackEntry[0].id}`);
+        }
+      } catch (emailError) {
+        console.error("Failed to send feedback notification email:", emailError);
+        // Don't fail the request if email fails
+      }
       
       res.json({ message: "Feedback submitted successfully", id: feedbackEntry[0].id });
     } catch (error) {
