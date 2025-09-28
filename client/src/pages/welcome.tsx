@@ -13,6 +13,8 @@ import {
 import { useLocation } from "wouter";
 import communityImage from '@assets/Screen1_1759047490095.png';
 import screen2Image from '@assets/Screen2_1759049549179.png';
+import screen3Image from '@assets/Screen3_1759049733885.png';
+import screen4Image from '@assets/Screen4_1759049750473.png';
 
 const welcomeScreens = [
   {
@@ -213,8 +215,19 @@ export default function Welcome() {
                   className="w-full h-full object-cover"
                 />
               )}
-              {currentScreen > 1 && (
-                <Icon className="w-16 h-16 text-gray-400" />
+              {currentScreen === 2 && (
+                <img 
+                  src={screen3Image} 
+                  alt="Local book discovery with location pin" 
+                  className="w-full h-full object-cover"
+                />
+              )}
+              {currentScreen === 3 && (
+                <img 
+                  src={screen4Image} 
+                  alt="Earning money by sharing books" 
+                  className="w-full h-full object-cover"
+                />
               )}
             </div>
           </div>
