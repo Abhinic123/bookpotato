@@ -12,9 +12,6 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import communityImage from '@assets/Screen1_1759047490095.png';
-import societyImage from '@assets/Screen2_1759048146370.png';
-import booksImage from '@assets/Screen3_1759048153491.png';
-import earningsImage from '@assets/Screen4_1759048161935.png';
 
 const welcomeScreens = [
   {
@@ -48,11 +45,23 @@ const welcomeScreens = [
     icon: Users,
     gradient: "from-purple-500 to-pink-500",
     illustration: (
-      <img 
-        src={societyImage} 
-        alt="Join your society" 
-        className="w-32 h-24 mx-auto object-contain"
-      />
+      <svg viewBox="0 0 200 150" className="w-32 h-24 mx-auto">
+        <defs>
+          <linearGradient id="buildingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#8B5CF6" />
+            <stop offset="100%" stopColor="#EC4899" />
+          </linearGradient>
+        </defs>
+        <rect x="40" y="60" width="40" height="70" fill="url(#buildingGradient)" />
+        <rect x="90" y="40" width="50" height="90" fill="#7C3AED" />
+        <rect x="150" y="70" width="35" height="60" fill="#A855F7" />
+        <circle cx="60" cy="35" r="8" fill="#FDE68A" />
+        <circle cx="115" cy="15" r="8" fill="#FDE68A" />
+        <circle cx="167" cy="45" r="8" fill="#FDE68A" />
+        <rect x="50" y="80" width="8" height="12" fill="#FEF3C7" />
+        <rect x="100" y="60" width="8" height="12" fill="#FEF3C7" />
+        <rect x="160" y="90" width="8" height="12" fill="#FEF3C7" />
+      </svg>
     )
   },
   {
@@ -63,11 +72,21 @@ const welcomeScreens = [
     icon: MapPin,
     gradient: "from-green-500 to-teal-500",
     illustration: (
-      <img 
-        src={booksImage} 
-        alt="Discover local books" 
-        className="w-32 h-24 mx-auto object-contain"
-      />
+      <svg viewBox="0 0 200 150" className="w-32 h-24 mx-auto">
+        <defs>
+          <linearGradient id="mapGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#10B981" />
+            <stop offset="100%" stopColor="#14B8A6" />
+          </linearGradient>
+        </defs>
+        <circle cx="100" cy="75" r="60" fill="url(#mapGradient)" opacity="0.3" />
+        <path d="M100 45 Q110 55 100 75 Q90 55 100 45" fill="#EF4444" />
+        <circle cx="100" cy="55" r="4" fill="#FFFFFF" />
+        <rect x="80" y="90" width="12" height="16" fill="#3B82F6" />
+        <rect x="108" y="85" width="12" height="20" fill="#8B5CF6" />
+        <rect x="136" y="95" width="10" height="15" fill="#10B981" />
+        <path d="M70 110 Q100 90 130 110" stroke="#6B7280" strokeWidth="2" fill="none" strokeDasharray="3,3" />
+      </svg>
     )
   },
   {
@@ -78,11 +97,24 @@ const welcomeScreens = [
     icon: Star,
     gradient: "from-orange-500 to-red-500",
     illustration: (
-      <img 
-        src={earningsImage} 
-        alt="Earn while sharing" 
-        className="w-32 h-24 mx-auto object-contain"
-      />
+      <svg viewBox="0 0 200 150" className="w-32 h-24 mx-auto">
+        <defs>
+          <linearGradient id="coinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#F59E0B" />
+            <stop offset="100%" stopColor="#EF4444" />
+          </linearGradient>
+        </defs>
+        <rect x="60" y="70" width="30" height="40" rx="2" fill="#3B82F6" />
+        <rect x="110" y="60" width="30" height="50" rx="2" fill="#8B5CF6" />
+        <circle cx="75" cy="50" r="12" fill="url(#coinGradient)" />
+        <text x="75" y="55" textAnchor="middle" fill="#FFFFFF" fontSize="8" fontWeight="bold">₹</text>
+        <circle cx="125" cy="40" r="12" fill="url(#coinGradient)" />
+        <text x="125" y="45" textAnchor="middle" fill="#FFFFFF" fontSize="8" fontWeight="bold">₹</text>
+        <circle cx="160" cy="85" r="10" fill="#F59E0B" />
+        <text x="160" y="89" textAnchor="middle" fill="#FFFFFF" fontSize="6" fontWeight="bold">₹</text>
+        <path d="M75 62 L75 68" stroke="#F59E0B" strokeWidth="2" />
+        <path d="M125 52 L125 58" stroke="#F59E0B" strokeWidth="2" />
+      </svg>
     )
   }
 ];
