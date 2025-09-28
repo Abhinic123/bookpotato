@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Settings, Users, BookOpen, TrendingUp, Home, Gift, Award, Plus, Trash2, Edit } from "lucide-react";
+import { Settings, Users, BookOpen, TrendingUp, Home, Gift, Award, Plus, Trash2, Edit, MessageSquare } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 const settingsSchema = z.object({
@@ -84,6 +84,11 @@ export default function AdminPanel() {
   // Fetch Brocks settings
   const { data: brocksSettings } = useQuery({
     queryKey: ["/api/admin/rewards/settings"],
+  });
+
+  // Fetch feedback
+  const { data: feedback = [], isLoading: feedbackLoading } = useQuery({
+    queryKey: ["/api/admin/feedback"],
   });
 
   // Form for settings
@@ -479,6 +484,10 @@ export default function AdminPanel() {
           <TabsTrigger value="page-content">Page Content</TabsTrigger>
           <TabsTrigger value="societies">Society Requests</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="feedback">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            Feedback
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="settings">
@@ -953,6 +962,52 @@ export default function AdminPanel() {
 
         <TabsContent value="page-content">
           <PageContentManager />
+        </TabsContent>
+
+        <TabsContent value="feedback">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <MessageSquare className="h-5 w-5" />
+                <span>User Feedback</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {feedbackLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="text-gray-500">Loading feedback...</div>
+                </div>
+              ) : feedback.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No feedback received yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {feedback.map((item: any) => (
+                    <div key={item.id} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center space-x-3">
+                          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                            {item.category}
+                          </Badge>
+                          <span className="text-sm font-medium">
+                            {item.userName} ({item.userEmail})
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          ID: {item.id} • {new Date(item.createdAt).toLocaleDateString()} {new Date(item.createdAt).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <div className="bg-white p-3 rounded border-l-4 border-blue-500">
+                        <p className="text-gray-800 whitespace-pre-wrap">{item.feedback}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
