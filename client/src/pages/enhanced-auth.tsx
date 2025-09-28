@@ -124,7 +124,7 @@ export default function EnhancedAuth() {
     onSuccess: () => {
       toast({ 
         title: "Success", 
-        description: "Password reset email sent! Check your inbox." 
+        description: "Password Reset Email sent. Please check your inbox as well as spam folder" 
       });
     },
     onError: (error: any) => {
