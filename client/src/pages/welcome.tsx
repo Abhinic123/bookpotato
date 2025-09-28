@@ -11,6 +11,7 @@ import {
   ChevronRight
 } from "lucide-react";
 import { useLocation } from "wouter";
+import communityImage from '@assets/Screen1_1759047490095.png';
 
 const welcomeScreens = [
   {
@@ -195,9 +196,13 @@ export default function Welcome() {
               </p>
             </div>
 
-            {/* Illustration Placeholder */}
-            <div className="w-full h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center">
-              <Icon className="w-16 h-16 text-gray-400" />
+            {/* Community Illustration */}
+            <div className="w-full h-48 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+              <img 
+                src={communityImage} 
+                alt="Community reading together" 
+                className="w-full h-full object-contain p-4"
+              />
             </div>
           </div>
 
