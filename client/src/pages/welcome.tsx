@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import communityImage from '@assets/Screen1_1759047490095.png';
+import screen2Image from '@assets/Screen2_1759049549179.png';
 
 const welcomeScreens = [
   {
@@ -196,13 +197,25 @@ export default function Welcome() {
               </p>
             </div>
 
-            {/* Community Illustration */}
+            {/* Screen-specific Illustration */}
             <div className="w-full h-64 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-              <img 
-                src={communityImage} 
-                alt="Community reading together" 
-                className="w-full h-full object-cover"
-              />
+              {currentScreen === 0 && (
+                <img 
+                  src={communityImage} 
+                  alt="Community reading together" 
+                  className="w-full h-full object-cover"
+                />
+              )}
+              {currentScreen === 1 && (
+                <img 
+                  src={screen2Image} 
+                  alt="Person next to purple buildings" 
+                  className="w-full h-full object-cover"
+                />
+              )}
+              {currentScreen > 1 && (
+                <Icon className="w-16 h-16 text-gray-400" />
+              )}
             </div>
           </div>
 
