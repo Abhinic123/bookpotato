@@ -19,6 +19,10 @@ localPort = 33089
 externalPort = 3000
 
 [[ports]]
+localPort = 33097
+externalPort = 3003
+
+[[ports]]
 localPort = 35057
 externalPort = 3002
 
@@ -48,4 +52,4 @@ args = "npm run dev"
 waitForPort = 5000
 
 [agent]
-integrations = ["javascript_gemini==1.0.0", "javascript_openai==1.0.0", "javascript_anthropic==1.0.0", "javascript_websocket==1.0.0", "javascript_sendgrid==1.0.0"]
+integrations = ["javascript_gemini:1.0.0", "javascript_openai:1.0.0", "javascript_anthropic:1.0.0", "javascript_websocket:1.0.0", "javascript_sendgrid:1.0.0", "javascript_stripe:1.0.0"]
