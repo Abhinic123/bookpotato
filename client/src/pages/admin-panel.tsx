@@ -146,13 +146,13 @@ export default function AdminPanel() {
 
   // Update form when settings load - use useEffect to prevent infinite re-renders
   useEffect(() => {
-    if (settings) {
+    if (settings && typeof settings === 'object' && 'commissionRate' in settings) {
       form.reset({
-        commissionRate: settings.commissionRate,
-        securityDeposit: settings.securityDeposit,
-        minApartments: settings.minApartments,
-        maxRentalDays: settings.maxRentalDays,
-        extensionFeePerDay: settings.extensionFeePerDay || 10,
+        commissionRate: (settings as any).commissionRate || 5,
+        securityDeposit: (settings as any).securityDeposit || 100,
+        minApartments: (settings as any).minApartments || 90,
+        maxRentalDays: (settings as any).maxRentalDays || 30,
+        extensionFeePerDay: (settings as any).extensionFeePerDay || 10,
       });
     }
   }, [settings]);
