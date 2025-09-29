@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Settings, Users, BookOpen, TrendingUp, Home, Gift, Award, Plus, Trash2, Edit, MessageSquare } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { apiRequest } from "@/lib/queryClient";
 
 const settingsSchema = z.object({
   commissionRate: z.number().min(0).max(100),
