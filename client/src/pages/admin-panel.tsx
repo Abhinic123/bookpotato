@@ -873,13 +873,13 @@ export default function AdminPanel() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {societyRequests.length === 0 ? (
+                {(societyRequests as any[]).length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <Home className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>No pending society requests</p>
                   </div>
                 ) : (
-                  societyRequests.map((request: any) => (
+                  (societyRequests as any[]).map((request: any) => (
                     <div key={request.id} className="p-4 border rounded-lg">
                       <div className="flex items-center justify-between">
                         <div>
