@@ -1662,7 +1662,7 @@ The BorrowBooks Team`,
       }
       
       // Get user details for email notification
-      const user = await storage.getUserById(userId);
+      const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
@@ -1745,7 +1745,7 @@ Submitted on: ${new Date().toLocaleString()}
       const userId = req.session.userId!;
       
       // Check if user is admin
-      const user = await storage.getUserById(userId);
+      const user = await storage.getUser(userId);
       if (!user?.isAdmin) {
         return res.status(403).json({ message: "Admin access required" });
       }
