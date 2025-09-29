@@ -433,7 +433,7 @@ export default function AdminPanel() {
               <Users className="h-5 w-5 text-blue-500" />
               <div>
                 <p className="text-sm font-medium text-text-secondary">Total Users</p>
-                <p className="text-2xl font-bold">{stats?.totalUsers || 0}</p>
+                <p className="text-2xl font-bold">{(stats as any)?.totalUsers || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -445,7 +445,7 @@ export default function AdminPanel() {
               <BookOpen className="h-5 w-5 text-green-500" />
               <div>
                 <p className="text-sm font-medium text-text-secondary">Total Books</p>
-                <p className="text-2xl font-bold">{stats?.totalBooks || 0}</p>
+                <p className="text-2xl font-bold">{(stats as any)?.totalBooks || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -457,7 +457,7 @@ export default function AdminPanel() {
               <Home className="h-5 w-5 text-purple-500" />
               <div>
                 <p className="text-sm font-medium text-text-secondary">Total Societies</p>
-                <p className="text-2xl font-bold">{stats?.totalSocieties || 0}</p>
+                <p className="text-2xl font-bold">{(stats as any)?.totalSocieties || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -469,7 +469,7 @@ export default function AdminPanel() {
               <TrendingUp className="h-5 w-5 text-orange-500" />
               <div>
                 <p className="text-sm font-medium text-text-secondary">Active Rentals</p>
-                <p className="text-2xl font-bold">{stats?.activeRentals || 0}</p>
+                <p className="text-2xl font-bold">{(stats as any)?.activeRentals || 0}</p>
               </div>
             </div>
           </CardContent>
