@@ -478,7 +478,7 @@ export default function AdminPanel() {
 
       {/* Settings Panel */}
       <Tabs defaultValue="settings" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 h-auto gap-2 p-2">
           <TabsTrigger value="settings">Platform Settings</TabsTrigger>
           <TabsTrigger value="brocks">Brocks Rewards</TabsTrigger>
           <TabsTrigger value="brocks-packages">Brocks Packages</TabsTrigger>
