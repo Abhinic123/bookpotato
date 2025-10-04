@@ -62,6 +62,7 @@ export const books = pgTable("books", {
   coverImageUrl: text("cover_image_url"),
   condition: text("condition").notNull(),
   dailyFee: decimal("daily_fee", { precision: 10, scale: 2 }).notNull(),
+  sellingPrice: decimal("selling_price", { precision: 10, scale: 2 }),
   ownerId: integer("owner_id").notNull(),
   societyId: integer("society_id").notNull(),
   isAvailable: boolean("is_available").default(true).notNull(),
@@ -83,6 +84,21 @@ export const bookRentals = pgTable("book_rentals", {
   securityDeposit: decimal("security_deposit", { precision: 10, scale: 2 }).notNull(),
   status: text("status").notNull(), // 'active', 'returned', 'overdue'
   paymentStatus: text("payment_status").notNull(), // 'pending', 'completed', 'refunded'
+  paymentMethod: text("payment_method").notNull().default("money"), // 'money', 'brocks'
+  paymentId: text("payment_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const bookPurchases = pgTable("book_purchases", {
+  id: serial("id").primaryKey(),
+  bookId: integer("book_id").notNull(),
+  buyerId: integer("buyer_id").notNull(),
+  sellerId: integer("seller_id").notNull(),
+  societyId: integer("society_id").notNull(),
+  salePrice: decimal("sale_price", { precision: 10, scale: 2 }).notNull(),
+  platformFee: decimal("platform_fee", { precision: 10, scale: 2 }).notNull(),
+  sellerAmount: decimal("seller_amount", { precision: 10, scale: 2 }).notNull(),
+  paymentStatus: text("payment_status").notNull().default("pending"), // 'pending', 'completed', 'refunded'
   paymentMethod: text("payment_method").notNull().default("money"), // 'money', 'brocks'
   paymentId: text("payment_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -309,13 +325,20 @@ export const insertBookSchema = createInsertSchema(books).omit({
   isAvailable: true,
   createdAt: true,
 }).extend({
-  dailyFee: z.union([z.string(), z.number()]).transform(val => String(val))
+  dailyFee: z.union([z.string(), z.number()]).transform(val => String(val)),
+  sellingPrice: z.union([z.string(), z.number(), z.null(), z.undefined()]).transform(val => val ? String(val) : null).optional()
 });
 
 export const insertBookRentalSchema = createInsertSchema(bookRentals).omit({
   id: true,
   startDate: true,
   actualReturnDate: true,
+  paymentId: true,
+  createdAt: true,
+});
+
+export const insertBookPurchaseSchema = createInsertSchema(bookPurchases).omit({
+  id: true,
   paymentId: true,
   createdAt: true,
 });
@@ -406,6 +429,9 @@ export type InsertBook = z.infer<typeof insertBookSchema>;
 
 export type BookRental = typeof bookRentals.$inferSelect;
 export type InsertBookRental = z.infer<typeof insertBookRentalSchema>;
+
+export type BookPurchase = typeof bookPurchases.$inferSelect;
+export type InsertBookPurchase = z.infer<typeof insertBookPurchaseSchema>;
 
 export type SocietyMember = typeof societyMembers.$inferSelect;
 export type InsertSocietyMember = z.infer<typeof insertSocietyMemberSchema>;
