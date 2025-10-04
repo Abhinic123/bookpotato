@@ -33,8 +33,9 @@ Preferred communication style: Simple, everyday language.
 ### Key Features
 - **Authentication**: Session-based, user registration, profile management, admin roles, password reset.
 - **Society Management**: Creation (with approval), joining, multi-society support, statistics tracking.
-- **Book Management**: Manual entry, barcode scanning, condition tracking, daily rental fees, availability management.
+- **Book Management**: Manual entry, barcode scanning, condition tracking, daily rental fees, availability management, optional selling price for buy/sell functionality.
 - **Rental System**: Borrowing with duration, payment calculation (5% commission), security deposits, tracking, due date management.
+- **Buy/Sell Marketplace**: Books can be listed for sale with optional selling price, purchase tracking with bookPurchases table, buy buttons in UI, "Bought" and "Sold" tabs in My Books page, Brocks payment integration for purchases.
 - **Brocks Credit System**: Platform currency awarded for actions (upload, referral, borrow, lend), convertible to commission-free days or rupees. Admin-configurable parameters.
 - **Referral Program**: Unique codes, Brocks credit rewards, commission-free periods.
 - **Enhanced Chat System**: Society chat rooms, one-on-one direct messages, integrated notifications, WebSocket real-time communication, society member directory, unread message tracking, tabbed interface, message history, read status management.
