@@ -927,6 +927,10 @@ The BorrowBooks Team`,
         allBooks.push(...otherBooks);
       }
 
+      // Filter out sold books (books that have been purchased)
+      const purchasedBookIds = await storage.getAllPurchasedBookIds();
+      allBooks = allBooks.filter(book => !purchasedBookIds.includes(book.id));
+
       // Apply search filter
       if (search && typeof search === 'string') {
         const searchTerm = search.toLowerCase();

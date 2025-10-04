@@ -53,6 +53,7 @@ export interface IStorage {
   createBookPurchase(purchase: any): Promise<any>;
   getPurchasesByBuyer(buyerId: number): Promise<any[]>;
   getPurchasesBySeller(sellerId: number): Promise<any[]>;
+  getAllPurchasedBookIds(): Promise<number[]>;
   
   // Notifications
   getNotificationsByUser(userId: number): Promise<Notification[]>;
@@ -839,6 +840,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookPurchases.sellerId, sellerId))
       .orderBy(desc(bookPurchases.createdAt));
     return purchases;
+  }
+
+  async getAllPurchasedBookIds(): Promise<number[]> {
+    const purchases = await db
+      .select({ bookId: bookPurchases.bookId })
+      .from(bookPurchases);
+    return purchases.map(p => p.bookId);
   }
 
   async getNotificationsByUser(userId: number): Promise<Notification[]> {
