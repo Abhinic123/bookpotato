@@ -68,6 +68,10 @@ const bookSchema = z.object({
     (val) => !isNaN(Number(val)) && Number(val) > 0,
     "Daily fee must be a positive number"
   ),
+  sellingPrice: z.string().optional().refine(
+    (val) => !val || (Number(val) >= 0),
+    "Selling price must be a positive number or empty"
+  ),
   societyId: z.number().min(1, "Society is required"),
 });
 
@@ -101,6 +105,7 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
       coverImageUrl: "",
       condition: "",
       dailyFee: "",
+      sellingPrice: "",
       societyId: 0,
     },
   });
@@ -120,6 +125,7 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
         coverImageUrl: editBook.coverImageUrl || "",
         condition: editBook.condition || "",
         dailyFee: editBook.dailyFee?.toString() || "",
+        sellingPrice: editBook.sellingPrice?.toString() || "",
         societyId: editBook.societyId || (Array.isArray(societies) ? societies[0]?.id : 0) || 0,
       });
     } else if (open && !editBook) {
@@ -134,6 +140,7 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
         coverImageUrl: "",
         condition: "",
         dailyFee: "",
+        sellingPrice: "",
         societyId: (Array.isArray(societies) ? societies[0]?.id : 0) || 0,
       });
     }
@@ -146,6 +153,7 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
       const response = await apiRequest(method, url, {
         ...data,
         dailyFee: Number(data.dailyFee),
+        sellingPrice: data.sellingPrice ? Number(data.sellingPrice) : null,
       });
       return response.json();
     },
@@ -574,7 +582,25 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
                   )}
                 />
 
-
+                <FormField
+                  control={form.control}
+                  name="sellingPrice"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Selling Price (If you want to sell) - ₹</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="Leave empty if not for sale" 
+                          min="0"
+                          step="0.01"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}
