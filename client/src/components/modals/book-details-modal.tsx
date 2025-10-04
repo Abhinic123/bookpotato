@@ -130,15 +130,15 @@ export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit, 
                 
                 <div className="flex items-center space-x-3">
                   <IndianRupee className="h-4 w-4 text-text-secondary" />
-                  <span className="text-sm">₹{book.dailyFee}/day</span>
+                  <span className="text-sm">Rental: ₹{book.dailyFee}/day</span>
                 </div>
 
-                {book.sellingPrice && (
-                  <div className="flex items-center space-x-3">
-                    <IndianRupee className="h-4 w-4 text-text-secondary" />
-                    <span className="text-sm font-semibold text-green-600">Selling Price: ₹{book.sellingPrice}</span>
-                  </div>
-                )}
+                <div className="flex items-center space-x-3">
+                  <IndianRupee className="h-4 w-4 text-text-secondary" />
+                  <span className={`text-sm font-semibold ${book.sellingPrice ? 'text-green-600' : 'text-gray-400'}`}>
+                    Selling Price: {book.sellingPrice ? `₹${book.sellingPrice}` : 'Not for Sale'}
+                  </span>
+                </div>
 
                 {book.genre && (
                   <div className="flex items-center space-x-3">

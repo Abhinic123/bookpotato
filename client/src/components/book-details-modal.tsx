@@ -162,7 +162,7 @@ export default function BookDetailsModal({
         {/* Action Buttons - Fixed at bottom */}
         <div className="flex-shrink-0 pt-4 border-t">
           <div className="flex space-x-2">
-            {book.isAvailable && (onBorrow || onBuy) ? (
+            {(onBorrow || onBuy) ? (
               <>
                 {onBorrow && (
                   <Button 
@@ -170,19 +170,25 @@ export default function BookDetailsModal({
                       onBorrow(book);
                     }}
                     className="flex-1"
+                    disabled={!book.isAvailable}
+                    data-testid={`button-borrow-modal-${book.id}`}
                   >
                     Borrow Book
                   </Button>
                 )}
-                {onBuy && book.sellingPrice && (
+                {onBuy && (
                   <Button 
                     onClick={() => {
-                      onBuy(book);
+                      if (book.sellingPrice) {
+                        onBuy(book);
+                      }
                     }}
                     variant="secondary"
                     className="flex-1"
+                    disabled={!book.sellingPrice}
+                    data-testid={`button-buy-modal-${book.id}`}
                   >
-                    Buy for ₹{book.sellingPrice}
+                    {book.sellingPrice ? `Buy for ₹${book.sellingPrice}` : 'Not for Sale'}
                   </Button>
                 )}
               </>
@@ -194,6 +200,7 @@ export default function BookDetailsModal({
                 }}
                 variant="outline"
                 className="flex-1"
+                data-testid={`button-edit-modal-${book.id}`}
               >
                 Edit Book
               </Button>

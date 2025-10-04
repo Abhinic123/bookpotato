@@ -460,6 +460,11 @@ export default function EnhancedBrowse() {
           setShowDetailsModal(false);
           setShowBorrowModal(true);
         }}
+        onBuy={(book) => {
+          // TODO: Add buy modal/functionality
+          console.log('Buy book:', book.title, 'for ₹', book.sellingPrice);
+          alert(`Purchase functionality coming soon! Book: ${book.title}, Price: ₹${book.sellingPrice}`);
+        }}
         user={user?.user}
       />
 
