@@ -10,6 +10,7 @@ import AvailabilityAlertButton from "@/components/availability-alert-button";
 interface BookCardProps {
   book: BookWithOwner;
   onBorrow?: (book: BookWithOwner) => void;
+  onBuy?: (book: BookWithOwner) => void;
   onEdit?: (book: BookWithOwner) => void;
   showOwner?: boolean;
   variant?: "grid" | "list";
@@ -17,7 +18,8 @@ interface BookCardProps {
 
 export default function BookCard({ 
   book, 
-  onBorrow, 
+  onBorrow,
+  onBuy, 
   onEdit, 
   showOwner = true, 
   variant = "list" 
@@ -67,19 +69,36 @@ export default function BookCard({
               </p>
             )}
             
-            {/* Action Button for Grid View */}
-            <div className="mt-auto">
-              {book.isAvailable && onBorrow ? (
-                <Button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onBorrow(book);
-                  }}
-                  size="sm"
-                  className="w-full"
-                >
-                  Borrow
-                </Button>
+            {/* Action Buttons for Grid View */}
+            <div className="mt-auto flex gap-2">
+              {book.isAvailable && (onBorrow || (onBuy && book.sellingPrice)) ? (
+                <>
+                  {onBorrow && (
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onBorrow(book);
+                      }}
+                      size="sm"
+                      className="flex-1"
+                    >
+                      Borrow
+                    </Button>
+                  )}
+                  {onBuy && book.sellingPrice && (
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onBuy(book);
+                      }}
+                      size="sm"
+                      variant="secondary"
+                      className="flex-1"
+                    >
+                      Buy
+                    </Button>
+                  )}
+                </>
               ) : onEdit ? (
                 <Button 
                   onClick={(e) => {
@@ -157,14 +176,27 @@ export default function BookCard({
             </div>
           </div>
           
-          <div className="flex-shrink-0 ml-2">
-            {book.isAvailable && onBorrow ? (
-              <Button 
-                onClick={() => onBorrow(book)}
-                size="sm"
-              >
-                Borrow
-              </Button>
+          <div className="flex-shrink-0 ml-2 flex gap-2">
+            {book.isAvailable && (onBorrow || (onBuy && book.sellingPrice)) ? (
+              <>
+                {onBorrow && (
+                  <Button 
+                    onClick={() => onBorrow(book)}
+                    size="sm"
+                  >
+                    Borrow
+                  </Button>
+                )}
+                {onBuy && book.sellingPrice && (
+                  <Button 
+                    onClick={() => onBuy(book)}
+                    size="sm"
+                    variant="secondary"
+                  >
+                    Buy
+                  </Button>
+                )}
+              </>
             ) : onEdit ? (
               <Button 
                 onClick={() => onEdit(book)}

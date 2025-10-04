@@ -25,6 +25,7 @@ interface BookDetailsModalProps {
 
 export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit, onDelete }: BookDetailsModalProps) {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -57,9 +58,14 @@ export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit, 
 
   const isOwner = book.ownerId === user?.id;
   const canBorrow = !isOwner && book.isAvailable;
+  const canBuy = !isOwner && book.isAvailable && book.sellingPrice;
 
   const handleBorrow = () => {
     setShowPaymentModal(true);
+  };
+
+  const handleBuy = () => {
+    setShowPurchaseModal(true);
   };
 
   const handleEdit = () => {
@@ -127,6 +133,13 @@ export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit, 
                   <span className="text-sm">₹{book.dailyFee}/day</span>
                 </div>
 
+                {book.sellingPrice && (
+                  <div className="flex items-center space-x-3">
+                    <IndianRupee className="h-4 w-4 text-text-secondary" />
+                    <span className="text-sm font-semibold text-green-600">Selling Price: ₹{book.sellingPrice}</span>
+                  </div>
+                )}
+
                 {book.genre && (
                   <div className="flex items-center space-x-3">
                     <BookOpen className="h-4 w-4 text-text-secondary" />
@@ -183,6 +196,16 @@ export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit, 
                     Borrow Book
                   </Button>
                 )}
+                
+                {canBuy && (
+                  <Button 
+                    onClick={handleBuy}
+                    variant="secondary"
+                    className="flex-1"
+                  >
+                    Buy Book
+                  </Button>
+                )}
               </div>
 
               {/* Delete button for owner */}
@@ -225,6 +248,20 @@ export default function BookDetailsModal({ isOpen, onClose, book, user, onEdit, 
           onClose();
         }}
       />
+
+      {/* Purchase Modal - Simple version */}
+      <Dialog open={showPurchaseModal} onOpenChange={setShowPurchaseModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Purchase Book</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p>Coming soon: Complete purchase flow for "{book?.title}"</p>
+            <p className="text-sm text-gray-600">Purchase price: ₹{book?.sellingPrice}</p>
+            <Button onClick={() => setShowPurchaseModal(false)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
