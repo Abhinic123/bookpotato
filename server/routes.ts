@@ -5,7 +5,7 @@ import { join } from "path";
 import { storage } from "./storage";
 import { WebSocketServer, WebSocket } from "ws";
 import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema, users, rentalExtensions, societyRequests, societyMembers } from "@shared/schema";
-import { userGenrePreferences, wishlists, bookReviews, books, feedbackTable } from "@shared/schema";
+import { userGenrePreferences, wishlists, bookReviews, books, feedbackTable, bookPurchases } from "@shared/schema";
 import { z } from "zod";
 import { db, pool } from "./db";
 import { sql, eq, and, inArray, not, desc } from "drizzle-orm";
