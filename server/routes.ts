@@ -101,6 +101,11 @@ const borrowBookSchema = z.object({
   }).nullable().optional(),
 });
 
+const buyBookSchema = z.object({
+  bookId: z.number(),
+  paymentMethod: z.string(),
+});
+
 const joinSocietySchema = z.object({
   societyId: z.number().optional(),
   code: z.string().optional(),
@@ -2432,6 +2437,113 @@ Submitted on: ${new Date().toLocaleString()}
     } catch (error) {
       console.error("Borrow book error:", error);
       res.status(400).json({ message: "Failed to borrow book" });
+    }
+  });
+
+  app.post("/api/purchases/buy", requireAuth, async (req, res) => {
+    try {
+      const { bookId, paymentMethod } = buyBookSchema.parse(req.body);
+      
+      const book = await storage.getBook(bookId);
+      if (!book) {
+        return res.status(404).json({ message: "Book not found" });
+      }
+
+      if (!book.sellingPrice) {
+        return res.status(400).json({ message: "This book is not for sale" });
+      }
+
+      if (!book.isAvailable) {
+        return res.status(400).json({ message: "Book is not available for purchase" });
+      }
+
+      if (book.ownerId === req.session.userId!) {
+        return res.status(400).json({ message: "You cannot buy your own book" });
+      }
+
+      // Get current platform settings
+      const settings = await getPlatformSettings();
+      
+      // Calculate costs
+      const salePrice = parseFloat(book.sellingPrice);
+      const platformFeeRate = settings.commissionRate / 100;
+      const platformFee = salePrice * platformFeeRate;
+      const sellerAmount = salePrice - platformFee;
+
+      const purchaseData = {
+        bookId,
+        buyerId: req.session.userId!,
+        sellerId: book.ownerId,
+        societyId: book.societyId,
+        salePrice: salePrice.toString(),
+        platformFee: platformFee.toString(),
+        sellerAmount: sellerAmount.toString(),
+        paymentStatus: 'completed',
+        paymentMethod: paymentMethod,
+      };
+
+      const purchase = await storage.createBookPurchase(purchaseData);
+      
+      // Mark book as unavailable
+      await storage.updateBook(bookId, { isAvailable: false });
+      
+      // Get buyer and seller details
+      const buyer = await storage.getUser(req.session.userId!);
+      const seller = await storage.getUser(book.ownerId);
+      
+      if (!buyer || !seller) {
+        return res.status(500).json({ message: "User details not found" });
+      }
+
+      // Create notification for seller
+      await storage.createNotification({
+        userId: book.ownerId,
+        title: "Book Sold",
+        message: `Your book "${book.title}" has been sold to ${buyer.name}. Sale amount: ₹${sellerAmount.toFixed(2)}`,
+        type: "purchase"
+      });
+
+      // Create notification for buyer
+      await storage.createNotification({
+        userId: req.session.userId!,
+        title: "Purchase Confirmed",
+        message: `You have successfully purchased "${book.title}" for ₹${salePrice.toFixed(2)}. Contact seller ${seller.name} at ${seller.phone} to collect the book.`,
+        type: "purchase"
+      });
+
+      res.json({
+        purchase,
+        sellerInfo: {
+          sellerName: seller.name,
+          flatWing: seller.flatWing,
+          buildingName: seller.buildingName,
+          detailedAddress: seller.detailedAddress,
+          phone: seller.phone
+        }
+      });
+    } catch (error) {
+      console.error("Buy book error:", error);
+      res.status(400).json({ message: "Failed to purchase book" });
+    }
+  });
+
+  app.get("/api/purchases/bought", requireAuth, async (req, res) => {
+    try {
+      const purchases = await storage.getPurchasesByBuyer(req.session.userId!);
+      res.json(purchases);
+    } catch (error) {
+      console.error("Get bought books error:", error);
+      res.status(500).json({ message: "Failed to fetch purchased books" });
+    }
+  });
+
+  app.get("/api/purchases/sold", requireAuth, async (req, res) => {
+    try {
+      const purchases = await storage.getPurchasesBySeller(req.session.userId!);
+      res.json(purchases);
+    } catch (error) {
+      console.error("Get sold books error:", error);
+      res.status(500).json({ message: "Failed to fetch sold books" });
     }
   });
 

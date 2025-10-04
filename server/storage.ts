@@ -1,9 +1,9 @@
 import { 
-  users, societies, books, bookRentals, societyMembers, notifications, societyRequests, referralRewards, rentalExtensions, extensionRequests,
+  users, societies, books, bookRentals, bookPurchases, societyMembers, notifications, societyRequests, referralRewards, rentalExtensions, extensionRequests,
   userCredits, creditTransactions, referrals, userBadges, commissionFreePeriods, rewardSettings, brocksPackages,
   availabilityAlerts,
   type User, type InsertUser, type Society, type InsertSociety, 
-  type Book, type InsertBook, type BookRental, type InsertBookRental,
+  type Book, type InsertBook, type BookRental, type InsertBookRental, type BookPurchase, type InsertBookPurchase,
   type SocietyMember, type InsertSocietyMember, type Notification, type InsertNotification,
   type BookWithOwner, type RentalWithDetails, type SocietyWithStats, type RentalExtension, type InsertRentalExtension,
   type ExtensionRequest, type InsertExtensionRequest, type UserCredits, type InsertUserCredits,
@@ -48,6 +48,11 @@ export interface IStorage {
   getActiveRentals(userId: number): Promise<RentalWithDetails[]>;
   createRental(rental: InsertBookRental): Promise<BookRental>;
   updateRental(id: number, updates: Partial<BookRental>): Promise<BookRental | undefined>;
+  
+  // Book Purchases
+  createBookPurchase(purchase: any): Promise<any>;
+  getPurchasesByBuyer(buyerId: number): Promise<any[]>;
+  getPurchasesBySeller(sellerId: number): Promise<any[]>;
   
   // Notifications
   getNotificationsByUser(userId: number): Promise<Notification[]>;
@@ -767,6 +772,70 @@ export class DatabaseStorage implements IStorage {
       .where(eq(bookRentals.id, id))
       .returning();
     return rental || undefined;
+  }
+
+  async createBookPurchase(purchase: InsertBookPurchase): Promise<BookPurchase> {
+    const [newPurchase] = await db
+      .insert(bookPurchases)
+      .values(purchase)
+      .returning();
+    return newPurchase;
+  }
+
+  async getPurchasesByBuyer(buyerId: number): Promise<any[]> {
+    const purchases = await db
+      .select({
+        id: bookPurchases.id,
+        bookId: bookPurchases.bookId,
+        buyerId: bookPurchases.buyerId,
+        sellerId: bookPurchases.sellerId,
+        societyId: bookPurchases.societyId,
+        salePrice: bookPurchases.salePrice,
+        platformFee: bookPurchases.platformFee,
+        sellerAmount: bookPurchases.sellerAmount,
+        paymentStatus: bookPurchases.paymentStatus,
+        paymentMethod: bookPurchases.paymentMethod,
+        paymentId: bookPurchases.paymentId,
+        createdAt: bookPurchases.createdAt,
+        bookTitle: books.title,
+        bookAuthor: books.author,
+        bookImageUrl: books.imageUrl,
+        sellerName: users.name,
+      })
+      .from(bookPurchases)
+      .innerJoin(books, eq(bookPurchases.bookId, books.id))
+      .innerJoin(users, eq(bookPurchases.sellerId, users.id))
+      .where(eq(bookPurchases.buyerId, buyerId))
+      .orderBy(desc(bookPurchases.createdAt));
+    return purchases;
+  }
+
+  async getPurchasesBySeller(sellerId: number): Promise<any[]> {
+    const purchases = await db
+      .select({
+        id: bookPurchases.id,
+        bookId: bookPurchases.bookId,
+        buyerId: bookPurchases.buyerId,
+        sellerId: bookPurchases.sellerId,
+        societyId: bookPurchases.societyId,
+        salePrice: bookPurchases.salePrice,
+        platformFee: bookPurchases.platformFee,
+        sellerAmount: bookPurchases.sellerAmount,
+        paymentStatus: bookPurchases.paymentStatus,
+        paymentMethod: bookPurchases.paymentMethod,
+        paymentId: bookPurchases.paymentId,
+        createdAt: bookPurchases.createdAt,
+        bookTitle: books.title,
+        bookAuthor: books.author,
+        bookImageUrl: books.imageUrl,
+        buyerName: users.name,
+      })
+      .from(bookPurchases)
+      .innerJoin(books, eq(bookPurchases.bookId, books.id))
+      .innerJoin(users, eq(bookPurchases.buyerId, users.id))
+      .where(eq(bookPurchases.sellerId, sellerId))
+      .orderBy(desc(bookPurchases.createdAt));
+    return purchases;
   }
 
   async getNotificationsByUser(userId: number): Promise<Notification[]> {
