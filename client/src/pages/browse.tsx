@@ -48,10 +48,26 @@ export default function Browse() {
     queryFn: async () => {
       if (currentSociety?.id === 0) {
         // Fetch all books from all societies
-        return await fetch('/api/books/all').then(res => res.json());
+        const data = await fetch('/api/books/all').then(res => res.json());
+        console.log('📚 Books from /api/books/all:', data.length, 'books');
+        const book111 = data.find((b: any) => b.id === 111);
+        if (book111) {
+          console.log('📚 Book 111 found in /api/books/all:', book111);
+        } else {
+          console.log('📚 Book 111 NOT found in /api/books/all');
+        }
+        return data;
       } else if (currentSociety?.id) {
         // Fetch books from specific society
-        return await fetch(`/api/books/society/${currentSociety.id}`).then(res => res.json());
+        const data = await fetch(`/api/books/society/${currentSociety.id}`).then(res => res.json());
+        console.log(`📚 Books from /api/books/society/${currentSociety.id}:`, data.length, 'books');
+        const book111 = data.find((b: any) => b.id === 111);
+        if (book111) {
+          console.log('📚 Book 111 found in society books:', book111);
+        } else {
+          console.log('📚 Book 111 NOT found in society books');
+        }
+        return data;
       }
       return [];
     },
