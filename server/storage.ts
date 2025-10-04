@@ -861,7 +861,30 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(users, eq(bookPurchases.buyerId, users.id))
       .where(eq(bookPurchases.sellerId, sellerId))
       .orderBy(desc(bookPurchases.createdAt));
-    return purchases;
+    
+    return purchases.map(p => ({
+      id: p.id,
+      bookId: p.bookId,
+      buyerId: p.buyerId,
+      sellerId: p.sellerId,
+      societyId: p.societyId,
+      purchasePrice: p.salePrice,
+      salePrice: p.salePrice,
+      platformFee: p.platformFee,
+      sellerAmount: p.sellerAmount,
+      paymentStatus: p.paymentStatus,
+      paymentMethod: p.paymentMethod,
+      paymentId: p.paymentId,
+      createdAt: p.createdAt,
+      book: {
+        title: p.bookTitle,
+        author: p.bookAuthor,
+        imageUrl: p.bookImageUrl,
+      },
+      buyer: {
+        name: p.buyerName,
+      },
+    }));
   }
 
   async getAllPurchasedBookIds(): Promise<number[]> {
