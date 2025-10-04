@@ -1968,9 +1968,21 @@ Submitted on: ${new Date().toLocaleString()}
       const bookPurchases = await storage.getPurchasesByBuyer(userId);
       console.log(`💰 Earnings API - User ${userId} - Book purchases:`, bookPurchases.length);
       
+      // Get all book sales where user was seller
+      const bookSales = await storage.getPurchasesBySeller(userId);
+      console.log(`💰 Earnings API - User ${userId} - Book sales:`, bookSales.length);
+      
       // Calculate money earnings from regular rentals
       const moneyEarned = lentRentals
         .reduce((sum, rental) => sum + parseFloat(rental.lenderAmount || '0'), 0);
+      
+      // Calculate money earnings from book sales (seller gets sale price minus platform fee)
+      const salesMoneyEarned = bookSales
+        .reduce((sum, sale) => {
+          const salePrice = parseFloat(sale.salePrice || sale.purchasePrice || '0');
+          const platformFee = parseFloat(sale.platformFee || '0');
+          return sum + (salePrice - platformFee);
+        }, 0);
       
       // Calculate money spending from regular rentals
       const moneySpent = borrowedRentals
@@ -2032,7 +2044,7 @@ Submitted on: ${new Date().toLocaleString()}
           eq(rentalExtensions.paymentStatus, 'completed')
         ));
 
-      const finalMoneyEarned = moneyEarned + parseFloat(extensionEarnings[0]?.total || '0');
+      const finalMoneyEarned = moneyEarned + parseFloat(extensionEarnings[0]?.total || '0') + salesMoneyEarned;
       const finalMoneySpent = moneySpent + parseFloat(extensionSpending[0]?.total || '0') + purchaseMoneySpent;
       
       // Legacy values for backwards compatibility
@@ -2040,6 +2052,64 @@ Submitted on: ${new Date().toLocaleString()}
       const totalSpent = finalMoneySpent + brocksSpentRupees + purchaseBrocksSpentRupees;
       
       console.log(`💰 Earnings API - Money: earned ${finalMoneyEarned}, spent ${finalMoneySpent}. Brocks: earned ${brocksEarned}, spent ${totalBrocksSpent}`);
+      
+      // Separate money earning transactions (rentals + extensions + book sales)
+      const moneyEarningTransactions = [
+        // Earnings from rental payments
+        ...lentRentals
+          .map(rental => ({
+            id: rental.id,
+            amount: parseFloat(rental.lenderAmount || '0'),
+            type: 'rental_earning',
+            description: `Earned from "${rental.book.title}" rental`,
+            createdAt: rental.startDate,
+            source: 'rental',
+            bookTitle: rental.book.title,
+            borrowerName: rental.borrower.name
+          })),
+        // Earnings from book sales
+        ...bookSales
+          .map(sale => ({
+            id: sale.id,
+            amount: parseFloat(sale.salePrice || sale.purchasePrice || '0') - parseFloat(sale.platformFee || '0'),
+            type: 'book_sale',
+            description: `Sold "${sale.book.title}"`,
+            createdAt: sale.createdAt,
+            source: 'sale',
+            bookTitle: sale.book.title,
+            buyerName: sale.buyer.name
+          }))
+      ];
+
+      // Separate money spending transactions (rentals + extensions + book purchases)
+      const moneySpendingTransactions = [
+        // Spending from rental payments with money
+        ...borrowedRentals
+          .filter(rental => !rental.paymentMethod || rental.paymentMethod === 'money')
+          .map(rental => ({
+            id: rental.id,
+            amount: parseFloat(rental.totalAmount || '0'),
+            type: 'rental_payment',
+            description: `Paid for "${rental.book.title}" rental`,
+            createdAt: rental.startDate,
+            source: 'rental',
+            bookTitle: rental.book.title,
+            lenderName: rental.lender.name
+          })),
+        // Spending from book purchases with money
+        ...bookPurchases
+          .filter(purchase => !purchase.paymentMethod || purchase.paymentMethod === 'money' || purchase.paymentMethod === 'card' || purchase.paymentMethod === 'upi')
+          .map(purchase => ({
+            id: purchase.id,
+            amount: parseFloat(purchase.salePrice || purchase.purchasePrice || '0') + parseFloat(purchase.platformFee || '0'),
+            type: 'book_purchase',
+            description: `Purchased "${purchase.book.title}"`,
+            createdAt: purchase.createdAt,
+            source: 'purchase',
+            bookTitle: purchase.book.title,
+            sellerName: purchase.seller.name
+          }))
+      ];
       
       // Separate brocks earning transactions by type
       const brocksEarningTransactions = creditTransactions
@@ -2104,7 +2174,9 @@ Submitted on: ${new Date().toLocaleString()}
         money: {
           earned: finalMoneyEarned,
           spent: finalMoneySpent,
-          netWorth: finalMoneyEarned - finalMoneySpent
+          netWorth: finalMoneyEarned - finalMoneySpent,
+          earningTransactions: moneyEarningTransactions,
+          spendingTransactions: moneySpendingTransactions
         },
         brocks: {
           earned: brocksEarned,
