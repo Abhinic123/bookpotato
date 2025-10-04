@@ -40,6 +40,14 @@ export default function MyBooks() {
     queryKey: ["/api/books/my"],
   });
 
+  const { data: boughtBooks, isLoading: loadingBought } = useQuery({
+    queryKey: ["/api/books/bought"],
+  });
+
+  const { data: soldBooks, isLoading: loadingSold } = useQuery({
+    queryKey: ["/api/books/sold"],
+  });
+
   const { data: userResponse } = useQuery({
     queryKey: ['/api/auth/me'],
   });
@@ -349,7 +357,7 @@ export default function MyBooks() {
                 <div className="w-12 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded flex items-center justify-center flex-shrink-0">
                   {book.coverImageUrl || book.imageUrl ? (
                     <img 
-                      src={book.coverImageUrl || book.imageUrl} 
+                      src={(book.coverImageUrl || book.imageUrl)!} 
                       alt={book.title}
                       className="w-full h-full object-cover rounded"
                     />
@@ -412,13 +420,160 @@ export default function MyBooks() {
     </div>
   );
 
+  const BoughtBooksTab = () => (
+    <div className="space-y-4">
+      {loadingBought ? (
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-12 h-16 bg-gray-200 rounded"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : Array.isArray(boughtBooks) && boughtBooks.length > 0 ? (
+        boughtBooks.map((purchase: any) => (
+          <Card key={purchase.id}>
+            <CardContent className="p-4">
+              <div className="flex items-start space-x-3">
+                <div className="w-12 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs text-green-600 font-medium text-center px-1">
+                    {purchase.book.title.substring(0, 3)}
+                  </span>
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-text-primary mb-1">
+                    {purchase.book.title}
+                  </h4>
+                  <p className="text-sm text-text-secondary mb-1">
+                    {purchase.book.author}
+                  </p>
+                  <p className="text-sm text-text-secondary mb-2">
+                    Seller: {purchase.seller.name}
+                  </p>
+                  
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary">
+                      Purchased {formatDateRelative(purchase.createdAt)}
+                    </Badge>
+                    <span className="text-sm font-semibold text-green-600">
+                      {formatCurrency(purchase.purchasePrice)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      ) : (
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <BookOpen className="h-12 w-12 text-text-secondary mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-text-primary mb-2">
+              No Purchased Books
+            </h3>
+            <p className="text-text-secondary mb-4">
+              You haven't purchased any books yet. Browse available books for sale!
+            </p>
+            <Button onClick={() => window.location.href = '/browse'}>
+              Browse Books
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
+  const SoldBooksTab = () => (
+    <div className="space-y-4">
+      {loadingSold ? (
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-12 h-16 bg-gray-200 rounded"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : Array.isArray(soldBooks) && soldBooks.length > 0 ? (
+        soldBooks.map((purchase: any) => (
+          <Card key={purchase.id}>
+            <CardContent className="p-4">
+              <div className="flex items-start space-x-3">
+                <div className="w-12 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded flex items-center justify-center flex-shrink-0">
+                  <span className="text-xs text-orange-600 font-medium text-center px-1">
+                    {purchase.book.title.substring(0, 3)}
+                  </span>
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-medium text-text-primary mb-1">
+                    {purchase.book.title}
+                  </h4>
+                  <p className="text-sm text-text-secondary mb-1">
+                    {purchase.book.author}
+                  </p>
+                  <p className="text-sm text-text-secondary mb-2">
+                    Buyer: {purchase.buyer.name}
+                  </p>
+                  
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary">
+                      Sold {formatDateRelative(purchase.createdAt)}
+                    </Badge>
+                    <span className="text-sm font-semibold text-green-600">
+                      {formatCurrency(purchase.purchasePrice)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      ) : (
+        <Card>
+          <CardContent className="pt-6 text-center">
+            <BookOpen className="h-12 w-12 text-text-secondary mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-text-primary mb-2">
+              No Sold Books
+            </h3>
+            <p className="text-text-secondary mb-4">
+              You haven't sold any books yet. Add books with a selling price to start selling!
+            </p>
+            <Button onClick={() => setShowAddModal(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Book
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
   return (
     <div className="p-4">
       <Tabs defaultValue="borrowed" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-6">
+        <TabsList className="grid w-full grid-cols-5 mb-6">
           <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
           <TabsTrigger value="lent">Lent Out</TabsTrigger>
           <TabsTrigger value="owned">My Library</TabsTrigger>
+          <TabsTrigger value="bought">Bought</TabsTrigger>
+          <TabsTrigger value="sold">Sold</TabsTrigger>
         </TabsList>
         
         <TabsContent value="borrowed">
@@ -431,6 +586,14 @@ export default function MyBooks() {
         
         <TabsContent value="owned">
           <MyLibraryTab />
+        </TabsContent>
+        
+        <TabsContent value="bought">
+          <BoughtBooksTab />
+        </TabsContent>
+        
+        <TabsContent value="sold">
+          <SoldBooksTab />
         </TabsContent>
       </Tabs>
       

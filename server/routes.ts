@@ -1032,6 +1032,26 @@ The BorrowBooks Team`,
     }
   });
 
+  app.get("/api/books/bought", requireAuth, async (req, res) => {
+    try {
+      const purchases = await storage.getPurchasesByBuyer(req.session.userId!);
+      res.json(purchases);
+    } catch (error) {
+      console.error("Get bought books error:", error);
+      res.status(500).json({ message: "Failed to fetch purchased books" });
+    }
+  });
+
+  app.get("/api/books/sold", requireAuth, async (req, res) => {
+    try {
+      const purchases = await storage.getPurchasesBySeller(req.session.userId!);
+      res.json(purchases);
+    } catch (error) {
+      console.error("Get sold books error:", error);
+      res.status(500).json({ message: "Failed to fetch sold books" });
+    }
+  });
+
   app.post("/api/books", requireAuth, async (req, res) => {
     try {
       const bookData = insertBookSchema.parse({
