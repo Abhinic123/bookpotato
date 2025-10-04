@@ -1964,6 +1964,10 @@ Submitted on: ${new Date().toLocaleString()}
       const creditTransactions = await storage.getCreditTransactions(userId);
       console.log(`💰 Earnings API - User ${userId} - Credit transactions:`, creditTransactions.length);
       
+      // Get all book purchases where user was buyer
+      const bookPurchases = await storage.getPurchasesByBuyer(userId);
+      console.log(`💰 Earnings API - User ${userId} - Book purchases:`, bookPurchases.length);
+      
       // Calculate money earnings from regular rentals
       const moneyEarned = lentRentals
         .reduce((sum, rental) => sum + parseFloat(rental.lenderAmount || '0'), 0);
@@ -1973,16 +1977,27 @@ Submitted on: ${new Date().toLocaleString()}
         .filter(rental => !rental.paymentMethod || rental.paymentMethod === 'money')
         .reduce((sum, rental) => sum + parseFloat(rental.totalAmount || '0'), 0);
       
+      // Calculate money spending from book purchases
+      const purchaseMoneySpent = bookPurchases
+        .filter(purchase => !purchase.paymentMethod || purchase.paymentMethod === 'money' || purchase.paymentMethod === 'card' || purchase.paymentMethod === 'upi')
+        .reduce((sum, purchase) => sum + (parseFloat(purchase.salePrice || purchase.purchasePrice || '0') + parseFloat(purchase.platformFee || '0')), 0);
+      
       // Calculate brocks spending from rental payments
       const brocksSpentRupees = borrowedRentals
         .filter(rental => rental.paymentMethod === 'brocks')
         .reduce((sum, rental) => sum + parseFloat(rental.totalAmount || '0'), 0);
+      
+      // Calculate brocks spending from book purchases
+      const purchaseBrocksSpentRupees = bookPurchases
+        .filter(purchase => purchase.paymentMethod === 'brocks')
+        .reduce((sum, purchase) => sum + (parseFloat(purchase.salePrice || purchase.purchasePrice || '0') + parseFloat(purchase.platformFee || '0')), 0);
       
       // Convert brocks rupee amounts back to actual brocks using conversion rate
       const rupeesPerCreditSetting = await storage.getRewardSetting('rupees_per_credit_conversion');
       const rupeesPerCredit = parseFloat(rupeesPerCreditSetting?.settingValue || '0.1'); // 0.1 means 10 Brocks = 1 Rupee
       const creditsToRupeesRate = 1 / rupeesPerCredit; // Convert to Brocks per Rupee
       const brocksSpentFromRentals = Math.round(brocksSpentRupees * creditsToRupeesRate);
+      const brocksSpentFromPurchases = Math.round(purchaseBrocksSpentRupees * creditsToRupeesRate);
       
       // Calculate brocks earnings and spending from credit transactions
       const brocksEarned = creditTransactions
@@ -1993,7 +2008,7 @@ Submitted on: ${new Date().toLocaleString()}
         .filter(tx => tx.amount < 0)
         .reduce((sum, tx) => sum + tx.amount, 0));
       
-      const totalBrocksSpent = brocksSpentFromRentals + brocksSpentFromTransactions;
+      const totalBrocksSpent = brocksSpentFromRentals + brocksSpentFromPurchases + brocksSpentFromTransactions;
 
       // Add extension earnings for lent books (money only)
       const extensionEarnings = await db
@@ -2018,11 +2033,11 @@ Submitted on: ${new Date().toLocaleString()}
         ));
 
       const finalMoneyEarned = moneyEarned + parseFloat(extensionEarnings[0]?.total || '0');
-      const finalMoneySpent = moneySpent + parseFloat(extensionSpending[0]?.total || '0');
+      const finalMoneySpent = moneySpent + parseFloat(extensionSpending[0]?.total || '0') + purchaseMoneySpent;
       
       // Legacy values for backwards compatibility
       const totalEarned = finalMoneyEarned;
-      const totalSpent = finalMoneySpent + brocksSpentRupees;
+      const totalSpent = finalMoneySpent + brocksSpentRupees + purchaseBrocksSpentRupees;
       
       console.log(`💰 Earnings API - Money: earned ${finalMoneyEarned}, spent ${finalMoneySpent}. Brocks: earned ${brocksEarned}, spent ${totalBrocksSpent}`);
       
@@ -2037,7 +2052,7 @@ Submitted on: ${new Date().toLocaleString()}
           createdAt: tx.createdAt
         }));
       
-      // Separate brocks spending transactions (rentals + other spending)
+      // Separate brocks spending transactions (rentals + purchases + other spending)
       const brocksSpendingTransactions = [
         // Spending from credit transactions
         ...creditTransactions
@@ -2062,6 +2077,19 @@ Submitted on: ${new Date().toLocaleString()}
             source: 'rental',
             bookTitle: rental.book.title,
             lenderName: rental.lender.name
+          })),
+        // Spending from book purchases with brocks
+        ...bookPurchases
+          .filter(purchase => purchase.paymentMethod === 'brocks')
+          .map(purchase => ({
+            id: purchase.id,
+            amount: Math.round((parseFloat(purchase.salePrice || purchase.purchasePrice || '0') + parseFloat(purchase.platformFee || '0')) * creditsToRupeesRate),
+            type: 'book_purchase',
+            description: `Purchased "${purchase.book.title}"`,
+            createdAt: purchase.createdAt,
+            source: 'purchase',
+            bookTitle: purchase.book.title,
+            sellerName: purchase.seller.name
           }))
       ];
       
