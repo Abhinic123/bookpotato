@@ -210,7 +210,9 @@ export default function BorrowBookModal({ book, open, onOpenChange, initialTrans
       }
       
       queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/books/browse"] });
       queryClient.invalidateQueries({ queryKey: ["/api/rentals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/purchases"] });
       form.reset();
       onOpenChange(false);
     },
