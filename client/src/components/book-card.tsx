@@ -76,7 +76,7 @@ export default function BookCard({
             
             {/* Action Buttons for Grid View */}
             <div className="mt-auto flex gap-2">
-              {book.isAvailable && (onBorrow || (onBuy && book.sellingPrice)) ? (
+              {(onBorrow || onBuy) ? (
                 <>
                   {onBorrow && (
                     <Button 
@@ -86,19 +86,25 @@ export default function BookCard({
                       }}
                       size="sm"
                       className="flex-1"
+                      disabled={!book.isAvailable}
+                      data-testid={`button-borrow-${book.id}`}
                     >
                       Borrow
                     </Button>
                   )}
-                  {onBuy && book.sellingPrice && (
+                  {onBuy && (
                     <Button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        onBuy(book);
+                        if (book.sellingPrice) {
+                          onBuy(book);
+                        }
                       }}
                       size="sm"
                       variant="secondary"
                       className="flex-1"
+                      disabled={!book.sellingPrice}
+                      data-testid={`button-buy-${book.id}`}
                     >
                       Buy
                     </Button>
@@ -113,6 +119,7 @@ export default function BookCard({
                   variant="outline"
                   size="sm"
                   className="w-full"
+                  data-testid={`button-edit-${book.id}`}
                 >
                   Edit
                 </Button>
@@ -185,21 +192,33 @@ export default function BookCard({
           </div>
           
           <div className="flex-shrink-0 ml-2 flex gap-2">
-            {book.isAvailable && (onBorrow || (onBuy && book.sellingPrice)) ? (
+            {(onBorrow || onBuy) ? (
               <>
                 {onBorrow && (
                   <Button 
-                    onClick={() => onBorrow(book)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onBorrow(book);
+                    }}
                     size="sm"
+                    disabled={!book.isAvailable}
+                    data-testid={`button-borrow-${book.id}`}
                   >
                     Borrow
                   </Button>
                 )}
-                {onBuy && book.sellingPrice && (
+                {onBuy && (
                   <Button 
-                    onClick={() => onBuy(book)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (book.sellingPrice) {
+                        onBuy(book);
+                      }
+                    }}
                     size="sm"
                     variant="secondary"
+                    disabled={!book.sellingPrice}
+                    data-testid={`button-buy-${book.id}`}
                   >
                     Buy
                   </Button>
@@ -207,9 +226,13 @@ export default function BookCard({
               </>
             ) : onEdit ? (
               <Button 
-                onClick={() => onEdit(book)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(book);
+                }}
                 variant="outline"
                 size="sm"
+                data-testid={`button-edit-${book.id}`}
               >
                 Edit
               </Button>

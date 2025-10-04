@@ -430,6 +430,11 @@ export default function EnhancedBrowse() {
                     setSelectedBook(book);
                     setShowBorrowModal(true);
                   } : undefined}
+                  onBuy={book.ownerId !== user?.user?.id ? () => {
+                    // TODO: Add buy modal/functionality
+                    console.log('Buy book:', book.title, 'for ₹', book.sellingPrice);
+                    alert(`Purchase functionality coming soon! Book: ${book.title}, Price: ₹${book.sellingPrice}`);
+                  } : undefined}
                   onEdit={book.ownerId === user?.user?.id ? () => {
                     // TODO: Add edit functionality
                     console.log('Edit book:', book.id);

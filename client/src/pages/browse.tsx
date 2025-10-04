@@ -48,26 +48,10 @@ export default function Browse() {
     queryFn: async () => {
       if (currentSociety?.id === 0) {
         // Fetch all books from all societies
-        const data = await fetch('/api/books/all').then(res => res.json());
-        console.log('📚 Books from /api/books/all:', data.length, 'books');
-        const book111 = data.find((b: any) => b.id === 111);
-        if (book111) {
-          console.log('📚 Book 111 found in /api/books/all:', book111);
-        } else {
-          console.log('📚 Book 111 NOT found in /api/books/all');
-        }
-        return data;
+        return await fetch('/api/books/all').then(res => res.json());
       } else if (currentSociety?.id) {
         // Fetch books from specific society
-        const data = await fetch(`/api/books/society/${currentSociety.id}`).then(res => res.json());
-        console.log(`📚 Books from /api/books/society/${currentSociety.id}:`, data.length, 'books');
-        const book111 = data.find((b: any) => b.id === 111);
-        if (book111) {
-          console.log('📚 Book 111 found in society books:', book111);
-        } else {
-          console.log('📚 Book 111 NOT found in society books');
-        }
-        return data;
+        return await fetch(`/api/books/society/${currentSociety.id}`).then(res => res.json());
       }
       return [];
     },
@@ -168,32 +152,20 @@ export default function Browse() {
           </div>
         ) : filteredBooks.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBooks.map((book: BookWithOwner) => {
-              if (book.id === 111) {
-                console.log('📚 Book 111 debug:', {
-                  id: book.id,
-                  title: book.title,
-                  sellingPrice: book.sellingPrice,
-                  isAvailable: book.isAvailable,
-                  ownerId: book.ownerId,
-                  currentUserId: user?.user?.id,
-                  onBuyCondition: book.isAvailable && book.ownerId !== user?.user?.id && book.sellingPrice
-                });
-              }
-              return (
+            {filteredBooks.map((book: BookWithOwner) => (
               <BookCard
                 key={book.id}
                 book={book}
                 onClick={handleBookClick}
-                onBorrow={book.isAvailable && book.ownerId !== user?.user?.id ? handleBorrowBook : undefined}
-                onBuy={book.isAvailable && book.ownerId !== user?.user?.id && book.sellingPrice ? handleBuyBook : undefined}
+                onBorrow={book.ownerId !== user?.user?.id ? handleBorrowBook : undefined}
+                onBuy={book.ownerId !== user?.user?.id ? handleBuyBook : undefined}
                 onEdit={book.ownerId === user?.user?.id ? () => {
                   console.log('Edit book:', book.id);
                 } : undefined}
                 variant="grid"
                 showOwner={true}
               />
-            )})}
+            ))}
           </div>
         ) : (
           <Card>
