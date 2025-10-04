@@ -36,8 +36,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { BookWithOwner } from "@shared/schema";
 
 const borrowSchema = z.object({
-  duration: z.string().min(1, "Please select rental duration"),
+  transactionType: z.enum(["borrow", "buy"], {
+    required_error: "Please select transaction type",
+  }),
+  duration: z.string().optional(),
   paymentMethod: z.string().min(1, "Please select payment method"),
+}).refine((data) => {
+  if (data.transactionType === "borrow") {
+    return data.duration && data.duration.length > 0;
+  }
+  return true;
+}, {
+  message: "Please select rental duration",
+  path: ["duration"],
 });
 
 type BorrowFormData = z.infer<typeof borrowSchema>;
@@ -73,18 +84,20 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
   // Fetch platform settings
   const { data: platformSettings } = useQuery({
     queryKey: ["/api/platform/settings"],
-    staleTime: 30 * 1000, // Cache for 30 seconds only
+    staleTime: 30 * 1000,
     refetchOnWindowFocus: true,
   });
 
   const form = useForm<BorrowFormData>({
     resolver: zodResolver(borrowSchema),
     defaultValues: {
+      transactionType: "borrow",
       duration: "",
       paymentMethod: "card",
     },
   });
 
+  const watchedTransactionType = form.watch("transactionType");
   const watchedDuration = form.watch("duration");
   const watchedPaymentMethod = form.watch("paymentMethod");
 
@@ -94,7 +107,8 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
     enabled: watchedPaymentMethod === "brocks",
   });
   
-  const rentalCost = book && watchedDuration 
+  // Calculate cost based on transaction type
+  const rentalCost = book && watchedDuration && watchedTransactionType === "borrow"
     ? calculateRentalCost(
         book.dailyFee, 
         parseInt(watchedDuration), 
@@ -102,49 +116,78 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
       )
     : null;
 
-  // Calculate Brocks cost using admin-configured conversion rate
-  const brocksCost = rentalCost && conversionRates ? {
-    rentalFee: Math.round(parseFloat(rentalCost.rentalFee) * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
-    platformFee: Math.round(parseFloat(rentalCost.platformFee) * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
-    securityDeposit: Math.round(parseFloat(rentalCost.securityDeposit) * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
-    totalAmount: Math.round(parseFloat(rentalCost.totalAmount) * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
+  const buyCost = book && watchedTransactionType === "buy" && book.sellingPrice ? {
+    itemPrice: book.sellingPrice,
+    platformFee: (parseFloat(book.sellingPrice) * 0.05).toFixed(2),
+    totalAmount: (parseFloat(book.sellingPrice) * 1.05).toFixed(2),
   } : null;
 
-  // Apply Brocks discount if available
-  const finalRentalCost = rentalCost && appliedBrocks ? {
-    ...rentalCost,
-    totalAmount: rentalCost.totalAmount - appliedBrocks.discountAmount
-  } : rentalCost;
+  const currentCost = watchedTransactionType === "buy" ? buyCost : rentalCost;
+
+  // Calculate Brocks cost using admin-configured conversion rate
+  const brocksCost = currentCost && conversionRates ? (
+    watchedTransactionType === "buy" && buyCost ? {
+      itemPrice: Math.round(parseFloat(buyCost.itemPrice) * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
+      platformFee: Math.round(parseFloat(buyCost.platformFee) * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
+      totalAmount: Math.round(parseFloat(buyCost.totalAmount) * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
+    } : rentalCost ? {
+      rentalFee: Math.round(rentalCost.rentalFee * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
+      platformFee: Math.round(rentalCost.platformFee * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
+      securityDeposit: Math.round(rentalCost.securityDeposit * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
+      totalAmount: Math.round(rentalCost.totalAmount * parseFloat((conversionRates as any)?.creditsToRupeesRate || '10')),
+    } : null
+  ) : null;
+
+  // Apply Brocks discount if available (only for borrow, not buy)
+  const finalCost = currentCost && appliedBrocks && watchedTransactionType === "borrow" ? {
+    ...currentCost,
+    totalAmount: parseFloat(currentCost.totalAmount.toString()) - appliedBrocks.discountAmount
+  } : currentCost;
 
   const borrowMutation = useMutation({
     mutationFn: async (data: BorrowFormData) => {
       if (!book) throw new Error("No book selected");
       
-      const response = await apiRequest("POST", "/api/rentals/borrow", {
-        bookId: book.id,
-        duration: parseInt(data.duration),
-        paymentMethod: data.paymentMethod,
-        appliedBrocks: appliedBrocks,
-      });
-      return response.json();
-    },
-    onSuccess: (data: any) => {
-      const { collectionInfo } = data || {};
-      
-      // Show collection instructions with owner's address details with safe fallbacks
-      let instructionsMessage = "Book borrowed successfully!";
-      
-      if (collectionInfo && collectionInfo.flatWing && collectionInfo.buildingName) {
-        instructionsMessage = `Please go to ${collectionInfo.flatWing}, ${collectionInfo.buildingName} to collect the book. In case you want to call, the phone number is ${collectionInfo.phone || 'not provided'}`;
+      if (data.transactionType === "buy") {
+        const response = await apiRequest("POST", "/api/purchases/buy", {
+          bookId: book.id,
+          paymentMethod: data.paymentMethod,
+        });
+        return response.json();
       } else {
-        instructionsMessage = "Book borrowed successfully! Please contact the owner for collection details.";
+        const response = await apiRequest("POST", "/api/rentals/borrow", {
+          bookId: book.id,
+          duration: parseInt(data.duration!),
+          paymentMethod: data.paymentMethod,
+          appliedBrocks: appliedBrocks,
+        });
+        return response.json();
       }
+    },
+    onSuccess: (data: any, variables) => {
+      if (variables.transactionType === "buy") {
+        toast({
+          title: "Book Purchased Successfully! 🎉",
+          description: "The book is now yours! Check 'My Books > Bought' to see your purchase.",
+          duration: 5000,
+        });
+      } else {
+        const { collectionInfo } = data || {};
+        
+        let instructionsMessage = "Book borrowed successfully!";
+        
+        if (collectionInfo && collectionInfo.flatWing && collectionInfo.buildingName) {
+          instructionsMessage = `Please go to ${collectionInfo.flatWing}, ${collectionInfo.buildingName} to collect the book. In case you want to call, the phone number is ${collectionInfo.phone || 'not provided'}`;
+        } else {
+          instructionsMessage = "Book borrowed successfully! Please contact the owner for collection details.";
+        }
 
-      toast({
-        title: "Book Borrowed Successfully! 📚",
-        description: instructionsMessage,
-        duration: 8000, // Show longer for collection instructions
-      });
+        toast({
+          title: "Book Borrowed Successfully! 📚",
+          description: instructionsMessage,
+          duration: 8000,
+        });
+      }
       
       queryClient.invalidateQueries({ queryKey: ["/api/books"] });
       queryClient.invalidateQueries({ queryKey: ["/api/rentals"] });
@@ -154,7 +197,7 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to borrow book",
+        description: error.message || `Failed to ${watchedTransactionType} book`,
         variant: "destructive",
       });
     },
@@ -166,12 +209,15 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
 
   if (!book) return null;
 
+  const canBuy = book.sellingPrice && parseFloat(book.sellingPrice) > 0;
+  const modalTitle = watchedTransactionType === "buy" ? "Buy Book" : "Borrow Book";
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>Borrow Book</DialogTitle>
+            <DialogTitle>{modalTitle}</DialogTitle>
             <Button 
               variant="ghost" 
               size="icon"
@@ -196,44 +242,50 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
               </h3>
               <p className="text-text-secondary">{book.author}</p>
               <p className="text-sm text-text-secondary mt-1">
-                Lender: {book.owner.name}
+                {watchedTransactionType === "buy" ? "Seller" : "Lender"}: {book.owner.name}
               </p>
               <div className="flex items-center mt-2">
                 <span className="text-lg font-semibold text-primary">
-                  {formatCurrency(book.dailyFee)}
+                  {formatCurrency(watchedTransactionType === "buy" && book.sellingPrice ? book.sellingPrice : book.dailyFee)}
                 </span>
-                <span className="text-text-secondary">/day</span>
+                {watchedTransactionType === "borrow" && <span className="text-text-secondary">/day</span>}
               </div>
             </div>
           </div>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Transaction Type Selection */}
               <FormField
                 control={form.control}
-                name="duration"
+                name="transactionType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Rental Period</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormLabel>Transaction Type</FormLabel>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        if (value === "buy") {
+                          form.setValue("duration", "");
+                          setAppliedBrocks(null);
+                        }
+                      }} 
+                      defaultValue={field.value}
+                    >
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select rental period" />
+                        <SelectTrigger data-testid="select-transaction-type">
+                          <SelectValue placeholder="Select transaction type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {durationOptions.map((option) => {
-                          const cost = calculateRentalCost(
-                            book.dailyFee, 
-                            option.days,
-                            platformSettings as { commissionRate: number; securityDeposit: number } | undefined
-                          );
-                          return (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label} - {formatCurrency(cost.rentalFee)}
-                            </SelectItem>
-                          );
-                        })}
+                        <SelectItem value="borrow" data-testid="option-borrow">
+                          Borrow - ₹{book.dailyFee}/day
+                        </SelectItem>
+                        {canBuy && (
+                          <SelectItem value="buy" data-testid="option-buy">
+                            Buy - ₹{book.sellingPrice}
+                          </SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -241,8 +293,43 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                 )}
               />
 
+              {/* Rental Period - Only show for borrow */}
+              {watchedTransactionType === "borrow" && (
+                <FormField
+                  control={form.control}
+                  name="duration"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rental Period</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger data-testid="select-rental-period">
+                            <SelectValue placeholder="Select rental period" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {durationOptions.map((option) => {
+                            const cost = calculateRentalCost(
+                              book.dailyFee, 
+                              option.days,
+                              platformSettings as { commissionRate: number; securityDeposit: number } | undefined
+                            );
+                            return (
+                              <SelectItem key={option.value} value={option.value} data-testid={`option-duration-${option.value}`}>
+                                {option.label} - {formatCurrency(cost.rentalFee)}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               {/* Cost Breakdown */}
-              {rentalCost && (
+              {currentCost && (
                 <div className="bg-surface rounded-xl p-4">
                   <h4 className="font-medium text-text-primary mb-3">
                     Cost Breakdown {watchedPaymentMethod === 'brocks' && (
@@ -250,48 +337,81 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                     )}
                   </h4>
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-text-secondary">
-                        Rental fee ({watchedDuration} days)
-                      </span>
-                      <span className="flex items-center">
-                        {watchedPaymentMethod === 'brocks' ? (
-                          <>
-                            <Coins className="w-4 h-4 text-amber-600 mr-1" />
-                            {brocksCost?.rentalFee}
-                          </>
-                        ) : (
-                          formatCurrency(rentalCost.rentalFee)
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-secondary">Platform fee (5%)</span>
-                      <span className="flex items-center">
-                        {watchedPaymentMethod === 'brocks' ? (
-                          <>
-                            <Coins className="w-4 h-4 text-amber-600 mr-1" />
-                            {brocksCost?.platformFee}
-                          </>
-                        ) : (
-                          formatCurrency(rentalCost.platformFee)
-                        )}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-secondary">Security deposit</span>
-                      <span className="flex items-center">
-                        {watchedPaymentMethod === 'brocks' ? (
-                          <>
-                            <Coins className="w-4 h-4 text-amber-600 mr-1" />
-                            {brocksCost?.securityDeposit}
-                          </>
-                        ) : (
-                          formatCurrency(rentalCost.securityDeposit)
-                        )}
-                      </span>
-                    </div>
-                    {appliedBrocks && watchedPaymentMethod !== 'brocks' && (
+                    {watchedTransactionType === "buy" && buyCost ? (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-text-secondary">Book price</span>
+                          <span className="flex items-center">
+                            {watchedPaymentMethod === 'brocks' ? (
+                              <>
+                                <Coins className="w-4 h-4 text-amber-600 mr-1" />
+                                {(brocksCost as any)?.itemPrice}
+                              </>
+                            ) : (
+                              formatCurrency(buyCost.itemPrice)
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-text-secondary">Platform fee (5%)</span>
+                          <span className="flex items-center">
+                            {watchedPaymentMethod === 'brocks' ? (
+                              <>
+                                <Coins className="w-4 h-4 text-amber-600 mr-1" />
+                                {(brocksCost as any)?.platformFee}
+                              </>
+                            ) : (
+                              formatCurrency(buyCost.platformFee)
+                            )}
+                          </span>
+                        </div>
+                      </>
+                    ) : rentalCost && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-text-secondary">
+                            Rental fee ({watchedDuration} days)
+                          </span>
+                          <span className="flex items-center">
+                            {watchedPaymentMethod === 'brocks' ? (
+                              <>
+                                <Coins className="w-4 h-4 text-amber-600 mr-1" />
+                                {(brocksCost as any)?.rentalFee}
+                              </>
+                            ) : (
+                              formatCurrency(rentalCost.rentalFee)
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-text-secondary">Platform fee (5%)</span>
+                          <span className="flex items-center">
+                            {watchedPaymentMethod === 'brocks' ? (
+                              <>
+                                <Coins className="w-4 h-4 text-amber-600 mr-1" />
+                                {(brocksCost as any)?.platformFee}
+                              </>
+                            ) : (
+                              formatCurrency(rentalCost.platformFee)
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-text-secondary">Security deposit</span>
+                          <span className="flex items-center">
+                            {watchedPaymentMethod === 'brocks' ? (
+                              <>
+                                <Coins className="w-4 h-4 text-amber-600 mr-1" />
+                                {(brocksCost as any)?.securityDeposit}
+                              </>
+                            ) : (
+                              formatCurrency(rentalCost.securityDeposit)
+                            )}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {appliedBrocks && watchedPaymentMethod !== 'brocks' && watchedTransactionType === "borrow" && (
                       <div className="flex justify-between text-green-600">
                         <span>Brocks Discount</span>
                         <span>-{formatCurrency(appliedBrocks.discountAmount)}</span>
@@ -304,28 +424,34 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                         {watchedPaymentMethod === 'brocks' ? (
                           <>
                             <Coins className="w-4 h-4 text-amber-600 mr-1" />
-                            {brocksCost?.totalAmount}
+                            {(brocksCost as any)?.totalAmount}
                           </>
                         ) : (
-                          formatCurrency(finalRentalCost ? finalRentalCost.totalAmount : rentalCost.totalAmount)
+                          formatCurrency(finalCost ? parseFloat(finalCost.totalAmount.toString()) : parseFloat(currentCost.totalAmount.toString()))
                         )}
                       </span>
                     </div>
                     <p className="text-xs text-text-secondary mt-2">
-                      *Security deposit will be refunded upon return
-                      {watchedPaymentMethod === 'brocks' && (
+                      {watchedTransactionType === "borrow" ? (
                         <>
-                          <br />
-                          *Lender receives payment in Brocks (minus platform commission)
+                          *Security deposit will be refunded upon return
+                          {watchedPaymentMethod === 'brocks' && (
+                            <>
+                              <br />
+                              *Lender receives payment in Brocks (minus platform commission)
+                            </>
+                          )}
                         </>
+                      ) : (
+                        "*This is a one-time purchase. The book will be yours permanently."
                       )}
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Brocks Offers - Show only when not using Brocks payment */}
-              {!appliedBrocks && watchedPaymentMethod !== 'brocks' && (
+              {/* Brocks Offers - Show only for borrow, when not using Brocks payment */}
+              {!appliedBrocks && watchedPaymentMethod !== 'brocks' && watchedTransactionType === "borrow" && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -353,8 +479,8 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                 </div>
               )}
 
-              {/* Applied Brocks Info - Show only when not using Brocks payment */}
-              {appliedBrocks && watchedPaymentMethod !== 'brocks' && (
+              {/* Applied Brocks Info - Show only for borrow, when not using Brocks payment */}
+              {appliedBrocks && watchedPaymentMethod !== 'brocks' && watchedTransactionType === "borrow" && (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
@@ -395,28 +521,29 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                         className="space-y-2"
                       >
                         <div className="flex items-center space-x-3 p-3 border border-gray-300 rounded-xl">
-                          <RadioGroupItem value="card" id="card" />
+                          <RadioGroupItem value="card" id="card" data-testid="payment-card" />
                           <CreditCard className="h-5 w-5 text-primary" />
                           <Label htmlFor="card" className="flex-1">
                             Credit/Debit Card
                           </Label>
                         </div>
                         <div className="flex items-center space-x-3 p-3 border border-gray-300 rounded-xl">
-                          <RadioGroupItem value="upi" id="upi" />
+                          <RadioGroupItem value="upi" id="upi" data-testid="payment-upi" />
                           <Smartphone className="h-5 w-5 text-primary" />
                           <Label htmlFor="upi" className="flex-1">
                             UPI
                           </Label>
                         </div>
                         <div className={`flex items-center space-x-3 p-3 border rounded-xl ${
-                          ((userCredits as any)?.balance || 0) >= (brocksCost?.totalAmount || 0)
+                          ((userCredits as any)?.balance || 0) >= ((brocksCost as any)?.totalAmount || 0)
                             ? 'border-amber-300 bg-amber-50' 
                             : 'border-gray-300 bg-gray-50 opacity-50'
                         }`}>
                           <RadioGroupItem 
                             value="brocks" 
                             id="brocks" 
-                            disabled={((userCredits as any)?.balance || 0) < (brocksCost?.totalAmount || 0)}
+                            data-testid="payment-brocks"
+                            disabled={((userCredits as any)?.balance || 0) < ((brocksCost as any)?.totalAmount || 0)}
                           />
                           <Coins className="h-5 w-5 text-amber-600" />
                           <Label htmlFor="brocks" className="flex-1">
@@ -424,7 +551,7 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
                               <span>Pay with Brocks</span>
                               <div className="text-xs text-gray-600">
                                 Balance: {(userCredits as any)?.balance || 0} Brocks
-                                {((userCredits as any)?.balance || 0) < (brocksCost?.totalAmount || 0) && (
+                                {((userCredits as any)?.balance || 0) < ((brocksCost as any)?.totalAmount || 0) && (
                                   <span className="text-red-600 ml-1">(Insufficient)</span>
                                 )}
                               </div>
@@ -441,12 +568,13 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
               <Button 
                 type="submit" 
                 className="w-full"
-                disabled={borrowMutation.isPending || !rentalCost || (watchedPaymentMethod === 'brocks' && ((userCredits as any)?.balance || 0) < (brocksCost?.totalAmount || 0))}
+                data-testid="button-proceed-payment"
+                disabled={borrowMutation.isPending || !currentCost || (watchedPaymentMethod === 'brocks' && ((userCredits as any)?.balance || 0) < ((brocksCost as any)?.totalAmount || 0))}
               >
                 {borrowMutation.isPending ? "Processing..." : 
                   watchedPaymentMethod === 'brocks' 
-                    ? `Pay with Brocks ${brocksCost ? `- ${brocksCost.totalAmount} Brocks` : ""}`
-                    : `Proceed to Payment ${finalRentalCost ? `- ${formatCurrency(finalRentalCost.totalAmount)}` : ""}`
+                    ? `Pay with Brocks ${brocksCost ? `- ${(brocksCost as any).totalAmount} Brocks` : ""}`
+                    : `Proceed to Payment ${finalCost ? `- ${formatCurrency(typeof finalCost.totalAmount === 'number' ? finalCost.totalAmount : parseFloat(finalCost.totalAmount))}` : ""}`
                 }
               </Button>
             </form>
