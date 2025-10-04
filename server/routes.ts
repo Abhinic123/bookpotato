@@ -1028,8 +1028,47 @@ The BorrowBooks Team`,
 
   app.get("/api/books/my", requireAuth, async (req, res) => {
     try {
-      const books = await storage.getBooksByOwner(req.session.userId!);
-      res.json(books);
+      const userId = req.session.userId!;
+      
+      // Get books owned by the user
+      const ownedBooks = await storage.getBooksByOwner(userId);
+      
+      // Get IDs of books that have been sold
+      const soldBookIds = await db
+        .select({ bookId: bookPurchases.bookId })
+        .from(bookPurchases)
+        .where(eq(bookPurchases.sellerId, userId));
+      const soldIds = new Set(soldBookIds.map(p => p.bookId));
+      
+      // Filter out sold books from owned books
+      const unsoldOwnedBooks = ownedBooks.filter(book => !soldIds.has(book.id));
+      
+      // Get books purchased by the user
+      const purchases = await storage.getPurchasesByBuyer(userId);
+      const purchasedBooks = purchases.map(purchase => ({
+        id: purchase.bookId,
+        title: purchase.book.title,
+        author: purchase.book.author,
+        imageUrl: purchase.book.imageUrl,
+        genre: '',
+        condition: 'Good',
+        dailyFee: '0',
+        ownerId: userId,
+        societyId: purchase.societyId,
+        isAvailable: true,
+        description: null,
+        isbn: null,
+        coverImageUrl: null,
+        sellingPrice: null,
+        createdAt: purchase.createdAt,
+        updatedAt: purchase.createdAt,
+        isPurchased: true
+      }));
+      
+      // Combine unsold owned books and purchased books
+      const allBooks = [...unsoldOwnedBooks, ...purchasedBooks];
+      
+      res.json(allBooks);
     } catch (error) {
       console.error("Get my books error:", error);
       res.status(500).json({ message: "Failed to fetch your books" });
