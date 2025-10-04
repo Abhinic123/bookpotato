@@ -152,7 +152,19 @@ export default function Browse() {
           </div>
         ) : filteredBooks.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBooks.map((book: BookWithOwner) => (
+            {filteredBooks.map((book: BookWithOwner) => {
+              if (book.id === 111) {
+                console.log('📚 Book 111 debug:', {
+                  id: book.id,
+                  title: book.title,
+                  sellingPrice: book.sellingPrice,
+                  isAvailable: book.isAvailable,
+                  ownerId: book.ownerId,
+                  currentUserId: user?.user?.id,
+                  onBuyCondition: book.isAvailable && book.ownerId !== user?.user?.id && book.sellingPrice
+                });
+              }
+              return (
               <BookCard
                 key={book.id}
                 book={book}
@@ -165,7 +177,7 @@ export default function Browse() {
                 variant="grid"
                 showOwner={true}
               />
-            ))}
+            )})}
           </div>
         ) : (
           <Card>
