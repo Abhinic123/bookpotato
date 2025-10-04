@@ -176,10 +176,20 @@ export default function BorrowBookModal({ book, open, onOpenChange, initialTrans
     },
     onSuccess: (data: any, variables) => {
       if (variables.transactionType === "buy") {
+        const { sellerInfo } = data || {};
+        
+        let purchaseMessage = "The book is now yours! Check 'My Books > Bought' to see your purchase.";
+        
+        if (sellerInfo && sellerInfo.flatWing && sellerInfo.buildingName) {
+          purchaseMessage = `Please go to ${sellerInfo.flatWing}, ${sellerInfo.buildingName} to collect your book. In case you want to call, the phone number is ${sellerInfo.phone || 'not provided'}`;
+        } else {
+          purchaseMessage = "The book is now yours! Please contact the seller for collection details.";
+        }
+
         toast({
           title: "Book Purchased Successfully! 🎉",
-          description: "The book is now yours! Check 'My Books > Bought' to see your purchase.",
-          duration: 5000,
+          description: purchaseMessage,
+          duration: 8000,
         });
       } else {
         const { collectionInfo } = data || {};
