@@ -73,6 +73,7 @@ export default function EnhancedBrowse() {
   const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showBorrowModal, setShowBorrowModal] = useState(false);
+  const [initialTransactionType, setInitialTransactionType] = useState<"borrow" | "buy">("borrow");
 
   // Fetch books with advanced filtering
   const { data: booksResponse, isLoading } = useQuery({
@@ -428,12 +429,13 @@ export default function EnhancedBrowse() {
                   variant="grid"
                   onBorrow={book.isAvailable && book.ownerId !== user?.user?.id ? () => {
                     setSelectedBook(book);
+                    setInitialTransactionType("borrow");
                     setShowBorrowModal(true);
                   } : undefined}
                   onBuy={book.ownerId !== user?.user?.id ? () => {
-                    // TODO: Add buy modal/functionality
-                    console.log('Buy book:', book.title, 'for ₹', book.sellingPrice);
-                    alert(`Purchase functionality coming soon! Book: ${book.title}, Price: ₹${book.sellingPrice}`);
+                    setSelectedBook(book);
+                    setInitialTransactionType("buy");
+                    setShowBorrowModal(true);
                   } : undefined}
                   onEdit={book.ownerId === user?.user?.id ? () => {
                     // TODO: Add edit functionality
@@ -458,12 +460,13 @@ export default function EnhancedBrowse() {
         }}
         onBorrow={(book) => {
           setShowDetailsModal(false);
+          setInitialTransactionType("borrow");
           setShowBorrowModal(true);
         }}
         onBuy={(book) => {
-          // TODO: Add buy modal/functionality
-          console.log('Buy book:', book.title, 'for ₹', book.sellingPrice);
-          alert(`Purchase functionality coming soon! Book: ${book.title}, Price: ₹${book.sellingPrice}`);
+          setShowDetailsModal(false);
+          setInitialTransactionType("buy");
+          setShowBorrowModal(true);
         }}
         user={user?.user}
       />
@@ -478,6 +481,7 @@ export default function EnhancedBrowse() {
             setSelectedBook(null);
           }
         }}
+        initialTransactionType={initialTransactionType}
       />
     </div>
   );

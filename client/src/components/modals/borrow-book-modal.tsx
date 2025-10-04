@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,6 +57,7 @@ interface BorrowBookModalProps {
   book: BookWithOwner | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialTransactionType?: "borrow" | "buy";
 }
 
 const durationOptions = [
@@ -66,7 +67,7 @@ const durationOptions = [
   { value: "30", label: "1 month", days: 30 },
 ];
 
-export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBookModalProps) {
+export default function BorrowBookModal({ book, open, onOpenChange, initialTransactionType = "borrow" }: BorrowBookModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showBrocksModal, setShowBrocksModal] = useState(false);
@@ -91,11 +92,20 @@ export default function BorrowBookModal({ book, open, onOpenChange }: BorrowBook
   const form = useForm<BorrowFormData>({
     resolver: zodResolver(borrowSchema),
     defaultValues: {
-      transactionType: "borrow",
+      transactionType: initialTransactionType,
       duration: "",
       paymentMethod: "card",
     },
   });
+
+  // Update form when initialTransactionType changes
+  useEffect(() => {
+    if (open) {
+      form.setValue("transactionType", initialTransactionType);
+      form.setValue("duration", "");
+      setAppliedBrocks(null);
+    }
+  }, [open, initialTransactionType, form]);
 
   const watchedTransactionType = form.watch("transactionType");
   const watchedDuration = form.watch("duration");
