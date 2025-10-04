@@ -102,7 +102,7 @@ export default function BookCard({
                       }}
                       size="sm"
                       variant="secondary"
-                      className="flex-1"
+                      className={`flex-1 ${!book.sellingPrice ? 'opacity-50 cursor-not-allowed' : ''}`}
                       disabled={!book.sellingPrice}
                       data-testid={`button-buy-${book.id}`}
                     >
@@ -217,6 +217,7 @@ export default function BookCard({
                     }}
                     size="sm"
                     variant="secondary"
+                    className={!book.sellingPrice ? 'opacity-50 cursor-not-allowed' : ''}
                     disabled={!book.sellingPrice}
                     data-testid={`button-buy-${book.id}`}
                   >
