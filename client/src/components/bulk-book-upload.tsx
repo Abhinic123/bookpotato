@@ -20,6 +20,7 @@ interface DetectedBook {
   description?: string;
   imageUrl?: string;
   dailyFee: string;
+  sellingPrice?: string;
   condition: string;
   selected: boolean;
   isbnLoading?: boolean;
@@ -111,6 +112,7 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
         genre: book.genre || "Fiction",
         description: book.description || "",
         dailyFee: "10.00",
+        sellingPrice: "",
         condition: "Good",
         selected: true,
         isbnLoading: false,
@@ -190,6 +192,7 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
             imageUrl: book.imageUrl,
             condition: book.condition,
             dailyFee: parseFloat(book.dailyFee),
+            sellingPrice: book.sellingPrice ? parseFloat(book.sellingPrice) : null,
             societyId: selectedSociety,
           }))
         }),
@@ -428,6 +431,7 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
                   <TableHead>ISBN</TableHead>
                   <TableHead>Condition</TableHead>
                   <TableHead>Daily Fee (₹)</TableHead>
+                  <TableHead>Selling Price (₹)</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -489,6 +493,17 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
                         onChange={(e) => updateBookField(index, 'dailyFee', e.target.value)}
                         className="w-20"
                         min="1"
+                        step="0.01"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Input
+                        type="number"
+                        value={book.sellingPrice || ''}
+                        onChange={(e) => updateBookField(index, 'sellingPrice', e.target.value)}
+                        placeholder="Optional"
+                        className="w-24"
+                        min="0"
                         step="0.01"
                       />
                     </TableCell>
