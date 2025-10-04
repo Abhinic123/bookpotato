@@ -92,18 +92,15 @@ export default function BookCard({
                       Borrow
                     </Button>
                   )}
-                  {onBuy && (
+                  {onBuy && book.sellingPrice && (
                     <Button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (book.sellingPrice) {
-                          onBuy(book);
-                        }
+                        onBuy(book);
                       }}
                       size="sm"
                       variant="secondary"
-                      className={`flex-1 ${!book.sellingPrice ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      disabled={!book.sellingPrice}
+                      className="flex-1"
                       data-testid={`button-buy-${book.id}`}
                     >
                       Buy
@@ -207,18 +204,14 @@ export default function BookCard({
                     Borrow
                   </Button>
                 )}
-                {onBuy && (
+                {onBuy && book.sellingPrice && (
                   <Button 
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (book.sellingPrice) {
-                        onBuy(book);
-                      }
+                      onBuy(book);
                     }}
                     size="sm"
                     variant="secondary"
-                    className={!book.sellingPrice ? 'opacity-50 cursor-not-allowed' : ''}
-                    disabled={!book.sellingPrice}
                     data-testid={`button-buy-${book.id}`}
                   >
                     Buy
