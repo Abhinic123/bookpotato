@@ -20,6 +20,28 @@ interface EarningsData {
     earned: number;
     spent: number;
     netWorth: number;
+    earningTransactions?: Array<{
+      id: number;
+      amount: number;
+      type: string;
+      description: string;
+      createdAt: string;
+      source?: string;
+      bookTitle?: string;
+      borrowerName?: string;
+      buyerName?: string;
+    }>;
+    spendingTransactions?: Array<{
+      id: number;
+      amount: number;
+      type: string;
+      description: string;
+      createdAt: string;
+      source?: string;
+      bookTitle?: string;
+      lenderName?: string;
+      sellerName?: string;
+    }>;
   };
   brocks: {
     earned: number;
@@ -453,10 +475,10 @@ export default function EarningsPage() {
                   <div>
                     <h3 className="text-lg font-semibold mb-4 flex items-center">
                       <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
-                      Money Earnings ({earningsData?.lentRentals?.length || 0})
+                      Money Earnings ({earningsData?.money?.earningTransactions?.length || 0})
                     </h3>
                     <div className="space-y-4">
-                      {earningsData?.lentRentals?.length === 0 ? (
+                      {!earningsData?.money?.earningTransactions || earningsData?.money?.earningTransactions?.length === 0 ? (
                         <Card>
                           <CardContent className="pt-6 text-center">
                             <TrendingUp className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -465,35 +487,29 @@ export default function EarningsPage() {
                           </CardContent>
                         </Card>
                       ) : (
-                        earningsData?.lentRentals?.map((rental) => (
-                          <Card key={rental.id} className="hover:shadow-md transition-shadow">
+                        earningsData?.money?.earningTransactions?.map((transaction) => (
+                          <Card key={transaction.id} className="hover:shadow-md transition-shadow">
                             <CardContent className="p-4">
-                              <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                   <h4 className="font-medium text-gray-900 mb-1">
-                                    {rental.bookTitle}
+                                    {transaction.bookTitle || transaction.description}
                                   </h4>
                                   <p className="text-sm text-gray-600 mb-2">
-                                    Borrowed by {rental.borrowerName}
+                                    {transaction.type === 'book_sale' 
+                                      ? `Sold to ${transaction.buyerName}`
+                                      : `Borrowed by ${transaction.borrowerName}`
+                                    }
                                   </p>
                                   <div className="flex items-center space-x-2 text-sm text-gray-500">
                                     <Calendar className="h-4 w-4" />
-                                    <span>
-                                      {new Date(rental.startDate).toLocaleDateString()} - {" "}
-                                      {rental.actualReturnDate 
-                                        ? new Date(rental.actualReturnDate).toLocaleDateString()
-                                        : new Date(rental.endDate).toLocaleDateString()
-                                      }
-                                    </span>
+                                    <span>{formatDateRelative(transaction.createdAt)}</span>
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-lg font-semibold text-green-600 mb-1">
-                                    +{formatCurrency(rental.amount)}
+                                  <div className="text-lg font-semibold text-green-600">
+                                    +{formatCurrency(transaction.amount)}
                                   </div>
-                                  <Badge className={getStatusColor(rental.status)}>
-                                    {getStatusText(rental.status)}
-                                  </Badge>
                                 </div>
                               </div>
                             </CardContent>
@@ -507,10 +523,10 @@ export default function EarningsPage() {
                   <div>
                     <h3 className="text-lg font-semibold mb-4 flex items-center">
                       <TrendingDown className="h-5 w-5 mr-2 text-red-600" />
-                      Money Spending ({earningsData?.borrowedRentals?.filter(r => r.paymentMethod !== 'brocks')?.length || 0})
+                      Money Spending ({earningsData?.money?.spendingTransactions?.length || 0})
                     </h3>
                     <div className="space-y-3">
-                      {earningsData?.borrowedRentals?.filter(rental => rental.paymentMethod !== 'brocks')?.length === 0 ? (
+                      {!earningsData?.money?.spendingTransactions || earningsData?.money?.spendingTransactions?.length === 0 ? (
                         <Card>
                           <CardContent className="pt-6 text-center">
                             <TrendingDown className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -519,39 +535,28 @@ export default function EarningsPage() {
                           </CardContent>
                         </Card>
                       ) : (
-                        earningsData?.borrowedRentals?.filter(rental => rental.paymentMethod !== 'brocks')?.map((rental) => (
-                          <Card key={rental.id} className="hover:shadow-md transition-shadow">
+                        earningsData?.money?.spendingTransactions?.map((transaction) => (
+                          <Card key={transaction.id} className="hover:shadow-md transition-shadow">
                             <CardContent className="p-4">
-                              <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-start justify-between">
                                 <div className="flex-1">
                                   <h4 className="font-medium text-gray-900 mb-1">
-                                    {rental.bookTitle}
+                                    {transaction.bookTitle || transaction.description}
                                   </h4>
                                   <p className="text-sm text-gray-600 mb-2">
-                                    Lent by {rental.lenderName}
+                                    {transaction.type === 'book_purchase' 
+                                      ? `Purchased from ${transaction.sellerName}`
+                                      : `Lent by ${transaction.lenderName}`
+                                    }
                                   </p>
                                   <div className="flex items-center space-x-2 text-sm text-gray-500">
                                     <Calendar className="h-4 w-4" />
-                                    <span>
-                                      {new Date(rental.startDate).toLocaleDateString()} - {" "}
-                                      {rental.actualReturnDate 
-                                        ? new Date(rental.actualReturnDate).toLocaleDateString()
-                                        : new Date(rental.endDate).toLocaleDateString()
-                                      }
-                                    </span>
+                                    <span>{formatDateRelative(transaction.createdAt)}</span>
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <div className="text-lg font-semibold text-red-600 mb-1">
-                                    -{formatCurrency(rental.amount)}
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
-                                      Money
-                                    </Badge>
-                                    <Badge className={getStatusColor(rental.status)}>
-                                      {getStatusText(rental.status)}
-                                    </Badge>
+                                  <div className="text-lg font-semibold text-red-600">
+                                    -{formatCurrency(transaction.amount)}
                                   </div>
                                 </div>
                               </div>
