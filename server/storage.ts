@@ -953,9 +953,21 @@ export class DatabaseStorage implements IStorage {
         eq(rentalExtensions.lenderId, userId),
         eq(rentalExtensions.paymentStatus, 'completed')
       ));
+
+    // Calculate total earnings from book sales
+    const salesEarningsResult = await db
+      .select({ 
+        salesEarnings: sql<string>`COALESCE(SUM(CAST(${bookPurchases.sellerAmount} AS DECIMAL)), 0)` 
+      })
+      .from(bookPurchases)
+      .where(and(
+        eq(bookPurchases.sellerId, userId),
+        eq(bookPurchases.paymentStatus, 'completed')
+      ));
     
     const totalEarnings = parseFloat(earningsResult[0]?.totalEarnings || '0') + 
-                         parseFloat(extensionEarningsResult[0]?.extensionEarnings || '0');
+                         parseFloat(extensionEarningsResult[0]?.extensionEarnings || '0') +
+                         parseFloat(salesEarningsResult[0]?.salesEarnings || '0');
     
     return {
       borrowedBooks: borrowedBooks.count,
