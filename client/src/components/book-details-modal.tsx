@@ -16,6 +16,7 @@ interface BookDetailsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onBorrow?: (book: BookWithOwner) => void;
+  onBuy?: (book: BookWithOwner) => void;
   onEdit?: (book: BookWithOwner) => void;
   user?: { id: number; name?: string };
 }
@@ -24,7 +25,8 @@ export default function BookDetailsModal({
   book, 
   open, 
   onOpenChange, 
-  onBorrow, 
+  onBorrow,
+  onBuy, 
   onEdit,
   user
 }: BookDetailsModalProps) {
@@ -50,7 +52,7 @@ export default function BookDetailsModal({
           <div className="w-full h-48 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center mb-4 relative overflow-hidden">
             {book.coverImageUrl || book.imageUrl ? (
               <img 
-                src={book.coverImageUrl || book.imageUrl} 
+                src={(book.coverImageUrl || book.imageUrl)!} 
                 alt={book.title}
                 className="w-full h-full object-cover rounded-lg"
               />
@@ -85,6 +87,13 @@ export default function BookDetailsModal({
               <span className="text-sm font-medium text-gray-700">Daily Fee:</span>
               <span className="text-lg font-bold text-primary">{formatCurrency(book.dailyFee)}/day</span>
             </div>
+            
+            {book.sellingPrice && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Selling Price:</span>
+                <span className="text-lg font-bold text-green-600">{formatCurrency(book.sellingPrice)}</span>
+              </div>
+            )}
             
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Status:</span>
@@ -153,15 +162,30 @@ export default function BookDetailsModal({
         {/* Action Buttons - Fixed at bottom */}
         <div className="flex-shrink-0 pt-4 border-t">
           <div className="flex space-x-2">
-            {book.isAvailable && onBorrow ? (
-              <Button 
-                onClick={() => {
-                  onBorrow(book);
-                }}
-                className="flex-1"
-              >
-                Borrow Book
-              </Button>
+            {book.isAvailable && (onBorrow || onBuy) ? (
+              <>
+                {onBorrow && (
+                  <Button 
+                    onClick={() => {
+                      onBorrow(book);
+                    }}
+                    className="flex-1"
+                  >
+                    Borrow Book
+                  </Button>
+                )}
+                {onBuy && book.sellingPrice && (
+                  <Button 
+                    onClick={() => {
+                      onBuy(book);
+                    }}
+                    variant="secondary"
+                    className="flex-1"
+                  >
+                    Buy for ₹{book.sellingPrice}
+                  </Button>
+                )}
+              </>
             ) : onEdit ? (
               <Button 
                 onClick={() => {

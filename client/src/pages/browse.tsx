@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import BookCard from "@/components/book-card";
 import BorrowBookModal from "@/components/modals/borrow-book-modal";
+import BookDetailsModal from "@/components/book-details-modal";
 import { debounce } from "@/lib/utils";
 import type { BookWithOwner } from "@shared/schema";
 
@@ -17,6 +18,7 @@ export default function Browse() {
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [selectedBook, setSelectedBook] = useState<BookWithOwner | null>(null);
   const [showBorrowModal, setShowBorrowModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedSociety, setSelectedSociety] = useState<any>(null);
 
   const { data: societies } = useQuery({
@@ -77,6 +79,17 @@ export default function Browse() {
   const handleBorrowBook = (book: BookWithOwner) => {
     setSelectedBook(book);
     setShowBorrowModal(true);
+  };
+
+  const handleBuyBook = (book: BookWithOwner) => {
+    // TODO: Open buy modal or handle purchase
+    console.log('Buy book:', book.title, 'for ₹', book.sellingPrice);
+    alert(`Purchase functionality coming soon! Book: ${book.title}, Price: ₹${book.sellingPrice}`);
+  };
+
+  const handleBookClick = (book: BookWithOwner) => {
+    setSelectedBook(book);
+    setShowDetailsModal(true);
   };
 
   if (!currentSociety) {
@@ -143,7 +156,9 @@ export default function Browse() {
               <BookCard
                 key={book.id}
                 book={book}
+                onClick={handleBookClick}
                 onBorrow={book.isAvailable && book.ownerId !== user?.user?.id ? handleBorrowBook : undefined}
+                onBuy={book.isAvailable && book.ownerId !== user?.user?.id && book.sellingPrice ? handleBuyBook : undefined}
                 onEdit={book.ownerId === user?.user?.id ? () => {
                   console.log('Edit book:', book.id);
                 } : undefined}
@@ -187,6 +202,18 @@ export default function Browse() {
         book={selectedBook}
         open={showBorrowModal}
         onOpenChange={setShowBorrowModal}
+      />
+
+      <BookDetailsModal
+        open={showDetailsModal}
+        onOpenChange={(open) => {
+          setShowDetailsModal(open);
+          if (!open) setSelectedBook(null);
+        }}
+        book={selectedBook}
+        user={user?.user}
+        onBorrow={selectedBook?.isAvailable && selectedBook?.ownerId !== user?.user?.id ? handleBorrowBook : undefined}
+        onBuy={selectedBook?.isAvailable && selectedBook?.ownerId !== user?.user?.id && selectedBook?.sellingPrice ? handleBuyBook : undefined}
       />
     </div>
   );

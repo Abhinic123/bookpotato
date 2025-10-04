@@ -12,6 +12,7 @@ interface BookCardProps {
   onBorrow?: (book: BookWithOwner) => void;
   onBuy?: (book: BookWithOwner) => void;
   onEdit?: (book: BookWithOwner) => void;
+  onClick?: (book: BookWithOwner) => void;
   showOwner?: boolean;
   variant?: "grid" | "list";
 }
@@ -20,7 +21,8 @@ export default function BookCard({
   book, 
   onBorrow,
   onBuy, 
-  onEdit, 
+  onEdit,
+  onClick, 
   showOwner = true, 
   variant = "list" 
 }: BookCardProps) {
@@ -29,7 +31,10 @@ export default function BookCard({
 
   if (variant === "grid") {
     return (
-      <Card className="book-card h-full flex flex-col cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105">
+      <Card 
+        className="book-card h-full flex flex-col cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
+        onClick={() => onClick?.(book)}
+      >
         <CardContent className="p-0 flex flex-col h-full">
           {/* Book cover image area */}
           <div className="w-full h-48 relative overflow-hidden rounded-t-lg">
@@ -127,7 +132,10 @@ export default function BookCard({
   }
 
   return (
-    <Card className="book-card">
+    <Card 
+      className="book-card cursor-pointer hover:shadow-md transition-shadow"
+      onClick={() => onClick?.(book)}
+    >
       <CardContent className="p-4">
         <div className="flex items-start space-x-3">
           {/* Book cover image */}
