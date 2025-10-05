@@ -72,7 +72,7 @@ const bookSchema = z.object({
     (val) => !val || (Number(val) >= 0),
     "Selling price must be a positive number or empty"
   ),
-  societyId: z.number().min(1, "Society is required"),
+  societyId: z.number().min(1, "Hub is required"),
 });
 
 type BookFormData = z.infer<typeof bookSchema>;
@@ -461,20 +461,20 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
                   name="societyId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Society</FormLabel>
+                      <FormLabel>Hub</FormLabel>
                       <Select 
                         onValueChange={(value) => field.onChange(Number(value))}
                         defaultValue={field.value?.toString()}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select society" />
+                            <SelectValue placeholder="Select hub" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
                           {(societies as any[])?.map((society: any) => (
                             <SelectItem key={society.id} value={society.id.toString()}>
-                              {society.name}
+                              {society.name} ({society.hubType})
                             </SelectItem>
                           ))}
                         </SelectContent>
