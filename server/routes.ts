@@ -2384,6 +2384,7 @@ Submitted on: ${new Date().toLocaleString()}
             city: request.city,
             apartmentCount: request.apartmentCount,
             location: request.location,
+            hubType: request.hubType,
             code: generateCode(request.name),
             status: 'active',
             createdBy: request.requestedBy
