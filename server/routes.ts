@@ -5,7 +5,7 @@ import { join } from "path";
 import { storage } from "./storage";
 import { WebSocketServer, WebSocket } from "ws";
 import { insertUserSchema, insertSocietySchema, insertBookSchema, insertBookRentalSchema, users, rentalExtensions, societyRequests, societyMembers } from "@shared/schema";
-import { userGenrePreferences, wishlists, bookReviews, books, feedbackTable, bookPurchases } from "@shared/schema";
+import { userGenrePreferences, wishlists, bookReviews, books, feedbackTable, bookPurchases, bookHubs } from "@shared/schema";
 import { z } from "zod";
 import { db, pool } from "./db";
 import { sql, eq, and, inArray, not, desc } from "drizzle-orm";
@@ -1157,7 +1157,7 @@ The BorrowBooks Team`,
       });
       
       // Get all hubs the user is a member of
-      const userHubs = await storage.getUserSocieties(req.session.userId!);
+      const userHubs = await storage.getSocietiesByUser(req.session.userId!);
       
       if (!userHubs || userHubs.length === 0) {
         return res.status(400).json({ message: "You must be a member of at least one hub to add books" });
