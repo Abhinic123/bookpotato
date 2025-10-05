@@ -45,17 +45,6 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
   const [detectedBooks, setDetectedBooks] = useState<DetectedBook[]>([]);
   const [processingProgress, setProcessingProgress] = useState(0);
 
-  // Get user societies for book assignment
-  const { data: societies = [] } = useQuery({
-    queryKey: ["/api/societies/my"],
-    queryFn: async () => {
-      const response = await fetch("/api/societies/my");
-      if (!response.ok) return [];
-      return response.json();
-    },
-  });
-
-  const [selectedSociety, setSelectedSociety] = useState<number | null>(null);
 
   // Process bookshelf image using OpenAI Vision
   const processImageMutation = useMutation({
@@ -193,7 +182,6 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
             condition: book.condition,
             dailyFee: parseFloat(book.dailyFee),
             sellingPrice: book.sellingPrice ? parseFloat(book.sellingPrice) : null,
-            societyId: selectedSociety,
           }))
         }),
       });
@@ -248,11 +236,6 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
   };
 
   const handleUploadBooks = () => {
-    if (!selectedSociety) {
-      toast({ title: "Please select a society", variant: "destructive" });
-      return;
-    }
-    
     const selectedBooks = detectedBooks.filter(book => book.selected);
     if (selectedBooks.length === 0) {
       toast({ title: "Please select at least one book", variant: "destructive" });
@@ -405,22 +388,6 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Select Society</label>
-            <Select value={selectedSociety?.toString()} onValueChange={(value) => setSelectedSociety(parseInt(value))}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Choose a society to add books to" />
-              </SelectTrigger>
-              <SelectContent>
-                {societies.map((society: any) => (
-                  <SelectItem key={society.id} value={society.id.toString()}>
-                    {society.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
@@ -551,7 +518,7 @@ export function BulkBookUpload({ onClose, onBooksAdded }: BulkBookUploadProps) {
             </div>
             <Button
               onClick={handleUploadBooks}
-              disabled={selectedCount === 0 || !selectedSociety}
+              disabled={selectedCount === 0}
             >
               Add {selectedCount} Books
             </Button>
