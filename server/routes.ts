@@ -1099,18 +1099,35 @@ The BorrowBooks Team`,
 
   app.post("/api/books", requireAuth, async (req, res) => {
     try {
+      const { hubIds, ...bookFields } = req.body;
+      
       const bookData = insertBookSchema.parse({
-        ...req.body,
+        ...bookFields,
         ownerId: req.session.userId!
       });
       
-      // Verify user is member of the society
-      const isMember = await storage.isMemberOfSociety(bookData.societyId, req.session.userId!);
-      if (!isMember) {
-        return res.status(403).json({ message: "You must be a member of this society to add books" });
+      // Verify hubIds is an array and not empty
+      if (!Array.isArray(hubIds) || hubIds.length === 0) {
+        return res.status(400).json({ message: "Please select at least one hub (Society, School, or Office)" });
+      }
+      
+      // Verify user is member of all selected hubs
+      for (const hubId of hubIds) {
+        const isMember = await storage.isMemberOfSociety(hubId, req.session.userId!);
+        if (!isMember) {
+          return res.status(403).json({ message: "You must be a member of all selected hubs to add books" });
+        }
       }
 
       const book = await storage.createBook(bookData);
+      
+      // Create book_hub records for each selected hub
+      for (const hubId of hubIds) {
+        await storage.createBookHub({
+          bookId: book.id,
+          societyId: hubId
+        });
+      }
       
       // Award Brocks credits for book upload
       const creditsPerUploadSetting = await storage.getRewardSetting('credits_per_book_upload');
