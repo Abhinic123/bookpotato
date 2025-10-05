@@ -33,6 +33,7 @@ export const societies = pgTable("societies", {
   name: text("name").notNull(),
   description: text("description"),
   code: text("code").notNull().unique(),
+  hubType: text("hub_type").notNull().default("society"), // society, school, office
   city: text("city").notNull(),
   apartmentCount: integer("apartment_count").notNull(),
   location: text("location"),
