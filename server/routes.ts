@@ -829,6 +829,26 @@ The BorrowBooks Team`,
       const member = await storage.joinSociety(societyId, req.session.userId!);
       console.log("✅ Successfully joined society:", member);
       
+      // Automatically add all user's books to this new hub
+      const userBooks = await storage.getUserBooks(req.session.userId!);
+      for (const book of userBooks) {
+        // Check if book is already tagged to this hub
+        const existingTag = await db.select()
+          .from(bookHubs)
+          .where(and(
+            eq(bookHubs.bookId, book.id),
+            eq(bookHubs.societyId, societyId)
+          ))
+          .limit(1);
+        
+        if (existingTag.length === 0) {
+          await storage.createBookHub({
+            bookId: book.id,
+            societyId: societyId
+          });
+        }
+      }
+      
       return res.json({ 
         success: true, 
         member: member,
@@ -860,6 +880,16 @@ The BorrowBooks Team`,
 
       // Remove membership by setting isActive to false
       await storage.leaveSociety(societyId, req.session.userId!);
+      
+      // Automatically remove all user's books from this hub
+      const userBooks = await storage.getUserBooks(req.session.userId!);
+      for (const book of userBooks) {
+        await db.delete(bookHubs)
+          .where(and(
+            eq(bookHubs.bookId, book.id),
+            eq(bookHubs.societyId, societyId)
+          ));
+      }
       
       res.json({ success: true, message: "Successfully left society" });
     } catch (error: any) {
