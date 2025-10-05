@@ -23,11 +23,11 @@ export interface IStorage {
   generateUniqueUserNumber(): Promise<number>;
   updateUser(id: number, updates: Partial<User>): Promise<User | undefined>;
   
-  // Societies
+  // Societies/Hubs
   getSociety(id: number): Promise<Society | undefined>;
   getSocietyByCode(code: string): Promise<Society | undefined>;
-  getSocietiesByUser(userId: number): Promise<SocietyWithStats[]>;
-  getAvailableSocieties(userId: number): Promise<SocietyWithStats[]>;
+  getSocietiesByUser(userId: number, hubType?: string): Promise<SocietyWithStats[]>;
+  getAvailableSocieties(userId: number, hubType?: string): Promise<SocietyWithStats[]>;
   createSociety(society: InsertSociety): Promise<Society>;
   joinSociety(societyId: number, userId: number): Promise<SocietyMember>;
   leaveSociety(societyId: number, userId: number): Promise<boolean>;
@@ -223,13 +223,23 @@ export class DatabaseStorage implements IStorage {
     return society || undefined;
   }
 
-  async getSocietiesByUser(userId: number): Promise<SocietyWithStats[]> {
+  async getSocietiesByUser(userId: number, hubType?: string): Promise<SocietyWithStats[]> {
+    const whereConditions = [
+      eq(societyMembers.userId, userId),
+      eq(societyMembers.isActive, true)
+    ];
+    
+    if (hubType) {
+      whereConditions.push(eq(societies.hubType, hubType));
+    }
+    
     const userSocieties = await db
       .select({
         id: societies.id,
         name: societies.name,
         code: societies.code,
         description: societies.description,
+        hubType: societies.hubType,
         city: societies.city,
         apartmentCount: societies.apartmentCount,
         location: societies.location,
@@ -239,7 +249,7 @@ export class DatabaseStorage implements IStorage {
       })
       .from(societies)
       .innerJoin(societyMembers, eq(societies.id, societyMembers.societyId))
-      .where(and(eq(societyMembers.userId, userId), eq(societyMembers.isActive, true)));
+      .where(and(...whereConditions));
     
     // Calculate dynamic stats for each society
     const societiesWithStats = await Promise.all(
@@ -266,9 +276,12 @@ export class DatabaseStorage implements IStorage {
     return societiesWithStats;
   }
 
-  async getAvailableSocieties(userId: number): Promise<SocietyWithStats[]> {
-    // Get all societies
-    const allSocieties = await db.select().from(societies);
+  async getAvailableSocieties(userId: number, hubType?: string): Promise<SocietyWithStats[]> {
+    // Get all societies (optionally filtered by hubType)
+    let query = db.select().from(societies);
+    const allSocieties = hubType 
+      ? await query.where(eq(societies.hubType, hubType))
+      : await query;
     
     // Get societies user is actively part of
     const joinedSocieties = await db

@@ -613,7 +613,8 @@ The BorrowBooks Team`,
   // Society routes
   app.get("/api/societies/my", requireAuth, async (req, res) => {
     try {
-      const societies = await storage.getSocietiesByUser(req.session.userId!);
+      const hubType = req.query.hubType as string | undefined;
+      const societies = await storage.getSocietiesByUser(req.session.userId!, hubType);
       res.json(societies);
     } catch (error) {
       console.error("Get my societies error:", error);
@@ -623,7 +624,8 @@ The BorrowBooks Team`,
 
   app.get("/api/societies/available", requireAuth, async (req, res) => {
     try {
-      const societies = await storage.getAvailableSocieties(req.session.userId!);
+      const hubType = req.query.hubType as string | undefined;
+      const societies = await storage.getAvailableSocieties(req.session.userId!, hubType);
       
       res.json(societies);
     } catch (error) {
