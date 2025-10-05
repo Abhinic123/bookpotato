@@ -44,10 +44,11 @@ const INDIAN_CITIES = [
 ];
 
 const createSocietySchema = z.object({
-  name: z.string().min(1, "Society name is required"),
+  name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
+  hubType: z.enum(["society", "school", "office"]).default("society"),
   city: z.string().min(1, "City is required"),
-  apartmentCount: z.number().min(1, "Apartment count must be at least 1"),
+  apartmentCount: z.number().min(1, "Member count must be at least 1"),
   location: z.string().optional(),
 });
 
@@ -176,6 +177,7 @@ export default function Societies() {
     defaultValues: {
       name: "",
       description: "",
+      hubType: "society",
       city: "",
       apartmentCount: 0,
       location: "",
@@ -653,22 +655,24 @@ export default function Societies() {
     <div className="p-4 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Societies</h1>
+          <h1 className="text-2xl font-bold text-text-primary">Hubs</h1>
           <p className="text-sm text-text-secondary mt-1">
-            Join communities and share books with your neighbors
+            Join societies, schools, and offices to share books
           </p>
         </div>
         <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
-          Create Society
+          Create Hub
         </Button>
       </div>
 
-      <Tabs defaultValue="my-societies" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <TabsList>
-            <TabsTrigger value="my-societies">My Societies</TabsTrigger>
-            <TabsTrigger value="available">Available to Join</TabsTrigger>
+            <TabsTrigger value="society" data-testid="tab-society">Societies</TabsTrigger>
+            <TabsTrigger value="school" data-testid="tab-school">Schools</TabsTrigger>
+            <TabsTrigger value="office" data-testid="tab-office">Offices</TabsTrigger>
+            <TabsTrigger value="my-hubs" data-testid="tab-my-hubs">My Hubs</TabsTrigger>
           </TabsList>
           
           <div className="flex items-center space-x-2">
@@ -688,19 +692,27 @@ export default function Societies() {
           </div>
         </div>
 
-        <TabsContent value="my-societies" className="space-y-4">
-          {renderMySocieties()}
+        <TabsContent value="society" className="space-y-4">
+          {renderAvailableSocieties()}
         </TabsContent>
 
-        <TabsContent value="available" className="space-y-4">
+        <TabsContent value="school" className="space-y-4">
           {renderAvailableSocieties()}
+        </TabsContent>
+
+        <TabsContent value="office" className="space-y-4">
+          {renderAvailableSocieties()}
+        </TabsContent>
+
+        <TabsContent value="my-hubs" className="space-y-4">
+          {renderMySocieties()}
         </TabsContent>
       </Tabs>
 
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Society</DialogTitle>
+            <DialogTitle>Create New Hub</DialogTitle>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onCreateSubmit)} className="space-y-4">
@@ -709,10 +721,32 @@ export default function Societies() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Society Name</FormLabel>
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter society name" {...field} />
+                      <Input placeholder="Enter hub name" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="hubType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hub Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select hub type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="society">Society</SelectItem>
+                        <SelectItem value="school">School</SelectItem>
+                        <SelectItem value="office">Office</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -746,7 +780,7 @@ export default function Societies() {
                 name="apartmentCount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Number of Apartments</FormLabel>
+                    <FormLabel>Number of Members/Units</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -801,7 +835,7 @@ export default function Societies() {
                 )}
               />
               <Button type="submit" disabled={createMutation.isPending} className="w-full">
-                {createMutation.isPending ? "Creating..." : "Create Society"}
+                {createMutation.isPending ? "Creating..." : "Create Hub"}
               </Button>
             </form>
           </Form>
