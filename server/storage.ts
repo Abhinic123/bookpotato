@@ -387,6 +387,11 @@ export class DatabaseStorage implements IStorage {
       })
       .from(books)
       .innerJoin(users, eq(books.ownerId, users.id))
+      .innerJoin(societyMembers, and(
+        eq(societyMembers.userId, books.ownerId),
+        eq(societyMembers.societyId, societyId),
+        eq(societyMembers.isActive, true)
+      ))
       .where(eq(books.societyId, societyId));
     
     return results;
@@ -436,6 +441,11 @@ export class DatabaseStorage implements IStorage {
       })
       .from(books)
       .innerJoin(users, eq(books.ownerId, users.id))
+      .innerJoin(societyMembers, and(
+        eq(societyMembers.userId, books.ownerId),
+        eq(societyMembers.societyId, societyId),
+        eq(societyMembers.isActive, true)
+      ))
       .where(and(...whereConditions));
     
     return results;
@@ -1250,7 +1260,12 @@ export class DatabaseStorage implements IStorage {
           },
         })
         .from(books)
-        .innerJoin(users, eq(books.ownerId, users.id));
+        .innerJoin(users, eq(books.ownerId, users.id))
+        .innerJoin(societyMembers, and(
+          eq(societyMembers.userId, books.ownerId),
+          eq(societyMembers.societyId, books.societyId),
+          eq(societyMembers.isActive, true)
+        ));
 
       // Apply society filter
       if (filters.societyIds?.length > 0) {

@@ -3873,6 +3873,11 @@ Submitted on: ${new Date().toLocaleString()}
         })
         .from(books)
         .innerJoin(users, eq(books.ownerId, users.id))
+        .innerJoin(societyMembers, and(
+          eq(societyMembers.userId, books.ownerId),
+          eq(societyMembers.societyId, books.societyId),
+          eq(societyMembers.isActive, true)
+        ))
         .where(and(
           inArray(books.societyId, societyIds),
           inArray(books.genre, preferredGenres),
@@ -3907,6 +3912,11 @@ Submitted on: ${new Date().toLocaleString()}
         })
         .from(books)
         .innerJoin(users, eq(books.ownerId, users.id))
+        .innerJoin(societyMembers, and(
+          eq(societyMembers.userId, books.ownerId),
+          eq(societyMembers.societyId, books.societyId),
+          eq(societyMembers.isActive, true)
+        ))
         .where(and(
           inArray(books.societyId, societyIds),
           eq(books.isAvailable, true),
