@@ -796,7 +796,7 @@ The BorrowBooks Team`,
       const member = await storage.joinSociety(targetSocietyId, req.session.userId!);
       
       // Automatically add all user's books to this new hub
-      const userBooks = await storage.getUserBooks(req.session.userId!);
+      const userBooks = await storage.getBooksByOwner(req.session.userId!);
       for (const book of userBooks) {
         // Check if book is already tagged to this hub
         const existingTag = await db.select()
@@ -851,7 +851,7 @@ The BorrowBooks Team`,
       console.log("✅ Successfully joined society:", member);
       
       // Automatically add all user's books to this new hub
-      const userBooks = await storage.getUserBooks(req.session.userId!);
+      const userBooks = await storage.getBooksByOwner(req.session.userId!);
       for (const book of userBooks) {
         // Check if book is already tagged to this hub
         const existingTag = await db.select()
@@ -903,7 +903,7 @@ The BorrowBooks Team`,
       await storage.leaveSociety(societyId, req.session.userId!);
       
       // Automatically remove all user's books from this hub
-      const userBooks = await storage.getUserBooks(req.session.userId!);
+      const userBooks = await storage.getBooksByOwner(req.session.userId!);
       for (const book of userBooks) {
         await db.delete(bookHubs)
           .where(and(
