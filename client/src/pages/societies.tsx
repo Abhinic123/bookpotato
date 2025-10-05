@@ -728,41 +728,65 @@ export default function Societies() {
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onCreateSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter hub name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="hubType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hub Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select hub type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="society">Society</SelectItem>
-                        <SelectItem value="school">School</SelectItem>
-                        <SelectItem value="office">Office</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {(() => {
+                const selectedHubType = form.watch("hubType") || "society";
+                const hubTypeLabels = {
+                  society: {
+                    count: "Number of Members/Units",
+                    countPlaceholder: "Enter number of units",
+                    description: "Describe your society..."
+                  },
+                  school: {
+                    count: "Approximate Number of Students",
+                    countPlaceholder: "Enter approximate number of students",
+                    description: "Describe your school..."
+                  },
+                  office: {
+                    count: "Number of Employees",
+                    countPlaceholder: "Enter number of employees",
+                    description: "Describe your office..."
+                  }
+                };
+                
+                const labels = hubTypeLabels[selectedHubType as keyof typeof hubTypeLabels];
+                
+                return (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter hub name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="hubType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Hub Type</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select hub type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="society">Society</SelectItem>
+                              <SelectItem value="school">School</SelectItem>
+                              <SelectItem value="office">Office</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
               <FormField
                 control={form.control}
                 name="city"
@@ -787,68 +811,71 @@ export default function Societies() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="apartmentCount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Number of Members/Units</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="Enter apartment count"
-                        value={field.value || ""}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="location"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Location (Optional)</FormLabel>
-                    <div className="flex space-x-2">
-                      <FormControl>
-                        <Input placeholder="Enter specific location" {...field} />
-                      </FormControl>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={openLocationPicker}
-                        className="flex items-center space-x-2"
-                      >
-                        <MapPin className="w-4 h-4" />
-                        <span>Map</span>
-                      </Button>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description (Optional)</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="Describe your society..." 
-                        className="min-h-[80px]"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={createMutation.isPending} className="w-full">
-                {createMutation.isPending ? "Creating..." : "Create Hub"}
-              </Button>
+                    <FormField
+                      control={form.control}
+                      name="apartmentCount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{labels.count}</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              placeholder={labels.countPlaceholder}
+                              value={field.value || ""}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Location (Optional)</FormLabel>
+                          <div className="flex space-x-2">
+                            <FormControl>
+                              <Input placeholder="Enter specific location" {...field} />
+                            </FormControl>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={openLocationPicker}
+                              className="flex items-center space-x-2"
+                            >
+                              <MapPin className="w-4 h-4" />
+                              <span>Map</span>
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description (Optional)</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              placeholder={labels.description} 
+                              className="min-h-[80px]"
+                              {...field} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" disabled={createMutation.isPending} className="w-full">
+                      {createMutation.isPending ? "Creating..." : "Create Hub"}
+                    </Button>
+                  </>
+                );
+              })()}
             </form>
           </Form>
         </DialogContent>
