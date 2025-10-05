@@ -185,11 +185,23 @@ export default function Societies() {
   });
 
   const { data: mySocieties, isLoading: isLoadingMy } = useQuery({
-    queryKey: ["/api/societies/my", { hubType: activeTab === "my-hubs" ? undefined : activeTab }],
+    queryKey: ["/api/societies/my", activeTab],
+    enabled: activeTab === "my-hubs",
   });
 
   const { data: availableSocieties, isLoading: isLoadingAvailable } = useQuery({
-    queryKey: ["/api/societies/available", { hubType: activeTab === "my-hubs" ? undefined : activeTab }],
+    queryKey: ["/api/societies/available", activeTab],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (activeTab !== "my-hubs") {
+        params.append("hubType", activeTab);
+      }
+      const url = `/api/societies/available${params.toString() ? `?${params.toString()}` : ""}`;
+      const response = await fetch(url, { credentials: 'include' });
+      if (!response.ok) throw new Error('Failed to fetch');
+      return response.json();
+    },
+    enabled: activeTab !== "my-hubs",
   });
 
   // Get current user data to use their city as default
