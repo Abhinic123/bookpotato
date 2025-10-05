@@ -173,14 +173,22 @@ export default function Home() {
         <div className="mb-8">
           <Building2 className="h-16 w-16 text-text-secondary mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-text-primary mb-2">
-            Join a Society
+            Join a Hub
           </h2>
           <p className="text-text-secondary mb-6">
-            You need to join a society to start borrowing and lending books.
+            Join a society, school, or office to start borrowing and lending books.
           </p>
-          <Button onClick={() => navigate("/societies")}>
-            Explore Societies
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-2xl mx-auto">
+            <Button onClick={() => navigate("/societies?type=society")} className="flex-1" data-testid="button-join-society">
+              Join a Society
+            </Button>
+            <Button onClick={() => navigate("/societies?type=school")} className="flex-1" data-testid="button-join-school">
+              Join a School
+            </Button>
+            <Button onClick={() => navigate("/societies?type=office")} className="flex-1" data-testid="button-join-office">
+              Join an Office
+            </Button>
+          </div>
         </div>
       </div>
     );
