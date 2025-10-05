@@ -877,27 +877,21 @@ The BorrowBooks Team`,
   // Get all books from user's societies (sorted by newest first)
   app.get("/api/books/all", requireAuth, async (req, res) => {
     try {
-      // Get all societies the user is a member of
-      const userSocieties = await storage.getSocietiesByUser(req.session.userId!);
-      console.log("📚 API /books/all - User societies:", userSocieties.length);
+      // Get all books from user's hubs using book_hubs junction table
+      const allBooks = await storage.getBooksByUserSocieties(req.session.userId!);
+      console.log("📚 API /books/all - Total books found:", allBooks.length);
       
-      let allBooks: any[] = [];
-      for (const society of userSocieties) {
-        const societyBooks = await storage.getBooksBySociety(society.id);
-        console.log(`📚 Society ${society.name} has ${societyBooks.length} books`);
-        // Filter out user's own books
-        const otherBooks = societyBooks.filter(book => book.ownerId !== req.session.userId!);
-        allBooks.push(...otherBooks);
-      }
+      // Filter out user's own books
+      const otherBooks = allBooks.filter(book => book.ownerId !== req.session.userId!);
       
       // Sort books by creation date (newest first) for home page recent books
-      allBooks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      otherBooks.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       
-      console.log("📚 Total books found:", allBooks.length);
-      console.log("📚 Sample book:", allBooks[0]);
-      console.log("📚 Sending response:", JSON.stringify(allBooks).substring(0, 200) + "...");
+      console.log("📚 Books after filtering owner:", otherBooks.length);
+      console.log("📚 Sample book:", otherBooks[0]);
+      console.log("📚 Sending response:", JSON.stringify(otherBooks).substring(0, 200) + "...");
       
-      res.status(200).json(allBooks);
+      res.status(200).json(otherBooks);
     } catch (error) {
       console.error("❌ Get all books error:", error);
       res.status(500).json({ message: "Failed to fetch books" });

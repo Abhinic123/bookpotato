@@ -405,13 +405,14 @@ export class DatabaseStorage implements IStorage {
         }
       })
       .from(books)
+      .innerJoin(bookHubs, eq(books.id, bookHubs.bookId))
       .innerJoin(users, eq(books.ownerId, users.id))
       .innerJoin(societyMembers, and(
         eq(societyMembers.userId, books.ownerId),
-        eq(societyMembers.societyId, societyId),
+        eq(societyMembers.societyId, bookHubs.societyId),
         eq(societyMembers.isActive, true)
       ))
-      .where(eq(books.societyId, societyId));
+      .where(eq(bookHubs.societyId, societyId));
     
     return results;
   }
