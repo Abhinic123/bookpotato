@@ -1,8 +1,8 @@
-# BookShare - Digital Library Platform
+# BookPotato - Digital Library Platform
 
 ## Overview
 
-BookShare is a community-driven digital library platform facilitating book sharing within residential societies. It enables users to lend and borrow books, manage rentals with payment processing, utilize barcode scanning for book identification, and participate in a referral program. The platform aims to create a comprehensive rental system, offering a new way for community members to share resources and earn through their book collections.
+BookPotato (formerly BorrowBooks and BookShare) is a community-driven digital library platform facilitating book sharing within residential societies. It enables users to lend and borrow books, manage rentals with payment processing, utilize barcode scanning for book identification, and participate in a referral program. The platform aims to create a comprehensive rental system, offering a new way for community members to share resources and earn through their book collections.
 
 ## User Preferences
 

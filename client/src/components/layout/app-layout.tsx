@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, BookOpen, Home, Search, Users, Bookmark, Plus, LogOut, User, Settings, Wallet, Coins, Heart, MessageCircle } from "lucide-react";
+import logoImage from "@assets/WhatsApp Image 2025-10-05 at 17.24.19_1759671721044.jpeg";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -87,8 +88,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <header className="bg-white border-b border-gray-100 px-4 py-3 sticky top-0 z-30">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <BookOpen className="h-6 w-6 text-primary" />
-            <h1 className="text-lg font-semibold text-text-primary">BorrowBooks</h1>
+            <img src={logoImage} alt="BookPotato" className="h-8 w-8 object-contain rounded-full" />
+            <h1 className="text-lg font-semibold text-text-primary">BookPotato</h1>
           </div>
           <div className="flex items-center space-x-1 sm:space-x-3 min-w-0">
             <Link href="/earnings">

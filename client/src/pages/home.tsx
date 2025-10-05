@@ -614,7 +614,7 @@ export default function Home() {
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="text-center mb-4">
             <h3 className="text-lg font-semibold text-text-primary mb-2">Help Us Improve</h3>
-            <p className="text-sm text-text-secondary">Your feedback helps make BorrowBooks better for everyone</p>
+            <p className="text-sm text-text-secondary">Your feedback helps make BookPotato better for everyone</p>
           </div>
           <FeedbackButton variant="inline" />
         </div>

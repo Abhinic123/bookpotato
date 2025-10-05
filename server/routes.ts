@@ -217,10 +217,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const msg = {
         to: email,
         from: fromEmail,
-        subject: 'Password Reset - BorrowBooks',
+        subject: 'Password Reset - BookPotato',
         text: `Hi ${user.name},
 
-You requested a password reset for your BorrowBooks account.
+You requested a password reset for your BookPotato account.
 
 Click the link below to reset your password:
 ${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}
@@ -230,11 +230,11 @@ This link will expire in 1 hour.
 If you didn't request this reset, you can safely ignore this email.
 
 Best regards,
-The BorrowBooks Team`,
+The BookPotato Team`,
         html: `
           <h2>Password Reset Request</h2>
           <p>Hi ${user.name},</p>
-          <p>You requested a password reset for your BorrowBooks account.</p>
+          <p>You requested a password reset for your BookPotato account.</p>
           <p>Click the link below to reset your password:</p>
           <a href="${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}" 
              style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 16px 0;">
@@ -242,7 +242,7 @@ The BorrowBooks Team`,
           </a>
           <p>This link will expire in 1 hour.</p>
           <p>If you didn't request this reset, you can safely ignore this email.</p>
-          <p>Best regards,<br>The BorrowBooks Team</p>
+          <p>Best regards,<br>The BookPotato Team</p>
         `,
       };
 
@@ -1824,9 +1824,9 @@ The BorrowBooks Team`,
           const msg = {
             to: adminEmail,
             from: fromEmail,
-            subject: `New Feedback: ${category} - BorrowBooks`,
+            subject: `New Feedback: ${category} - BookPotato`,
             text: `
-New feedback received on BorrowBooks:
+New feedback received on BookPotato:
 
 From: ${user.name} (${user.email})
 Category: ${category}

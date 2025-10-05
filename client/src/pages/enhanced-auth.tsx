@@ -12,6 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { BookOpen, Mail, Phone, User, Chrome, Facebook, Github, Eye, EyeOff } from "lucide-react";
+import logoImage from "@assets/WhatsApp Image 2025-10-05 at 17.24.19_1759671721044.jpeg";
 
 const INDIAN_CITIES = [
   "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad",
@@ -154,9 +155,9 @@ export default function EnhancedAuth() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <BookOpen className="w-12 h-12 text-blue-600" />
+            <img src={logoImage} alt="BookPotato" className="w-16 h-16 object-contain rounded-full" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">BorrowBooks</h1>
+          <h1 className="text-3xl font-bold text-gray-900">BookPotato</h1>
           <p className="text-gray-600 mt-2">Connect, Share, Read</p>
         </div>
 
@@ -262,7 +263,7 @@ export default function EnhancedAuth() {
             <TabsContent value="register" className="space-y-4 p-6">
               <CardHeader className="text-center p-0 mb-4">
                 <CardTitle>Create Account</CardTitle>
-                <CardDescription>Join the BorrowBooks community</CardDescription>
+                <CardDescription>Join the BookPotato community</CardDescription>
               </CardHeader>
 
               <form onSubmit={registerForm.handleSubmit((data) => registerMutation.mutate(data))}>

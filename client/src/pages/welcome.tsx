@@ -19,7 +19,7 @@ import screen4Image from '@assets/Screen4_1759049750473.png';
 const welcomeScreens = [
   {
     id: 1,
-    title: "Welcome to BorrowBooks",
+    title: "Welcome to BookPotato",
     subtitle: "Your Community Library Platform",
     description: "Connect with your neighbors and share books within your society. Discover new reads while building a stronger community.",
     icon: BookOpen,
