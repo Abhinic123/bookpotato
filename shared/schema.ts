@@ -65,8 +65,15 @@ export const books = pgTable("books", {
   dailyFee: decimal("daily_fee", { precision: 10, scale: 2 }).notNull(),
   sellingPrice: decimal("selling_price", { precision: 10, scale: 2 }),
   ownerId: integer("owner_id").notNull(),
-  societyId: integer("society_id").notNull(),
+  societyId: integer("society_id"), // deprecated - use book_hubs for multi-hub support
   isAvailable: boolean("is_available").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const bookHubs = pgTable("book_hubs", {
+  id: serial("id").primaryKey(),
+  bookId: integer("book_id").notNull(),
+  societyId: integer("society_id").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -325,9 +332,15 @@ export const insertBookSchema = createInsertSchema(books).omit({
   id: true,
   isAvailable: true,
   createdAt: true,
+  societyId: true,
 }).extend({
   dailyFee: z.union([z.string(), z.number()]).transform(val => String(val)),
   sellingPrice: z.union([z.string(), z.number(), z.null(), z.undefined()]).transform(val => val ? String(val) : null).optional()
+});
+
+export const insertBookHubSchema = createInsertSchema(bookHubs).omit({
+  id: true,
+  createdAt: true,
 });
 
 export const insertBookRentalSchema = createInsertSchema(bookRentals).omit({
@@ -427,6 +440,9 @@ export type InsertSociety = z.infer<typeof insertSocietySchema>;
 
 export type Book = typeof books.$inferSelect;
 export type InsertBook = z.infer<typeof insertBookSchema>;
+
+export type BookHub = typeof bookHubs.$inferSelect;
+export type InsertBookHub = z.infer<typeof insertBookHubSchema>;
 
 export type BookRental = typeof bookRentals.$inferSelect;
 export type InsertBookRental = z.infer<typeof insertBookRentalSchema>;
