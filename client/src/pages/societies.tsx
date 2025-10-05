@@ -246,10 +246,12 @@ export default function Societies() {
       const response = await apiRequest("POST", "/api/societies", data);
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      const hubTypeLabel = data.hubType === 'society' ? 'society' : 
+                          data.hubType === 'school' ? 'school' : 'office';
       toast({
         title: "Request Submitted",
-        description: "Your society creation request has been submitted for admin approval.",
+        description: `Your ${hubTypeLabel} creation request has been submitted for admin approval.`,
       });
       setShowCreateModal(false);
       form.reset();
