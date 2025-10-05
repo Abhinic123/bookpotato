@@ -73,12 +73,6 @@ const bookSchema = z.object({
     (val) => !val || (Number(val) >= 0),
     "Selling price must be a positive number or empty"
   ),
-  societyIds: z.array(z.number()).min(1, "Select at least one Society"),
-  schoolIds: z.array(z.number()),
-  officeIds: z.array(z.number()),
-}).refine((data) => data.societyIds.length > 0 || data.schoolIds.length > 0 || data.officeIds.length > 0, {
-  message: "Please select at least one hub (Society, School, or Office)",
-  path: ["societyIds"],
 });
 
 type BookFormData = z.infer<typeof bookSchema>;
@@ -112,9 +106,6 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
       condition: "",
       dailyFee: "",
       sellingPrice: "",
-      societyIds: [],
-      schoolIds: [],
-      officeIds: [],
     },
   });
 
@@ -163,9 +154,6 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
       const method = editBook ? "PATCH" : "POST";
       const url = editBook ? `/api/books/${editBook.id}` : "/api/books";
       
-      // Combine all hub IDs into a single array
-      const hubIds = [...data.societyIds, ...data.schoolIds, ...data.officeIds];
-      
       const response = await apiRequest(method, url, {
         title: data.title,
         author: data.author,
@@ -177,7 +165,6 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
         condition: data.condition,
         dailyFee: Number(data.dailyFee),
         sellingPrice: data.sellingPrice ? Number(data.sellingPrice) : null,
-        hubIds: hubIds,
       });
       return response.json();
     },
@@ -479,139 +466,6 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
                     </FormItem>
                   )}
                 />
-
-                <div className="space-y-4 border rounded-lg p-4">
-                  <div className="text-sm font-medium">Select Hubs (choose at least one)</div>
-                  
-                  <FormField
-                    control={form.control}
-                    name="societyIds"
-                    render={() => (
-                      <FormItem>
-                        <FormLabel>Societies</FormLabel>
-                        <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
-                          {(societies as any[])?.filter((s: any) => s.hubType === 'society').length > 0 ? (
-                            (societies as any[])?.filter((s: any) => s.hubType === 'society').map((society: any) => (
-                              <FormField
-                                key={society.id}
-                                control={form.control}
-                                name="societyIds"
-                                render={({ field }) => (
-                                  <FormItem className="flex items-center space-x-2 space-y-0">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(society.id)}
-                                        onCheckedChange={(checked) => {
-                                          const current = field.value || [];
-                                          const updated = checked
-                                            ? [...current, society.id]
-                                            : current.filter((id) => id !== society.id);
-                                          field.onChange(updated);
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="text-sm font-normal cursor-pointer">
-                                      {society.name}
-                                    </FormLabel>
-                                  </FormItem>
-                                )}
-                              />
-                            ))
-                          ) : (
-                            <p className="text-sm text-muted-foreground">No societies available</p>
-                          )}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="schoolIds"
-                    render={() => (
-                      <FormItem>
-                        <FormLabel>Schools</FormLabel>
-                        <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
-                          {(societies as any[])?.filter((s: any) => s.hubType === 'school').length > 0 ? (
-                            (societies as any[])?.filter((s: any) => s.hubType === 'school').map((school: any) => (
-                              <FormField
-                                key={school.id}
-                                control={form.control}
-                                name="schoolIds"
-                                render={({ field }) => (
-                                  <FormItem className="flex items-center space-x-2 space-y-0">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(school.id)}
-                                        onCheckedChange={(checked) => {
-                                          const current = field.value || [];
-                                          const updated = checked
-                                            ? [...current, school.id]
-                                            : current.filter((id) => id !== school.id);
-                                          field.onChange(updated);
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="text-sm font-normal cursor-pointer">
-                                      {school.name}
-                                    </FormLabel>
-                                  </FormItem>
-                                )}
-                              />
-                            ))
-                          ) : (
-                            <p className="text-sm text-muted-foreground">No schools available</p>
-                          )}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="officeIds"
-                    render={() => (
-                      <FormItem>
-                        <FormLabel>Offices</FormLabel>
-                        <div className="space-y-2 max-h-40 overflow-y-auto border rounded p-2">
-                          {(societies as any[])?.filter((s: any) => s.hubType === 'office').length > 0 ? (
-                            (societies as any[])?.filter((s: any) => s.hubType === 'office').map((office: any) => (
-                              <FormField
-                                key={office.id}
-                                control={form.control}
-                                name="officeIds"
-                                render={({ field }) => (
-                                  <FormItem className="flex items-center space-x-2 space-y-0">
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(office.id)}
-                                        onCheckedChange={(checked) => {
-                                          const current = field.value || [];
-                                          const updated = checked
-                                            ? [...current, office.id]
-                                            : current.filter((id) => id !== office.id);
-                                          field.onChange(updated);
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="text-sm font-normal cursor-pointer">
-                                      {office.name}
-                                    </FormLabel>
-                                  </FormItem>
-                                )}
-                              />
-                            ))
-                          ) : (
-                            <p className="text-sm text-muted-foreground">No offices available</p>
-                          )}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
 
                 <FormField
                   control={form.control}
