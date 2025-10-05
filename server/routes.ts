@@ -794,6 +794,27 @@ The BorrowBooks Team`,
       }
 
       const member = await storage.joinSociety(targetSocietyId, req.session.userId!);
+      
+      // Automatically add all user's books to this new hub
+      const userBooks = await storage.getUserBooks(req.session.userId!);
+      for (const book of userBooks) {
+        // Check if book is already tagged to this hub
+        const existingTag = await db.select()
+          .from(bookHubs)
+          .where(and(
+            eq(bookHubs.bookId, book.id),
+            eq(bookHubs.societyId, targetSocietyId)
+          ))
+          .limit(1);
+        
+        if (existingTag.length === 0) {
+          await storage.createBookHub({
+            bookId: book.id,
+            societyId: targetSocietyId
+          });
+        }
+      }
+      
       res.json(member);
     } catch (error) {
       console.error("Join society error:", error);
