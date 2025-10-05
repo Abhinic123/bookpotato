@@ -674,6 +674,11 @@ The BorrowBooks Team`,
       
       const request = await storage.createSocietyRequest(requestData);
       
+      // Get hub type label for messages
+      const hubTypeLabel = validatedData.hubType === 'society' ? 'Society' : 
+                          validatedData.hubType === 'school' ? 'School' : 'Office';
+      const hubTypeLower = hubTypeLabel.toLowerCase();
+      
       // Create notification for all admin users
       try {
         const user = await storage.getUser(req.session.userId!);
@@ -687,12 +692,13 @@ The BorrowBooks Team`,
         for (const admin of adminUsers) {
           await storage.createNotification({
             userId: admin.id,
-            title: "New Society Request",
-            message: `${user?.name || 'User'} has requested to create "${validatedData.name}" society with ${validatedData.apartmentCount} apartments in ${validatedData.city}. Please review and approve.`,
+            title: `New ${hubTypeLabel} Request`,
+            message: `${user?.name || 'User'} has requested to create "${validatedData.name}" ${hubTypeLower} with ${validatedData.apartmentCount} members in ${validatedData.city}. Please review and approve.`,
             type: "society_request",
             data: JSON.stringify({
               requestId: request.id,
               societyName: validatedData.name,
+              hubType: validatedData.hubType,
               requestedBy: req.session.userId!,
               apartmentCount: validatedData.apartmentCount,
               city: validatedData.city
@@ -705,7 +711,8 @@ The BorrowBooks Team`,
       }
       
       res.json({
-        message: "Society creation request submitted for admin approval",
+        message: `${hubTypeLabel} creation request submitted for admin approval`,
+        hubType: validatedData.hubType,
         requestId: request.id,
         status: "pending"
       });
