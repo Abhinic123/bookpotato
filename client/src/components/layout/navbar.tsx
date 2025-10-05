@@ -44,7 +44,7 @@ export default function Navbar({ user }: NavbarProps) {
     { label: "Home", path: "/" },
     { label: "Browse", path: "/browse" },
     { label: "My Books", path: "/my-books" },
-    { label: "Societies", path: "/societies" },
+    { label: "Hub", path: "/societies" },
   ];
 
   return (

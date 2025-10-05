@@ -72,7 +72,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { name: "Browse", icon: Search, path: "/browse" },
     { name: "My Books", icon: Bookmark, path: "/my-books" },
     { name: "Chat", icon: MessageCircle, path: "/chat" },
-    { name: "Societies", icon: Users, path: "/societies" },
+    { name: "Hub", icon: Users, path: "/societies" },
   ];
 
   const isActiveTab = (path: string) => {
