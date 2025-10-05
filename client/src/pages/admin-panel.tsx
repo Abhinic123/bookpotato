@@ -478,12 +478,14 @@ export default function AdminPanel() {
 
       {/* Settings Panel */}
       <Tabs defaultValue="settings" className="space-y-4">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 h-auto gap-2 p-2">
+        <TabsList className="grid grid-cols-2 md:grid-cols-5 h-auto gap-2 p-2">
           <TabsTrigger value="settings">Platform Settings</TabsTrigger>
           <TabsTrigger value="brocks">Brocks Rewards</TabsTrigger>
           <TabsTrigger value="brocks-packages">Brocks Packages</TabsTrigger>
           <TabsTrigger value="page-content">Page Content</TabsTrigger>
           <TabsTrigger value="societies">Society Requests</TabsTrigger>
+          <TabsTrigger value="schools">School Requests</TabsTrigger>
+          <TabsTrigger value="offices">Office Requests</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="feedback">
             <MessageSquare className="h-4 w-4 mr-2" />
@@ -873,18 +875,118 @@ export default function AdminPanel() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {(societyRequests as any[]).length === 0 ? (
+                {(societyRequests as any[]).filter((r: any) => r.hubType === 'society').length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <Home className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p>No pending society requests</p>
                   </div>
                 ) : (
-                  (societyRequests as any[]).map((request: any) => (
+                  (societyRequests as any[]).filter((r: any) => r.hubType === 'society').map((request: any) => (
                     <div key={request.id} className="p-4 border rounded-lg">
                       <div className="flex items-center justify-between">
                         <div>
                           <h3 className="font-semibold">{request.name}</h3>
-                          <p className="text-sm text-gray-600">{request.city} • {request.apartmentCount} apartments</p>
+                          <p className="text-sm text-gray-600">{request.city} • {request.apartmentCount} members/units</p>
+                          <p className="text-xs text-gray-500 mt-1">{request.description}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-green-600 border-green-600 hover:bg-green-50"
+                            disabled={reviewSocietyMutation.isPending}
+                            onClick={() => handleApproveReject(request.id, true)}
+                          >
+                            {reviewSocietyMutation.isPending ? "Processing..." : "Approve"}
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                            disabled={reviewSocietyMutation.isPending}
+                            onClick={() => handleApproveReject(request.id, false)}
+                          >
+                            {reviewSocietyMutation.isPending ? "Processing..." : "Reject"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="schools">
+          <Card>
+            <CardHeader>
+              <CardTitle>School Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {(societyRequests as any[]).filter((r: any) => r.hubType === 'school').length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Home className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No pending school requests</p>
+                  </div>
+                ) : (
+                  (societyRequests as any[]).filter((r: any) => r.hubType === 'school').map((request: any) => (
+                    <div key={request.id} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">{request.name}</h3>
+                          <p className="text-sm text-gray-600">{request.city} • {request.apartmentCount} students</p>
+                          <p className="text-xs text-gray-500 mt-1">{request.description}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-green-600 border-green-600 hover:bg-green-50"
+                            disabled={reviewSocietyMutation.isPending}
+                            onClick={() => handleApproveReject(request.id, true)}
+                          >
+                            {reviewSocietyMutation.isPending ? "Processing..." : "Approve"}
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-red-600 border-red-600 hover:bg-red-50"
+                            disabled={reviewSocietyMutation.isPending}
+                            onClick={() => handleApproveReject(request.id, false)}
+                          >
+                            {reviewSocietyMutation.isPending ? "Processing..." : "Reject"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="offices">
+          <Card>
+            <CardHeader>
+              <CardTitle>Office Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {(societyRequests as any[]).filter((r: any) => r.hubType === 'office').length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Home className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No pending office requests</p>
+                  </div>
+                ) : (
+                  (societyRequests as any[]).filter((r: any) => r.hubType === 'office').map((request: any) => (
+                    <div key={request.id} className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">{request.name}</h3>
+                          <p className="text-sm text-gray-600">{request.city} • {request.apartmentCount} employees</p>
                           <p className="text-xs text-gray-500 mt-1">{request.description}</p>
                         </div>
                         <div className="flex space-x-2">
