@@ -171,6 +171,7 @@ export const societyRequests = pgTable("society_requests", {
   city: text("city").notNull(),
   apartmentCount: integer("apartment_count").notNull(),
   location: text("location"),
+  hubType: text("hub_type").notNull().default("society"), // society, school, office
   status: text("status").default("pending").notNull(),
   reviewReason: text("review_reason"),
   rejectionReason: text("rejection_reason"),
