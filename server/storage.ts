@@ -803,7 +803,11 @@ export class DatabaseStorage implements IStorage {
         createdAt: bookPurchases.createdAt,
         bookTitle: books.title,
         bookAuthor: books.author,
+        bookIsbn: books.isbn,
+        bookGenre: books.genre,
+        bookDescription: books.description,
         bookImageUrl: books.imageUrl,
+        bookCondition: books.condition,
         sellerName: users.name,
       })
       .from(bookPurchases)
@@ -828,7 +832,11 @@ export class DatabaseStorage implements IStorage {
       book: {
         title: p.bookTitle,
         author: p.bookAuthor,
+        isbn: p.bookIsbn,
+        genre: p.bookGenre,
+        description: p.bookDescription,
         imageUrl: p.bookImageUrl,
+        condition: p.bookCondition,
       },
       seller: {
         name: p.sellerName,
