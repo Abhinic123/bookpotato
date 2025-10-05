@@ -435,9 +435,14 @@ export default function Societies() {
                     <span>{getInitials(society.name)}</span>
                   </div>
                   <div>
-                    <h4 className="font-medium text-text-primary">
-                      {society.name}
-                    </h4>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-medium text-text-primary">
+                        {society.name}
+                      </h4>
+                      <Badge variant="secondary" className="text-xs capitalize">
+                        {society.hubType || 'society'}
+                      </Badge>
+                    </div>
                     <div className="flex items-center space-x-4 text-sm text-text-secondary">
                       <span 
                         className="flex items-center cursor-pointer hover:text-primary transition-colors" 
@@ -550,9 +555,14 @@ export default function Societies() {
                     <span>{getInitials(society.name)}</span>
                   </div>
                   <div>
-                    <h4 className="font-medium text-text-primary">
-                      {society.name}
-                    </h4>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h4 className="font-medium text-text-primary">
+                        {society.name}
+                      </h4>
+                      <Badge variant="secondary" className="text-xs capitalize">
+                        {society.hubType || 'society'}
+                      </Badge>
+                    </div>
                     <div className="flex items-center space-x-4 text-sm text-text-secondary">
                       <span className="flex items-center">
                         <MapPin className="h-3 w-3 mr-1" />
