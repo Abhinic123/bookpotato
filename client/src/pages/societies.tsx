@@ -157,9 +157,19 @@ export default function Societies() {
   const [selectedCity, setSelectedCity] = useState<string>("All Cities");
   const [showMemberListModal, setShowMemberListModal] = useState(false);
   const [selectedSocietyForMembers, setSelectedSocietyForMembers] = useState<SocietyWithStats | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("society");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  
+  // Check URL for hub type (from home page buttons)
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const typeParam = urlParams.get('type');
+    if (typeParam && ['society', 'school', 'office'].includes(typeParam)) {
+      setActiveTab(typeParam);
+    }
+  }, []);
 
   const form = useForm<CreateSocietyFormData>({
     resolver: zodResolver(createSocietySchema),
@@ -173,11 +183,11 @@ export default function Societies() {
   });
 
   const { data: mySocieties, isLoading: isLoadingMy } = useQuery({
-    queryKey: ["/api/societies/my"],
+    queryKey: ["/api/societies/my", { hubType: activeTab === "my-hubs" ? undefined : activeTab }],
   });
 
   const { data: availableSocieties, isLoading: isLoadingAvailable } = useQuery({
-    queryKey: ["/api/societies/available"],
+    queryKey: ["/api/societies/available", { hubType: activeTab === "my-hubs" ? undefined : activeTab }],
   });
 
   // Get current user data to use their city as default
