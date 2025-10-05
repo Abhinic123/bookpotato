@@ -1,9 +1,9 @@
 import { 
-  users, societies, books, bookRentals, bookPurchases, societyMembers, notifications, societyRequests, referralRewards, rentalExtensions, extensionRequests,
+  users, societies, books, bookHubs, bookRentals, bookPurchases, societyMembers, notifications, societyRequests, referralRewards, rentalExtensions, extensionRequests,
   userCredits, creditTransactions, referrals, userBadges, commissionFreePeriods, rewardSettings, brocksPackages,
   availabilityAlerts,
   type User, type InsertUser, type Society, type InsertSociety, 
-  type Book, type InsertBook, type BookRental, type InsertBookRental, type BookPurchase, type InsertBookPurchase,
+  type Book, type InsertBook, type BookHub, type InsertBookHub, type BookRental, type InsertBookRental, type BookPurchase, type InsertBookPurchase,
   type SocietyMember, type InsertSocietyMember, type Notification, type InsertNotification,
   type BookWithOwner, type RentalWithDetails, type SocietyWithStats, type RentalExtension, type InsertRentalExtension,
   type ExtensionRequest, type InsertExtensionRequest, type UserCredits, type InsertUserCredits,
@@ -40,6 +40,12 @@ export interface IStorage {
   searchBooks(societyId: number, query?: string, genre?: string): Promise<BookWithOwner[]>;
   createBook(book: InsertBook): Promise<Book>;
   updateBook(id: number, updates: Partial<Book>): Promise<Book | undefined>;
+  
+  // Book Hubs
+  createBookHub(bookHub: InsertBookHub): Promise<BookHub>;
+  getBookHubsByBook(bookId: number): Promise<BookHub[]>;
+  deleteBookHubsByBook(bookId: number): Promise<void>;
+  getBooksByUserSocieties(userId: number): Promise<BookWithOwner[]>;
   
   // Rentals
   getRental(id: number): Promise<RentalWithDetails | undefined>;
@@ -479,6 +485,75 @@ export class DatabaseStorage implements IStorage {
       .where(eq(books.id, id))
       .returning();
     return book || undefined;
+  }
+
+  async createBookHub(bookHub: InsertBookHub): Promise<BookHub> {
+    const [hub] = await db
+      .insert(bookHubs)
+      .values(bookHub)
+      .returning();
+    return hub;
+  }
+
+  async getBookHubsByBook(bookId: number): Promise<BookHub[]> {
+    return await db
+      .select()
+      .from(bookHubs)
+      .where(eq(bookHubs.bookId, bookId));
+  }
+
+  async deleteBookHubsByBook(bookId: number): Promise<void> {
+    await db.delete(bookHubs).where(eq(bookHubs.bookId, bookId));
+  }
+
+  async getBooksByUserSocieties(userId: number): Promise<BookWithOwner[]> {
+    const userSocieties = await db
+      .select({ societyId: societyMembers.societyId })
+      .from(societyMembers)
+      .where(and(
+        eq(societyMembers.userId, userId),
+        eq(societyMembers.isActive, true)
+      ));
+
+    if (userSocieties.length === 0) {
+      return [];
+    }
+
+    const societyIds = userSocieties.map(s => s.societyId);
+
+    const results = await db
+      .select({
+        id: books.id,
+        title: books.title,
+        author: books.author,
+        isbn: books.isbn,
+        genre: books.genre,
+        imageUrl: books.imageUrl,
+        coverImageUrl: books.coverImageUrl,
+        condition: books.condition,
+        dailyFee: books.dailyFee,
+        sellingPrice: books.sellingPrice,
+        description: books.description,
+        isAvailable: books.isAvailable,
+        ownerId: books.ownerId,
+        societyId: books.societyId,
+        createdAt: books.createdAt,
+        owner: {
+          id: users.id,
+          name: users.name
+        }
+      })
+      .from(books)
+      .innerJoin(bookHubs, eq(books.id, bookHubs.bookId))
+      .innerJoin(users, eq(books.ownerId, users.id))
+      .innerJoin(societyMembers, and(
+        eq(societyMembers.userId, books.ownerId),
+        eq(societyMembers.societyId, bookHubs.societyId),
+        eq(societyMembers.isActive, true)
+      ))
+      .where(inArray(bookHubs.societyId, societyIds));
+
+    return results;
   }
 
   async deleteBook(id: number): Promise<boolean> {
