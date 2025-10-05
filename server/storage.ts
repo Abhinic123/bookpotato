@@ -1231,6 +1231,16 @@ export class DatabaseStorage implements IStorage {
           // Auto-join the creator to the society
           await this.joinSociety(society.id, request.requestedBy);
           console.log('Database Storage: Auto-joined creator to society');
+          
+          // Automatically tag all creator's books to this new hub
+          const creatorBooks = await this.getBooksByOwner(request.requestedBy);
+          for (const book of creatorBooks) {
+            await this.createBookHub({
+              bookId: book.id,
+              societyId: society.id
+            });
+          }
+          console.log(`Database Storage: Tagged ${creatorBooks.length} books to new society`);
         }
       }
     } catch (error) {
