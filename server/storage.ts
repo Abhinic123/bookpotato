@@ -1215,6 +1215,7 @@ export class DatabaseStorage implements IStorage {
           const societyData = {
             name: request.name,
             description: request.description,
+            hubType: request.hubType || 'society',
             city: request.city,
             apartmentCount: request.apartmentCount,
             location: request.location,
