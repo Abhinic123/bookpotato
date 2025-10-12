@@ -1,22 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { CreditCard, Coins, ArrowRight, Check } from "lucide-react";
+import { CreditCard, Coins, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -27,13 +16,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/utils";
-
-const buyBrocksSchema = z.object({
-  package: z.string().min(1, "Please select a package"),
-  paymentMethod: z.string().min(1, "Please select payment method"),
-});
-
-type BuyBrocksFormData = z.infer<typeof buyBrocksSchema>;
 
 // Dynamic Brocks packages from API - we'll fetch these
 
@@ -62,19 +44,16 @@ export default function BuyBrocks() {
     queryKey: ["/api/page-content/buy-brocks"],
   });
 
-  const form = useForm<BuyBrocksFormData>({
-    resolver: zodResolver(buyBrocksSchema),
-    defaultValues: {
-      package: "",
-      paymentMethod: "card",
-    },
-  });
+  const [paymentMethod, setPaymentMethod] = useState("card");
 
   const purchaseMutation = useMutation({
-    mutationFn: async (data: BuyBrocksFormData) => {
+    mutationFn: async () => {
+      if (!selectedPackage) {
+        throw new Error("Please select a package");
+      }
       const response = await apiRequest("POST", "/api/brocks/purchase", {
-        packageId: data.package,
-        paymentMethod: data.paymentMethod,
+        packageId: selectedPackage.toString(),
+        paymentMethod: paymentMethod,
       });
       return response.json();
     },
@@ -84,8 +63,8 @@ export default function BuyBrocks() {
         description: `${data.brocksAwarded} Brocks credits have been added to your account.`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/user/credits"] });
-      form.reset();
       setSelectedPackage("");
+      setPaymentMethod("card");
     },
     onError: (error: any) => {
       toast({
@@ -96,15 +75,16 @@ export default function BuyBrocks() {
     },
   });
 
-  const onSubmit = (data: BuyBrocksFormData) => {
-    console.log("🛒 Form submitted with data:", data);
-    console.log("📦 Selected package:", selectedPkg);
-    console.log("🔍 Form state:", {
-      isValid: form.formState.isValid,
-      errors: form.formState.errors,
-      values: form.getValues()
-    });
-    purchaseMutation.mutate(data);
+  const handlePurchase = () => {
+    if (!selectedPackage) {
+      toast({
+        title: "Package Required",
+        description: "Please select a package to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+    purchaseMutation.mutate();
   };
   
   // Default packages in case API fails or no packages exist
@@ -211,14 +191,7 @@ export default function BuyBrocks() {
                     : "hover:shadow-md"
                 } ${pkg.popular ? "border-amber-400" : ""}`}
                 onClick={() => {
-                  console.log("📦 Package selected:", pkg.id, pkg.name);
                   setSelectedPackage(pkg.id);
-                  form.setValue("package", pkg.id.toString(), { 
-                    shouldValidate: true,
-                    shouldDirty: true,
-                    shouldTouch: true
-                  });
-                  console.log("✅ Form package value set to:", form.getValues("package"));
                 }}
               >
                 {pkg.popular && (
@@ -265,44 +238,21 @@ export default function BuyBrocks() {
               <CardTitle>Payment Details</CardTitle>
             </CardHeader>
             <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {/* Hidden package field for form validation */}
-                  <FormField
-                    control={form.control}
-                    name="package"
-                    render={({ field }) => (
-                      <FormItem className="hidden">
-                        <FormControl>
-                          <Input type="hidden" {...field} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="paymentMethod"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Payment Method</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select payment method" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="card">Credit/Debit Card</SelectItem>
-                            <SelectItem value="upi">UPI</SelectItem>
-                            <SelectItem value="netbanking">Net Banking</SelectItem>
-                            <SelectItem value="wallet">Digital Wallet</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label>Payment Method</Label>
+                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="card">Credit/Debit Card</SelectItem>
+                      <SelectItem value="upi">UPI</SelectItem>
+                      <SelectItem value="netbanking">Net Banking</SelectItem>
+                      <SelectItem value="wallet">Digital Wallet</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
                   {/* Order Summary */}
                   {selectedPkg && (
@@ -334,33 +284,22 @@ export default function BuyBrocks() {
                     </div>
                   )}
 
-                  <Button
-                    type="button"
-                    className="w-full"
-                    disabled={purchaseMutation.isPending || !selectedPackage}
-                    data-testid="button-complete-purchase"
-                    onClick={async (e) => {
-                      console.log("🖱️ Button clicked!");
-                      console.log("📋 Current form values:", form.getValues());
-                      console.log("❌ Form errors:", form.formState.errors);
-                      console.log("✅ Form is valid:", form.formState.isValid);
-                      console.log("📦 Selected package ID:", selectedPackage);
-                      
-                      // Manually trigger form submission
-                      await form.handleSubmit(onSubmit)();
-                    }}
-                  >
-                    {purchaseMutation.isPending ? (
-                      "Processing Payment..."
-                    ) : (
-                      <>
-                        <CreditCard className="h-4 w-4 mr-2" />
-                        Complete Purchase {selectedPkg && `- ${formatCurrency(selectedPkg.price)}`}
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </Form>
+                <Button
+                  className="w-full"
+                  disabled={purchaseMutation.isPending || !selectedPackage}
+                  data-testid="button-complete-purchase"
+                  onClick={handlePurchase}
+                >
+                  {purchaseMutation.isPending ? (
+                    "Processing Payment..."
+                  ) : (
+                    <>
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Complete Purchase {selectedPkg && `- ${formatCurrency(selectedPkg.price)}`}
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
