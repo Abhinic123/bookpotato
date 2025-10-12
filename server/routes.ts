@@ -4676,15 +4676,16 @@ Submitted on: ${new Date().toLocaleString()}
       for (const bookData of books) {
         try {
           // Validate required fields
-          if (!bookData.title || !bookData.author || !bookData.societyId) {
+          if (!bookData.title || !bookData.author) {
             errors.push(`Book "${bookData.title || 'Unknown'}" missing required fields`);
             continue;
           }
 
-          // Check if user is member of the society
-          const isMember = await storage.isMemberOfSociety(bookData.societyId, userId);
-          if (!isMember) {
-            errors.push(`Not a member of society for book "${bookData.title}"`);
+          // Get all hubs the user is a member of
+          const userHubs = await storage.getSocietiesByUser(userId);
+          
+          if (!userHubs || userHubs.length === 0) {
+            errors.push(`Book "${bookData.title}": You must be a member of at least one hub to add books`);
             continue;
           }
 
@@ -4700,13 +4701,20 @@ Submitted on: ${new Date().toLocaleString()}
             dailyFee: bookData.dailyFee || 25,
             sellingPrice: bookData.sellingPrice || null,
             ownerId: userId,
-            societyId: bookData.societyId,
             isAvailable: true
           });
 
           if (book) {
+            // Tag book to all user's hubs
+            for (const hub of userHubs) {
+              await storage.createBookHub({
+                bookId: book.id,
+                societyId: hub.id
+              });
+            }
+            
             addedCount++;
-            console.log(`📚 Added book: "${bookData.title}" by ${bookData.author}`);
+            console.log(`📚 Added book: "${bookData.title}" by ${bookData.author} and tagged to ${userHubs.length} hubs`);
           }
         } catch (error) {
           console.error(`Error adding book "${bookData.title}":`, error);
