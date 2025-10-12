@@ -214,6 +214,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@bookshare.com';
       
+      // Construct proper frontend URL for Replit environment
+      const frontendUrl = process.env.FRONTEND_URL || 
+                         (process.env.REPL_SLUG && process.env.REPL_OWNER 
+                           ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` 
+                           : 'http://localhost:5000');
+      
       const msg = {
         to: email,
         from: fromEmail,
@@ -223,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 You requested a password reset for your BookPotato account.
 
 Click the link below to reset your password:
-${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}
+${frontendUrl}/reset-password?token=${resetToken}
 
 This link will expire in 1 hour.
 
@@ -236,7 +242,7 @@ The BookPotato Team`,
           <p>Hi ${user.name},</p>
           <p>You requested a password reset for your BookPotato account.</p>
           <p>Click the link below to reset your password:</p>
-          <a href="${process.env.FRONTEND_URL || 'http://localhost:5000'}/reset-password?token=${resetToken}" 
+          <a href="${frontendUrl}/reset-password?token=${resetToken}" 
              style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 16px 0;">
              Reset Password
           </a>
