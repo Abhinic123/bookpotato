@@ -20,41 +20,41 @@ import {
 const steps = [
   {
     number: 1,
-    title: "Join Your Society",
-    description: "Find and join your residential society or create a new one if it doesn't exist.",
+    title: "Join Your Hub",
+    description: "Find and join your community hub (Society, School, or Office) or create a new one.",
     icon: Users,
     color: "bg-blue-500",
     details: [
-      "Search for your society by name or code",
+      "Search for your hub by name or code",
       "Request to join if it exists",
-      "Create a new society with 90+ apartments",
-      "Get verified by providing valid address"
+      "Create a new hub (Society, School, or Office)",
+      "Get verified by providing valid details"
     ]
   },
   {
     number: 2,
     title: "Add Your Books",
-    description: "List books you're willing to share and set your daily rental fee.",
+    description: "List books you're willing to share and set your daily rental fee or selling price.",
     icon: BookOpen,
     color: "bg-green-500",
     details: [
       "Scan ISBN barcode or add manually",
       "Set condition (Excellent, Good, Fair, Poor)",
-      "Choose your daily rental fee",
+      "Choose daily rental fee or selling price",
       "Earn 1 Brock credit for each book added"
     ]
   },
   {
     number: 3,
     title: "Browse & Borrow",
-    description: "Discover books from your neighbors and borrow what interests you.",
+    description: "Discover books from your community members and borrow or buy what interests you.",
     icon: Clock,
     color: "bg-purple-500",
     details: [
-      "Browse available books in your society",
+      "Browse available books in your hubs",
       "Read descriptions and check conditions",
-      "Choose rental duration (1-30 days)",
-      "Pay rental fee + security deposit"
+      "Choose to rent (1-30 days) or buy",
+      "Pay rental fee + security deposit or purchase price"
     ]
   },
   {
@@ -124,7 +124,7 @@ export default function HowItWorks() {
             <ArrowLeft className="h-4 w-4" />
             <span>Back</span>
           </Button>
-          <h1 className="text-xl font-bold text-gray-900">How BookShare Works</h1>
+          <h1 className="text-xl font-bold text-gray-900">How BookPotato Works</h1>
           <div className="w-16" /> {/* Spacer */}
         </div>
       </div>
@@ -136,8 +136,8 @@ export default function HowItWorks() {
             <BookOpen className="w-10 h-10 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to BookShare!</h2>
-            <p className="text-gray-600 text-lg">Your community-driven digital library platform</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome to BookPotato!</h2>
+            <p className="text-gray-600 text-lg">Your community-driven book sharing platform</p>
           </div>
         </div>
 
@@ -237,14 +237,14 @@ export default function HowItWorks() {
         {/* Call to Action */}
         <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
           <CardContent className="p-6 text-center">
-            <h3 className="text-xl font-bold mb-2">Ready to Start Your BookShare Journey?</h3>
-            <p className="mb-4 opacity-90">Join your society and start sharing books with your community today!</p>
+            <h3 className="text-xl font-bold mb-2">Ready to Start Your BookPotato Journey?</h3>
+            <p className="mb-4 opacity-90">Join your hub and start sharing books with your community today!</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button 
                 className="bg-white text-blue-600 hover:bg-gray-100"
                 onClick={() => navigate('/societies')}
               >
-                Join a Society
+                Join a Hub
               </Button>
               <Button 
                 variant="outline" 
