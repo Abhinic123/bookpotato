@@ -211,8 +211,14 @@ export default function BuyBrocks() {
                     : "hover:shadow-md"
                 } ${pkg.popular ? "border-amber-400" : ""}`}
                 onClick={() => {
+                  console.log("📦 Package selected:", pkg.id, pkg.name);
                   setSelectedPackage(pkg.id);
-                  form.setValue("package", pkg.id.toString());
+                  form.setValue("package", pkg.id.toString(), { 
+                    shouldValidate: true,
+                    shouldDirty: true,
+                    shouldTouch: true
+                  });
+                  console.log("✅ Form package value set to:", form.getValues("package"));
                 }}
               >
                 {pkg.popular && (
@@ -329,18 +335,19 @@ export default function BuyBrocks() {
                   )}
 
                   <Button
-                    type="submit"
+                    type="button"
                     className="w-full"
                     disabled={purchaseMutation.isPending || !selectedPackage}
                     data-testid="button-complete-purchase"
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       console.log("🖱️ Button clicked!");
                       console.log("📋 Current form values:", form.getValues());
                       console.log("❌ Form errors:", form.formState.errors);
                       console.log("✅ Form is valid:", form.formState.isValid);
                       console.log("📦 Selected package ID:", selectedPackage);
                       
-                      // Don't prevent default - let the form handle submission
+                      // Manually trigger form submission
+                      await form.handleSubmit(onSubmit)();
                     }}
                   >
                     {purchaseMutation.isPending ? (
