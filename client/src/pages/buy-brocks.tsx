@@ -99,6 +99,11 @@ export default function BuyBrocks() {
   const onSubmit = (data: BuyBrocksFormData) => {
     console.log("🛒 Form submitted with data:", data);
     console.log("📦 Selected package:", selectedPkg);
+    console.log("🔍 Form state:", {
+      isValid: form.formState.isValid,
+      errors: form.formState.errors,
+      values: form.getValues()
+    });
     purchaseMutation.mutate(data);
   };
   
@@ -328,6 +333,15 @@ export default function BuyBrocks() {
                     className="w-full"
                     disabled={purchaseMutation.isPending || !selectedPackage}
                     data-testid="button-complete-purchase"
+                    onClick={(e) => {
+                      console.log("🖱️ Button clicked!");
+                      console.log("📋 Current form values:", form.getValues());
+                      console.log("❌ Form errors:", form.formState.errors);
+                      console.log("✅ Form is valid:", form.formState.isValid);
+                      console.log("📦 Selected package ID:", selectedPackage);
+                      
+                      // Don't prevent default - let the form handle submission
+                    }}
                   >
                     {purchaseMutation.isPending ? (
                       "Processing Payment..."
