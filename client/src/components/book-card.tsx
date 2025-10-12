@@ -6,6 +6,7 @@ import type { BookWithOwner } from "@shared/schema";
 import ShareButton from "@/components/social/share-button";
 import WishlistButton from "@/components/social/wishlist-button";
 import AvailabilityAlertButton from "@/components/availability-alert-button";
+import { Home, GraduationCap, Briefcase } from "lucide-react";
 
 interface BookCardProps {
   book: BookWithOwner;
@@ -15,6 +16,30 @@ interface BookCardProps {
   onClick?: (book: BookWithOwner) => void;
   showOwner?: boolean;
   variant?: "grid" | "list";
+}
+
+function getHubIcon(hubType?: string) {
+  switch (hubType) {
+    case 'school':
+      return <GraduationCap className="w-4 h-4" />;
+    case 'office':
+      return <Briefcase className="w-4 h-4" />;
+    case 'society':
+    default:
+      return <Home className="w-4 h-4" />;
+  }
+}
+
+function getHubColor(hubType?: string) {
+  switch (hubType) {
+    case 'school':
+      return 'bg-purple-500';
+    case 'office':
+      return 'bg-blue-500';
+    case 'society':
+    default:
+      return 'bg-green-500';
+  }
 }
 
 export default function BookCard({ 
@@ -28,6 +53,7 @@ export default function BookCard({
 }: BookCardProps) {
   const statusColor = getBookStatusColor(book.isAvailable);
   const statusText = getBookStatusText(book.isAvailable);
+  const hubType = (book as any).hubType;
 
   if (variant === "grid") {
     return (
@@ -57,6 +83,11 @@ export default function BookCard({
               <Badge className={`text-xs ${statusColor}`}>
                 {statusText}
               </Badge>
+            </div>
+            
+            {/* Hub Type Icon */}
+            <div className={`absolute top-3 right-3 ${getHubColor(hubType)} text-white rounded-full p-2 shadow-md`}>
+              {getHubIcon(hubType)}
             </div>
           </div>
           

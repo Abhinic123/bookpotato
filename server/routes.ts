@@ -976,8 +976,13 @@ The BookPotato Team`,
       
       for (const society of userSocieties) {
         const societyBooks = await storage.getBooksBySociety(society.id);
-        // Filter out user's own books
-        const otherBooks = societyBooks.filter(book => book.ownerId !== req.session.userId!);
+        // Filter out user's own books and add hub type info
+        const otherBooks = societyBooks
+          .filter(book => book.ownerId !== req.session.userId!)
+          .map(book => ({
+            ...book,
+            hubType: society.hubType || 'society'
+          }));
         allBooks.push(...otherBooks);
       }
 
