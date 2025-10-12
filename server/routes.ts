@@ -215,10 +215,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'noreply@bookshare.com';
       
       // Construct proper frontend URL for Replit environment
-      const frontendUrl = process.env.FRONTEND_URL || 
-                         (process.env.REPL_SLUG && process.env.REPL_OWNER 
-                           ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` 
-                           : 'http://localhost:5000');
+      const frontendUrl = process.env.REPLIT_DEV_DOMAIN 
+                           ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
+                           : 'http://localhost:5000';
       
       const msg = {
         to: email,
@@ -255,6 +254,8 @@ The BookPotato Team`,
       try {
         console.log(`📧 Attempting to send password reset email to ${email}`);
         console.log(`📧 Using SendGrid API key: ${process.env.SENDGRID_API_KEY?.substring(0, 10)}...`);
+        console.log(`📧 Frontend URL: ${frontendUrl}`);
+        console.log(`📧 Reset link: ${frontendUrl}/reset-password?token=${resetToken}`);
         console.log(`📧 Message details:`, { 
           to: msg.to, 
           from: msg.from, 
