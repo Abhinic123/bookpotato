@@ -163,12 +163,19 @@ export default function Societies() {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
   
-  // Check URL for hub type (from home page buttons)
+  // Check URL for hub type and action (from home page buttons and profile links)
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const typeParam = urlParams.get('type');
+    const actionParam = urlParams.get('action');
+    
     if (typeParam && ['society', 'school', 'office'].includes(typeParam)) {
       setActiveTab(typeParam);
+      form.setValue('hubType', typeParam as 'society' | 'school' | 'office');
+    }
+    
+    if (actionParam === 'create') {
+      setShowCreateModal(true);
     }
   }, []);
 
@@ -407,7 +414,7 @@ export default function Societies() {
                 variant="outline" 
                 onClick={() => {
                   setMergeData({
-                    formData: { name: "", description: "", city: "", apartmentCount: 0, location: "" },
+                    formData: { name: "", hubType: "society", description: "", city: "", apartmentCount: 0, location: "" },
                     minApartments: 90,
                     suggestedSocieties: [],
                     message: "Choose an existing society to merge with. Location and name are required."
