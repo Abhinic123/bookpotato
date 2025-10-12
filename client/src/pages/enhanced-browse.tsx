@@ -321,22 +321,81 @@ export default function EnhancedBrowse() {
 
               <Separator />
 
-              {/* Societies */}
+              {/* Hubs */}
               <div className="space-y-3">
-                <Label className="text-sm font-medium">Societies</Label>
-                <div className="grid gap-2 max-h-40 overflow-y-auto">
-                  {((societies as any[]) || []).map((society: any) => (
-                    <div key={society.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`society-${society.id}`}
-                        checked={filters.societies.includes(society.id.toString())}
-                        onCheckedChange={() => toggleSociety(society.id.toString())}
-                      />
-                      <Label htmlFor={`society-${society.id}`} className="text-sm">
-                        {society.name}
-                      </Label>
-                    </div>
-                  ))}
+                <Label className="text-sm font-medium">Hubs</Label>
+                <div className="space-y-4 max-h-60 overflow-y-auto">
+                  {/* Societies */}
+                  {(() => {
+                    const societyHubs = ((societies as any[]) || []).filter((h: any) => h.hubType === 'society' || !h.hubType);
+                    return societyHubs.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-xs font-semibold text-gray-600">Society</Label>
+                        <div className="grid gap-2 pl-2">
+                          {societyHubs.map((society: any) => (
+                            <div key={society.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`society-${society.id}`}
+                                checked={filters.societies.includes(society.id.toString())}
+                                onCheckedChange={() => toggleSociety(society.id.toString())}
+                              />
+                              <Label htmlFor={`society-${society.id}`} className="text-sm">
+                                {society.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  
+                  {/* Schools */}
+                  {(() => {
+                    const schoolHubs = ((societies as any[]) || []).filter((h: any) => h.hubType === 'school');
+                    return schoolHubs.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-xs font-semibold text-gray-600">School</Label>
+                        <div className="grid gap-2 pl-2">
+                          {schoolHubs.map((school: any) => (
+                            <div key={school.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`school-${school.id}`}
+                                checked={filters.societies.includes(school.id.toString())}
+                                onCheckedChange={() => toggleSociety(school.id.toString())}
+                              />
+                              <Label htmlFor={`school-${school.id}`} className="text-sm">
+                                {school.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  
+                  {/* Offices */}
+                  {(() => {
+                    const officeHubs = ((societies as any[]) || []).filter((h: any) => h.hubType === 'office');
+                    return officeHubs.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-xs font-semibold text-gray-600">Office</Label>
+                        <div className="grid gap-2 pl-2">
+                          {officeHubs.map((office: any) => (
+                            <div key={office.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`office-${office.id}`}
+                                checked={filters.societies.includes(office.id.toString())}
+                                onCheckedChange={() => toggleSociety(office.id.toString())}
+                              />
+                              <Label htmlFor={`office-${office.id}`} className="text-sm">
+                                {office.name}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
