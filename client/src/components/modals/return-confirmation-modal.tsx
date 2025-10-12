@@ -39,7 +39,7 @@ export default function ReturnConfirmationModal({
     const endDate = new Date(rental.endDate);
     const currentDate = new Date();
     const daysLate = Math.max(0, Math.ceil((currentDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24)));
-    const dailyLateFee = (parseFloat(rental.book.dailyFee) || 0) * 0.5 || 5; // 50% of daily fee or ₹5 minimum
+    const dailyLateFee = parseFloat(rental.book.dailyFee) || 10; // 100% of daily rental fee
     return {
       daysLate,
       dailyLateFee,
