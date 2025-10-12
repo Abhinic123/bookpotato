@@ -1075,6 +1075,12 @@ The BookPotato Team`,
         allBooks = allBooks.filter(book => conditionList.includes(book.condition));
       }
 
+      // Apply society filter - STRICT filtering by selected societies
+      if (societies && typeof societies === 'string') {
+        const societyList = societies.split(',').map(s => parseInt(s));
+        allBooks = allBooks.filter(book => societyList.includes(book.societyId));
+      }
+
       // Apply availability filter
       if (availability && availability !== 'all') {
         if (availability === 'available') {
@@ -1430,7 +1436,7 @@ The BookPotato Team`,
 
       if (isOverdue) {
         const daysLate = Math.ceil((currentDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
-        const dailyLateFee = (Number(rental.book?.dailyFee) || 10) * 0.5; // 50% of daily fee
+        const dailyLateFee = Number(rental.book?.dailyFee) || 10; // 100% of daily fee (same as normal rate)
         calculatedLateFee = daysLate * dailyLateFee;
       }
 
@@ -1506,7 +1512,7 @@ The BookPotato Team`,
 
       if (isOverdue) {
         const daysLate = Math.ceil((currentDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
-        const dailyLateFee = (Number(rental.book?.dailyFee) || 10) * 0.5; // 50% of daily fee
+        const dailyLateFee = Number(rental.book?.dailyFee) || 10; // 100% of daily fee (same as normal rate)
         lateFee = daysLate * dailyLateFee;
       }
 
@@ -1514,6 +1520,7 @@ The BookPotato Team`,
       const securityDepositAmount = parseFloat(rental.securityDeposit);
       const lenderEarnings = parseFloat(rental.lenderAmount);
       const totalRefund = Math.max(0, securityDepositAmount - lateFee);
+      const excessLateFee = Math.max(0, lateFee - securityDepositAmount);
       
       // Update rental status and mark book as available
       await storage.updateRental(rentalId, {
@@ -1526,16 +1533,29 @@ The BookPotato Team`,
       await storage.updateBook(rental.bookId, { isAvailable: true });
 
       // Notify borrower about return confirmation and payment details
+      let borrowerMessage = `Return of "${rental.book.title}" confirmed! Security deposit: ₹${securityDepositAmount.toFixed(2)}`;
+      
+      if (lateFee > 0) {
+        if (excessLateFee > 0) {
+          borrowerMessage += `, Late fee: ₹${lateFee.toFixed(2)}. You need to pay additional ₹${excessLateFee.toFixed(2)} (late fees exceeded security deposit). Please contact the lender to complete payment.`;
+        } else {
+          borrowerMessage += `, Late fee: ₹${lateFee.toFixed(2)}, Refund: ₹${totalRefund.toFixed(2)} has been processed.`;
+        }
+      } else {
+        borrowerMessage += `, Refund: ₹${totalRefund.toFixed(2)} has been processed.`;
+      }
+      
       await storage.createNotification({
         userId: rental.borrowerId,
-        title: "Book Return Confirmed - Payment Processed",
-        message: `Return of "${rental.book.title}" confirmed! Security deposit: ₹${securityDepositAmount.toFixed(2)}${lateFee > 0 ? `, Late fee: ₹${lateFee.toFixed(2)}` : ''}, Refund: ₹${totalRefund.toFixed(2)} has been processed.`,
+        title: excessLateFee > 0 ? "Book Return - Additional Payment Required" : "Book Return Confirmed - Payment Processed",
+        message: borrowerMessage,
         type: "return_confirmed",
         data: JSON.stringify({
           rentalId: rentalId,
           securityDeposit: securityDepositAmount,
           lateFee: lateFee,
           refundAmount: totalRefund,
+          excessLateFee: excessLateFee,
           bookTitle: rental.book.title
         })
       });
@@ -1554,10 +1574,13 @@ The BookPotato Team`,
       });
 
       res.json({ 
-        message: "Book return confirmed and payments processed successfully",
+        message: excessLateFee > 0 
+          ? "Book return confirmed. Additional payment required for excess late fees."
+          : "Book return confirmed and payments processed successfully",
         securityDeposit: securityDepositAmount,
         lateFee: lateFee,
         refundAmount: totalRefund,
+        excessLateFee: excessLateFee,
         lenderEarnings: lenderEarnings
       });
     } catch (error) {
