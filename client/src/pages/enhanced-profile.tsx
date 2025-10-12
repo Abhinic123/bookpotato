@@ -20,6 +20,17 @@ const INDIAN_CITIES = [
   "Surat", "Jaipur", "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal"
 ];
 
+const SCHOOLS = [
+  "Delhi Public School", "Ryan International School", "The Shri Ram School", "Pathways World School",
+  "Oberoi International School", "Jamnabai Narsee School", "Dhirubhai Ambani International School",
+  "Cathedral & John Connon School", "Greenwood High International School", "The Bishop's School"
+];
+
+const COMPANIES = [
+  "Tata Consultancy Services", "Infosys", "Wipro", "HCL Technologies", "Tech Mahindra",
+  "Accenture India", "Cognizant", "IBM India", "Google India", "Microsoft India"
+];
+
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
@@ -28,6 +39,12 @@ const profileSchema = z.object({
   buildingName: z.string().min(1, "Building Name is required"),
   detailedAddress: z.string().min(5, "Detailed Address must be at least 5 characters"),
   city: z.string().min(1, "Please select a city"),
+  school: z.string().optional(),
+  grade: z.string().optional(),
+  division: z.string().optional(),
+  company: z.string().optional(),
+  floor: z.string().optional(),
+  building: z.string().optional(),
 });
 
 const passwordSchema = z.object({
@@ -83,6 +100,12 @@ export default function EnhancedProfile() {
       buildingName: "",
       detailedAddress: "",
       city: "",
+      school: "",
+      grade: "",
+      division: "",
+      company: "",
+      floor: "",
+      building: "",
     },
   });
 
@@ -99,6 +122,12 @@ export default function EnhancedProfile() {
         buildingName: userData?.buildingName || "",
         detailedAddress: userData?.detailedAddress || "",
         city: userData?.city || "",
+        school: userData?.school || "",
+        grade: userData?.grade || "",
+        division: userData?.division || "",
+        company: userData?.company || "",
+        floor: userData?.floor || "",
+        building: userData?.building || "",
       });
     }
   }, [user, profileForm]);
@@ -486,6 +515,102 @@ export default function EnhancedProfile() {
                       {profileForm.formState.errors.city.message}
                     </p>
                   )}
+                </div>
+
+                {/* School Information */}
+                <div className="pt-4 border-t">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">School Information (Optional)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="school">School Name</Label>
+                      <Select
+                        value={profileForm.watch("school")}
+                        onValueChange={(value) => profileForm.setValue("school", value)}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select school" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SCHOOLS.map((school) => (
+                            <SelectItem key={school} value={school}>
+                              {school}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-blue-600 mt-1 cursor-pointer hover:underline" onClick={() => window.location.href = '/societies?type=school&action=create'}>
+                        Send Request to Add School
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="grade">Grade</Label>
+                      <Input
+                        id="grade"
+                        placeholder="e.g., 10th"
+                        {...profileForm.register("grade")}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="division">Division</Label>
+                      <Input
+                        id="division"
+                        placeholder="e.g., A"
+                        {...profileForm.register("division")}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Company Information */}
+                <div className="pt-4 border-t">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-4">Company Information (Optional)</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="company">Company Name</Label>
+                      <Select
+                        value={profileForm.watch("company")}
+                        onValueChange={(value) => profileForm.setValue("company", value)}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select company" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COMPANIES.map((company) => (
+                            <SelectItem key={company} value={company}>
+                              {company}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-blue-600 mt-1 cursor-pointer hover:underline" onClick={() => window.location.href = '/societies?type=office&action=create'}>
+                        Send Request to Add Company
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="floor">Floor Number</Label>
+                      <Input
+                        id="floor"
+                        placeholder="e.g., 5th"
+                        {...profileForm.register("floor")}
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="building">Building Name</Label>
+                      <Input
+                        id="building"
+                        placeholder="e.g., Tower A"
+                        {...profileForm.register("building")}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <Button
