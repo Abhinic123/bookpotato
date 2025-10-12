@@ -114,6 +114,20 @@ export default function EnhancedBrowse() {
     },
   });
 
+  // Pre-select all user's societies when they load
+  useEffect(() => {
+    if (societies && Array.isArray(societies) && societies.length > 0) {
+      const allSocietyIds = societies.map((s: any) => s.id.toString());
+      setFilters(prev => {
+        // Only update if societies filter is empty (initial load)
+        if (prev.societies.length === 0) {
+          return { ...prev, societies: allSocietyIds };
+        }
+        return prev;
+      });
+    }
+  }, [societies]);
+
   const updateFilter = (key: keyof Filters, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
@@ -146,12 +160,17 @@ export default function EnhancedBrowse() {
   };
 
   const clearFilters = () => {
+    // When clearing filters, reset societies to all user's societies
+    const allSocietyIds = societies && Array.isArray(societies) 
+      ? societies.map((s: any) => s.id.toString()) 
+      : [];
+    
     setFilters({
       search: "",
       genres: [],
       priceRange: [0, 100],
       conditions: [],
-      societies: [],
+      societies: allSocietyIds,
       availability: "all",
       sortBy: "newest",
       location: ""
