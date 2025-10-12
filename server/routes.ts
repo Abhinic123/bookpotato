@@ -2650,6 +2650,14 @@ Submitted on: ${new Date().toLocaleString()}
         type: "rental"
       });
 
+      // Create notification for borrower with owner's address and phone
+      await storage.createNotification({
+        userId: req.session.userId!,
+        title: "Book Borrowed Successfully",
+        message: `You have borrowed "${book.title}" from ${owner.name}. Collect from: ${owner.flatWing}, ${owner.buildingName}, ${owner.detailedAddress || ''}. Contact: ${owner.phone || 'No phone provided'}`,
+        type: "rental"
+      });
+
       // Return rental data with owner collection details
       res.json({
         rental,
