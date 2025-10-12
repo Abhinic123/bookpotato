@@ -261,25 +261,28 @@ export default function BuyBrocks() {
                   </div>
                 </div>
 
-                <button
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8 py-2 rounded-md font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                <Button
+                  type="button"
+                  className="w-full"
+                  size="lg"
                   disabled={purchaseMutation.isPending}
-                  onClick={() => {
-                    console.log("🖱️ BUTTON CLICKED!");
-                    console.log("📦 Selected package:", selectedPackage);
-                    console.log("🎯 Package details:", selectedPkg);
-                    setShowPaymentModal(true);
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("🚀 COMPLETE PURCHASE CLICKED");
+                    handlePurchase();
                   }}
+                  data-testid="button-complete-purchase"
                 >
                   {purchaseMutation.isPending ? (
                     "Processing Payment..."
                   ) : (
                     <>
-                      <CreditCard className="h-4 w-4" />
+                      <CreditCard className="h-4 w-4 mr-2" />
                       Complete Purchase - {formatCurrency(selectedPkg.price)}
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             </CardContent>
           </Card>
