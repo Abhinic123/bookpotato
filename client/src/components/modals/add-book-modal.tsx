@@ -424,20 +424,6 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="text-center">
-              <div className="flex gap-2 mb-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setScanMode(true)}
-                  className="flex-1"
-                >
-                  <Camera className="h-4 w-4 mr-2" />
-                  Scan Barcode
-                </Button>
-              </div>
-              <p className="text-sm text-text-secondary">or fill manually</p>
-            </div>
-
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -446,7 +432,7 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
-                        ISBN
+                        ISBN (Fill it for auto populating details)
                         {isLookingUpISBN && <Loader2 className="h-4 w-4 animate-spin" />}
                       </FormLabel>
                       <FormControl>
