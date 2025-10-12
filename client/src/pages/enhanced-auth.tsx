@@ -269,7 +269,7 @@ export default function EnhancedAuth() {
               <form onSubmit={registerForm.handleSubmit((data) => registerMutation.mutate(data))}>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name">Full Name *</Label>
                     <Input
                       id="name"
                       {...registerForm.register("name")}
@@ -283,7 +283,7 @@ export default function EnhancedAuth() {
                   </div>
 
                   <div>
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">Email *</Label>
                     <Input
                       id="email"
                       type="email"
@@ -298,7 +298,7 @@ export default function EnhancedAuth() {
                   </div>
 
                   <div>
-                    <Label htmlFor="phone">Phone Number</Label>
+                    <Label htmlFor="phone">Phone Number *</Label>
                     <Input
                       id="phone"
                       {...registerForm.register("phone")}
@@ -312,7 +312,7 @@ export default function EnhancedAuth() {
                   </div>
 
                   <div>
-                    <Label htmlFor="city">City</Label>
+                    <Label htmlFor="city">City *</Label>
                     <Select onValueChange={(value) => registerForm.setValue("city", value)}>
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder="Select your city" />
@@ -333,7 +333,7 @@ export default function EnhancedAuth() {
                   </div>
 
                   <div>
-                    <Label htmlFor="flatWing">Flat and Wing Number</Label>
+                    <Label htmlFor="flatWing">Flat and Wing Number *</Label>
                     <Input
                       id="flatWing"
                       placeholder="e.g., A-301"
@@ -348,7 +348,7 @@ export default function EnhancedAuth() {
                   </div>
 
                   <div>
-                    <Label htmlFor="buildingName">Building Name</Label>
+                    <Label htmlFor="buildingName">Building Name *</Label>
                     <Input
                       id="buildingName"
                       placeholder="e.g., Crystal Tower"
@@ -363,7 +363,7 @@ export default function EnhancedAuth() {
                   </div>
 
                   <div>
-                    <Label htmlFor="detailedAddress">Detailed Address</Label>
+                    <Label htmlFor="detailedAddress">Detailed Address *</Label>
                     <Input
                       id="detailedAddress"
                       placeholder="e.g., Behind Metro Station, Near Park"
@@ -391,7 +391,7 @@ export default function EnhancedAuth() {
                   </div>
 
                   <div>
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">Password *</Label>
                     <div className="relative mt-1">
                       <Input
                         id="password"
