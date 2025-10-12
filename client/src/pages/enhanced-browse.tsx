@@ -99,9 +99,9 @@ export default function EnhancedBrowse() {
   // Ensure books is always an array
   const books = Array.isArray(booksResponse) ? booksResponse : [];
 
-  // Fetch available societies for filtering
+  // Fetch user's societies for filtering (only show hubs user is part of)
   const { data: societies = [] } = useQuery({
-    queryKey: ["/api/societies/available"],
+    queryKey: ["/api/societies/my"],
   });
 
   // Get current user data

@@ -319,14 +319,11 @@ The BookPotato Team`,
         return res.status(400).json({ message: "Reset token has expired" });
       }
 
-      // Hash new password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Update user password and clear reset token
+      // Update user password and clear reset token (simple password storage to match existing auth)
       await db
         .update(users)
         .set({
-          password: hashedPassword,
+          password: password,
           resetToken: null,
           resetTokenExpiry: null,
         })
