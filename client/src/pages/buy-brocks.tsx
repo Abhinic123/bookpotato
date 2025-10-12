@@ -13,6 +13,7 @@ import { PaymentGatewayModal } from "@/components/modals/payment-gateway-modal";
 // Dynamic Brocks packages from API - we'll fetch these
 
 export default function BuyBrocks() {
+  console.log("🎯 BuyBrocks page loaded");
   const { toast } = useToast();
   
   // Fetch dynamic packages from API
@@ -187,6 +188,7 @@ export default function BuyBrocks() {
                     : "hover:shadow-md"
                 } ${pkg.popular ? "border-amber-400" : ""}`}
                 onClick={() => {
+                  console.log("📦 Package selected:", pkg.id, pkg.name);
                   setSelectedPackage(pkg.id);
                 }}
               >
@@ -229,9 +231,9 @@ export default function BuyBrocks() {
 
         {/* Order Summary and Purchase Button */}
         {selectedPackage && selectedPkg && (
-          <Card onClick={() => console.log("CARD CLICKED")}>
+          <Card>
             <CardHeader>
-              <CardTitle onClick={() => console.log("TITLE CLICKED")}>Order Summary</CardTitle>
+              <CardTitle>Order Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
@@ -261,32 +263,22 @@ export default function BuyBrocks() {
                   </div>
                 </div>
 
-                <div style={{ position: 'relative', zIndex: 10, pointerEvents: 'auto' }}>
-                  <Button
-                    type="button"
-                    className="w-full"
-                    size="lg"
-                    disabled={purchaseMutation.isPending}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      console.log("🚀🚀🚀 BUTTON CLICKED - OPENING MODAL");
-                      console.log("Selected:", selectedPackage, selectedPkg);
-                      setShowPaymentModal(true);
-                    }}
-                    data-testid="button-complete-purchase"
-                    style={{ cursor: 'pointer', pointerEvents: 'auto' }}
-                  >
-                    {purchaseMutation.isPending ? (
-                      "Processing Payment..."
-                    ) : (
-                      <>
-                        <CreditCard className="h-4 w-4 mr-2" />
-                        Complete Purchase - {formatCurrency(selectedPkg.price)}
-                      </>
-                    )}
-                  </Button>
-                </div>
+                <Button
+                  className="w-full"
+                  size="lg"
+                  disabled={purchaseMutation.isPending}
+                  onClick={() => setShowPaymentModal(true)}
+                  data-testid="button-complete-purchase"
+                >
+                  {purchaseMutation.isPending ? (
+                    "Processing Payment..."
+                  ) : (
+                    <>
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      Complete Purchase - {formatCurrency(selectedPkg.price)}
+                    </>
+                  )}
+                </Button>
               </div>
             </CardContent>
           </Card>
