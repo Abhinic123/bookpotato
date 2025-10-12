@@ -13,7 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { CheckCircle, XCircle, MessageSquare, Book, IndianRupee, Clock } from "lucide-react";
+import { CheckCircle, XCircle, MessageSquare, Book, IndianRupee, Clock, AlertTriangle } from "lucide-react";
+import { PaymentGatewayModal } from "@/components/modals/payment-gateway-modal";
 
 interface ReturnConfirmationModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export default function ReturnConfirmationModal({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState("");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Calculate late fees if overdue
   const calculateLateFee = () => {
@@ -98,6 +100,18 @@ export default function ReturnConfirmationModal({
   });
 
   const handleSubmit = () => {
+    // If borrower is requesting return and book is overdue, show payment modal first
+    if (type === "request" && isOverdue && totalLateFee > 0) {
+      setShowPaymentModal(true);
+    } else {
+      // Otherwise proceed with normal flow (lender confirm or on-time return request)
+      confirmReturnMutation.mutate();
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    // After successful payment, send the return request
+    setShowPaymentModal(false);
     confirmReturnMutation.mutate();
   };
 
@@ -285,6 +299,24 @@ export default function ReturnConfirmationModal({
           </div>
         </div>
       </DialogContent>
+
+      {/* Payment Gateway Modal for Overdue Late Fees */}
+      {showPaymentModal && (
+        <PaymentGatewayModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onPaymentSuccess={handlePaymentSuccess}
+          paymentDetails={{
+            amount: totalLateFee,
+            description: `Late Fee Payment for "${rental.book?.title}" - ${daysLate} days overdue`,
+            breakdown: {
+              extensionFee: totalLateFee,
+              platformCommission: 0,
+              ownerEarnings: totalLateFee,
+            }
+          }}
+        />
+      )}
     </Dialog>
   );
 }
