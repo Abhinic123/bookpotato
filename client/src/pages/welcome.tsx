@@ -21,7 +21,7 @@ const welcomeScreens = [
     id: 1,
     title: "Welcome to BookPotato",
     subtitle: "Your Community Library Platform",
-    description: "Connect with your neighbors and share books within your society. Discover new reads while building a stronger community.",
+    description: "Connect with your neighbors and share books within your hub. Upload books instantly with our powerful bulk upload feature - just snap photos of multiple books and let AI do the rest!",
     icon: BookOpen,
     gradient: "from-blue-500 to-cyan-500",
     illustration: (
@@ -42,9 +42,9 @@ const welcomeScreens = [
   },
   {
     id: 2,
-    title: "Join Your Society",
-    subtitle: "Connect with Your Community",
-    description: "Find and join your residential society to start sharing books with your neighbors. Build lasting connections through literature.",
+    title: "Smart Bulk Upload",
+    subtitle: "Add Your Library in Minutes",
+    description: "Upload multiple books at once! Take photos of your book collection and our AI automatically recognizes titles, authors, and details. No more manual typing - list your entire library in seconds!",
     icon: Users,
     gradient: "from-purple-500 to-pink-500",
     illustration: (
@@ -69,9 +69,9 @@ const welcomeScreens = [
   },
   {
     id: 3,
-    title: "Discover Local Books",
-    subtitle: "Browse Nearby Collections",
-    description: "Explore books available in your society. From bestsellers to classics, find your next great read just steps away from home.",
+    title: "Discover & Share",
+    subtitle: "Browse Books Across Hubs",
+    description: "Explore books from Societies, Schools, and Offices. Find your next great read nearby, rent or buy instantly, and earn money by sharing your collection with the community.",
     icon: MapPin,
     gradient: "from-green-500 to-teal-500",
     illustration: (
