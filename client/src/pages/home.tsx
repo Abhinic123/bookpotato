@@ -196,33 +196,32 @@ export default function Home() {
 
   return (
     <div className="space-y-6">
-      {/* Society Header */}
+      {/* Hubs Header */}
       <div className="gradient-primary p-4 text-white">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold">Current Society</h2>
+          <h2 className="font-semibold">Current Hubs</h2>
           <Button 
             variant="ghost" 
             size="sm" 
             className="text-white opacity-90"
             onClick={() => navigate("/societies")}
           >
-            Change
+            Manage
           </Button>
         </div>
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-            <Building2 className="h-6 w-6" />
-          </div>
-          <div>
-            <h3 className="font-semibold">{currentSociety.name}</h3>
-            <p 
-              className="text-sm opacity-90 cursor-pointer hover:opacity-100 transition-opacity" 
-              onClick={() => setShowMembersPopup(true)}
-              data-testid="current-society-members-count"
+        <div className="flex flex-wrap gap-2">
+          {(societies as any[])?.map((society, index) => (
+            <div 
+              key={society.id}
+              className="flex items-center space-x-2 bg-white bg-opacity-20 rounded-lg px-3 py-2 hover:bg-opacity-30 transition-all"
             >
-              {(currentSociety as any)?.memberCount || 0} members
-            </p>
-          </div>
+              <Building2 className="h-4 w-4" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">{society.name}</span>
+                <span className="text-xs opacity-80">{society.memberCount || 0} members</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
