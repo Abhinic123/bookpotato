@@ -78,8 +78,9 @@ export default function BuyBrocks() {
     setShowPaymentModal(true);
   };
 
-  const handlePaymentSuccess = (paymentMethod: string) => {
-    purchaseMutation.mutate(paymentMethod);
+  const handlePaymentSuccess = () => {
+    // Use "card" as default payment method for now
+    purchaseMutation.mutate("card");
   };
   
   // Default packages in case API fails or no packages exist
@@ -330,12 +331,7 @@ export default function BuyBrocks() {
           onPaymentSuccess={handlePaymentSuccess}
           paymentDetails={{
             amount: parseFloat(selectedPkg.price),
-            description: `Purchase ${selectedPkg.name}`,
-            breakdown: {
-              baseBrocks: selectedPkg.brocks,
-              bonusBrocks: selectedPkg.bonus,
-              totalBrocks: selectedPkg.brocks + selectedPkg.bonus,
-            }
+            description: `Purchase ${selectedPkg.name} - Get ${selectedPkg.brocks + selectedPkg.bonus} Brocks`,
           }}
         />
       )}
