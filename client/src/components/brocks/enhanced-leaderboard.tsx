@@ -153,21 +153,6 @@ export default function EnhancedLeaderboard({ leaderboard }: EnhancedLeaderboard
                         <div className="text-xs text-gray-500">Total Earned</div>
                       </div>
                     </div>
-                    
-                    {/* Progress to Next Rank */}
-                    {user.credits < 10000 && (
-                      <div className="text-center sm:text-right flex-shrink-0">
-                        <div className="text-xs text-gray-500 mb-1">Next Rank Progress</div>
-                        <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden mx-auto sm:mx-0">
-                          <div 
-                            className="h-full bg-gradient-to-r from-blue-400 to-purple-500 transition-all"
-                            style={{
-                              width: `${Math.min(100, ((user.credits % 1000) / 10))}%`
-                            }}
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -177,7 +162,7 @@ export default function EnhancedLeaderboard({ leaderboard }: EnhancedLeaderboard
                 <div className="mt-3 text-center">
                   <div className="inline-flex items-center space-x-2 px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white rounded-full text-sm font-medium">
                     <Crown className="w-4 h-4" />
-                    <span>Community Champion</span>
+                    <span>Overall Champion</span>
                     <Zap className="w-4 h-4" />
                   </div>
                 </div>
