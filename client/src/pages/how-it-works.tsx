@@ -34,13 +34,13 @@ const steps = [
   {
     number: 2,
     title: "Add Your Books",
-    description: "List books you're willing to share and set your daily rental fee or selling price.",
+    description: "List your entire library in seconds with our smart bulk upload feature! Just snap photos and our AI does the rest.",
     icon: BookOpen,
     color: "bg-green-500",
     details: [
-      "Scan ISBN barcode or add manually",
-      "Set condition (Excellent, Good, Fair, Poor)",
-      "Choose daily rental fee or selling price",
+      "Use bulk upload to add multiple books at once",
+      "AI automatically recognizes book details from photos",
+      "Set condition and pricing for each book",
       "Earn 1 Brock credit for each book added"
     ]
   },
