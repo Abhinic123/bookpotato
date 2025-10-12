@@ -11,6 +11,7 @@ import AutofillSuggestions from "@/pages/autofill-suggestions";
 import EnhancedBrowse from "@/pages/enhanced-browse";
 import Settings from "@/pages/settings";
 import EnhancedAuth from "@/pages/enhanced-auth";
+import ResetPassword from "@/pages/reset-password";
 import Home from "@/pages/home";
 import Browse from "@/pages/browse";
 import MyBooks from "@/pages/my-books";
@@ -85,6 +86,7 @@ function Router() {
     return (
       <Switch>
         <Route path="/auth" component={EnhancedAuth} />
+        <Route path="/reset-password" component={ResetPassword} />
         <Route path="/downloads" component={Downloads} />
         <Route component={Welcome} />
       </Switch>

@@ -291,6 +291,54 @@ The BookPotato Team`,
     }
   });
 
+  // Reset password with token
+  app.post("/api/auth/reset-password", async (req, res) => {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ message: "Token and password are required" });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters long" });
+    }
+
+    try {
+      // Find user with valid reset token
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.resetToken, token));
+
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      // Check if token is expired
+      if (!user.resetTokenExpiry || new Date(user.resetTokenExpiry) < new Date()) {
+        return res.status(400).json({ message: "Reset token has expired" });
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Update user password and clear reset token
+      await db
+        .update(users)
+        .set({
+          password: hashedPassword,
+          resetToken: null,
+          resetTokenExpiry: null,
+        })
+        .where(eq(users.id, user.id));
+
+      res.json({ message: "Password reset successfully" });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  });
+
   app.post("/api/auth/register", async (req, res) => {
     try {
       // Separate referral code from user data for processing
