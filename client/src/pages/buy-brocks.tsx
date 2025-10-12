@@ -5,17 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/utils";
+import { PaymentGatewayModal } from "@/components/modals/payment-gateway-modal";
 
 // Dynamic Brocks packages from API - we'll fetch these
 
@@ -28,6 +21,7 @@ export default function BuyBrocks() {
   });
   const queryClient = useQueryClient();
   const [selectedPackage, setSelectedPackage] = useState<string | number>("");
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Fetch user credits
   const { data: userCredits } = useQuery({
@@ -44,10 +38,8 @@ export default function BuyBrocks() {
     queryKey: ["/api/page-content/buy-brocks"],
   });
 
-  const [paymentMethod, setPaymentMethod] = useState("card");
-
   const purchaseMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (paymentMethod: string) => {
       if (!selectedPackage) {
         throw new Error("Please select a package");
       }
@@ -64,7 +56,6 @@ export default function BuyBrocks() {
       });
       queryClient.invalidateQueries({ queryKey: ["/api/user/credits"] });
       setSelectedPackage("");
-      setPaymentMethod("card");
     },
     onError: (error: any) => {
       toast({
@@ -84,7 +75,11 @@ export default function BuyBrocks() {
       });
       return;
     }
-    purchaseMutation.mutate();
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSuccess = (paymentMethod: string) => {
+    purchaseMutation.mutate(paymentMethod);
   };
   
   // Default packages in case API fails or no packages exist
@@ -231,61 +226,43 @@ export default function BuyBrocks() {
           )}
         </div>
 
-        {/* Payment Form */}
-        {selectedPackage && (
+        {/* Order Summary and Purchase Button */}
+        {selectedPackage && selectedPkg && (
           <Card>
             <CardHeader>
-              <CardTitle>Payment Details</CardTitle>
+              <CardTitle>Order Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="space-y-2">
-                  <Label>Payment Method</Label>
-                  <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select payment method" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="card">Credit/Debit Card</SelectItem>
-                      <SelectItem value="upi">UPI</SelectItem>
-                      <SelectItem value="netbanking">Net Banking</SelectItem>
-                      <SelectItem value="wallet">Digital Wallet</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                  {/* Order Summary */}
-                  {selectedPkg && (
-                    <div className="bg-surface rounded-lg p-4 space-y-3">
-                      <h4 className="font-semibold text-text-primary">Order Summary</h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>Package</span>
-                          <span>{selectedPkg.name}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Base Brocks</span>
-                          <span>{selectedPkg.brocks} Brocks</span>
-                        </div>
-                        <div className="flex justify-between text-green-600">
-                          <span>Bonus Brocks</span>
-                          <span>+{selectedPkg.bonus} Brocks</span>
-                        </div>
-                        <Separator />
-                        <div className="flex justify-between font-semibold">
-                          <span>Total Brocks</span>
-                          <span>{selectedPkg.brocks + selectedPkg.bonus} Brocks</span>
-                        </div>
-                        <div className="flex justify-between font-semibold text-lg">
-                          <span>Total Amount</span>
-                          <span>{formatCurrency(selectedPkg.price)}</span>
-                        </div>
-                      </div>
+                <div className="bg-surface rounded-lg p-4 space-y-3">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Package</span>
+                      <span className="font-medium">{selectedPkg.name}</span>
                     </div>
-                  )}
+                    <div className="flex justify-between">
+                      <span>Base Brocks</span>
+                      <span>{selectedPkg.brocks} Brocks</span>
+                    </div>
+                    <div className="flex justify-between text-green-600">
+                      <span>Bonus Brocks</span>
+                      <span>+{selectedPkg.bonus} Brocks</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between font-semibold">
+                      <span>Total Brocks</span>
+                      <span className="text-amber-600">{selectedPkg.brocks + selectedPkg.bonus} Brocks</span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-lg">
+                      <span>Total Amount</span>
+                      <span className="text-primary">{formatCurrency(selectedPkg.price)}</span>
+                    </div>
+                  </div>
+                </div>
 
                 <Button
                   className="w-full"
+                  size="lg"
                   disabled={purchaseMutation.isPending || !selectedPackage}
                   data-testid="button-complete-purchase"
                   onClick={handlePurchase}
@@ -295,7 +272,7 @@ export default function BuyBrocks() {
                   ) : (
                     <>
                       <CreditCard className="h-4 w-4 mr-2" />
-                      Complete Purchase {selectedPkg && `- ${formatCurrency(selectedPkg.price)}`}
+                      Complete Purchase - {formatCurrency(selectedPkg.price)}
                     </>
                   )}
                 </Button>
@@ -341,6 +318,24 @@ export default function BuyBrocks() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Payment Gateway Modal */}
+      {selectedPkg && (
+        <PaymentGatewayModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onPaymentSuccess={handlePaymentSuccess}
+          paymentDetails={{
+            amount: parseFloat(selectedPkg.price),
+            description: `Purchase ${selectedPkg.name}`,
+            breakdown: {
+              baseBrocks: selectedPkg.brocks,
+              bonusBrocks: selectedPkg.bonus,
+              totalBrocks: selectedPkg.brocks + selectedPkg.bonus,
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
