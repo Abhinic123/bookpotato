@@ -1412,7 +1412,7 @@ The BookPotato Team`,
         return res.status(400).json({ message: "Return request already sent" });
       }
 
-      const { notes } = req.body;
+      const { notes, lateFeeAmount } = req.body;
 
       // Get borrower and lender details including phone numbers
       const borrower = await storage.getUser(rental.borrowerId);
@@ -1422,16 +1422,32 @@ The BookPotato Team`,
         return res.status(400).json({ message: "User details not found" });
       }
 
+      // Check if book is overdue and calculate late fee
+      const endDate = new Date(rental.endDate);
+      const currentDate = new Date();
+      const isOverdue = currentDate > endDate;
+      let calculatedLateFee = 0;
+
+      if (isOverdue) {
+        const daysLate = Math.ceil((currentDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
+        const dailyLateFee = (Number(rental.book?.dailyFee) || 10) * 0.5; // 50% of daily fee
+        calculatedLateFee = daysLate * dailyLateFee;
+      }
+
       // Update rental status to indicate return request
       await storage.updateRental(rentalId, {
         status: 'return_requested'
       });
 
       // Create comprehensive notification for lender with coordination details
+      const notificationMessage = isOverdue && calculatedLateFee > 0
+        ? `${borrower.name} wants to return "${rental.book.title}". The book is overdue and will incur a late fee of ₹${calculatedLateFee.toFixed(2)}. Please coordinate a meeting spot for the book return. Once you receive the book, confirm the return to complete the transaction.${notes ? ` Borrower's message: ${notes}` : ''}`
+        : `${borrower.name} wants to return "${rental.book.title}". Please coordinate a meeting spot for the book return. Once you receive the book, confirm the return to complete the transaction.${notes ? ` Borrower's message: ${notes}` : ''}`;
+
       await storage.createNotification({
         userId: rental.lenderId,
         title: "Book Return Request",
-        message: `${borrower.name} wants to return "${rental.book.title}". Please coordinate a meeting spot for the book return. Once you receive the book, confirm the return to complete the transaction.${notes ? ` Borrower's message: ${notes}` : ''}`,
+        message: notificationMessage,
         type: "return_request",
         data: JSON.stringify({
           rentalId: rentalId,
@@ -1439,11 +1455,31 @@ The BookPotato Team`,
           borrowerPhone: borrower.phone,
           lenderPhone: lender.phone,
           bookTitle: rental.book.title,
-          notes: notes || null
+          notes: notes || null,
+          lateFee: calculatedLateFee > 0 ? calculatedLateFee : null,
+          isOverdue: isOverdue
         })
       });
 
-      res.json({ message: "Return request sent successfully" });
+      // If there's a late fee, also notify the borrower
+      if (isOverdue && calculatedLateFee > 0) {
+        await storage.createNotification({
+          userId: rental.borrowerId,
+          title: "Late Fee Notice",
+          message: `Your return request for "${rental.book.title}" has been sent. A late fee of ₹${calculatedLateFee.toFixed(2)} will be deducted from your security deposit when the owner confirms the return.`,
+          type: "late_fee_notice",
+          data: JSON.stringify({
+            rentalId: rentalId,
+            lateFee: calculatedLateFee,
+            bookTitle: rental.book.title
+          })
+        });
+      }
+
+      res.json({ 
+        message: "Return request sent successfully",
+        lateFee: calculatedLateFee > 0 ? calculatedLateFee : null
+      });
     } catch (error) {
       console.error("Request return error:", error);
       res.status(500).json({ message: "Failed to request return" });

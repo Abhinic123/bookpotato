@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { CheckCircle, XCircle, MessageSquare, Book } from "lucide-react";
+import { CheckCircle, XCircle, MessageSquare, Book, IndianRupee, Clock } from "lucide-react";
 
 interface ReturnConfirmationModalProps {
   isOpen: boolean;
@@ -32,21 +32,47 @@ export default function ReturnConfirmationModal({
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState("");
 
+  // Calculate late fees if overdue
+  const calculateLateFee = () => {
+    if (!rental || !rental.book) return { daysLate: 0, dailyLateFee: 0, totalLateFee: 0 };
+    
+    const endDate = new Date(rental.endDate);
+    const currentDate = new Date();
+    const daysLate = Math.max(0, Math.ceil((currentDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24)));
+    const dailyLateFee = (parseFloat(rental.book.dailyFee) || 0) * 0.5 || 5; // 50% of daily fee or ₹5 minimum
+    return {
+      daysLate,
+      dailyLateFee,
+      totalLateFee: daysLate * dailyLateFee
+    };
+  };
+
+  const { daysLate, dailyLateFee, totalLateFee } = calculateLateFee();
+
   const confirmReturnMutation = useMutation({
     mutationFn: async () => {
       const endpoint = type === "confirm" 
         ? `/api/rentals/${rental.id}/confirm-return`
         : `/api/rentals/${rental.id}/request-return`;
       
-      const response = await apiRequest("POST", endpoint, {
+      const requestData: any = {
         notes: notes.trim() || undefined
-      });
+      };
+
+      // Include late fee info if borrower is requesting return for overdue book
+      if (type === "request" && isOverdue && totalLateFee > 0) {
+        requestData.lateFeeAmount = totalLateFee;
+      }
+      
+      const response = await apiRequest("POST", endpoint, requestData);
       return response.json();
     },
     onSuccess: () => {
       const message = type === "confirm" 
         ? "Return confirmed successfully"
-        : "Return request sent to book owner";
+        : isOverdue && totalLateFee > 0
+          ? `Return request sent. Late fee of ₹${totalLateFee.toFixed(2)} will be charged.`
+          : "Return request sent to book owner";
       
       toast({
         title: type === "confirm" ? "Return Confirmed" : "Return Requested",
@@ -128,19 +154,54 @@ export default function ReturnConfirmationModal({
             </CardContent>
           </Card>
 
-          {/* Overdue Warning */}
+          {/* Overdue Warning and Late Fee Details */}
           {isOverdue && (
             <Card className="border-red-200 bg-red-50">
-              <CardContent className="p-3">
+              <CardContent className="p-4 space-y-3">
                 <div className="flex items-center space-x-2">
                   <XCircle className="w-4 h-4 text-red-600" />
                   <span className="text-sm font-medium text-red-800">
                     This book is overdue
                   </span>
                 </div>
-                <p className="text-xs text-red-700 mt-1">
-                  Late fees may apply. Please process the return as soon as possible.
-                </p>
+                
+                {type === "request" && totalLateFee > 0 && (
+                  <>
+                    <div className="flex items-center space-x-2 pt-2 border-t border-red-200">
+                      <Clock className="w-4 h-4 text-red-600" />
+                      <span className="font-medium text-red-800">Late Fee Details</span>
+                    </div>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Days overdue:</span>
+                        <span className="font-medium">{daysLate} days</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Late fee per day:</span>
+                        <span className="font-medium">₹{dailyLateFee.toFixed(2)}</span>
+                      </div>
+                      <hr className="border-red-200" />
+                      <div className="flex justify-between font-medium text-base">
+                        <span>Total late fee:</span>
+                        <span className="text-red-700 flex items-center">
+                          <IndianRupee className="w-4 h-4" />
+                          {totalLateFee.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <p className="text-xs text-red-700 mt-2">
+                      This late fee will be charged when you return the book.
+                    </p>
+                  </>
+                )}
+                
+                {type === "confirm" && (
+                  <p className="text-xs text-red-700 mt-1">
+                    Late fees may apply. Please process the return as soon as possible.
+                  </p>
+                )}
               </CardContent>
             </Card>
           )}
