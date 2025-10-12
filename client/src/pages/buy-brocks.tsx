@@ -16,7 +16,7 @@ export default function BuyBrocks() {
   const { toast } = useToast();
   
   // Fetch dynamic packages from API
-  const { data: brocksPackages, isLoading: packagesLoading } = useQuery({
+  const { data: brocksPackages, isLoading: packagesLoading } = useQuery<any>({
     queryKey: ["/api/brocks-packages"],
   });
   const queryClient = useQueryClient();
@@ -24,17 +24,17 @@ export default function BuyBrocks() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Fetch user credits
-  const { data: userCredits } = useQuery({
+  const { data: userCredits } = useQuery<any>({
     queryKey: ["/api/user/credits"],
   });
 
   // Fetch conversion rates
-  const { data: conversionRates } = useQuery({
+  const { data: conversionRates } = useQuery<any>({
     queryKey: ["/api/admin/brocks-conversion-rates"],
   });
 
   // Fetch page content
-  const { data: pageContent } = useQuery({
+  const { data: pageContent } = useQuery<any>({
     queryKey: ["/api/page-content/buy-brocks"],
   });
 
@@ -178,7 +178,7 @@ export default function BuyBrocks() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {packages?.map((pkg) => (
+              {packages?.map((pkg: any) => (
               <Card
                 key={pkg.id}
                 className={`relative cursor-pointer transition-all ${
@@ -229,9 +229,9 @@ export default function BuyBrocks() {
 
         {/* Order Summary and Purchase Button */}
         {selectedPackage && selectedPkg && (
-          <Card>
+          <Card onClick={() => console.log("CARD CLICKED")}>
             <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
+              <CardTitle onClick={() => console.log("TITLE CLICKED")}>Order Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
@@ -261,28 +261,32 @@ export default function BuyBrocks() {
                   </div>
                 </div>
 
-                <Button
-                  type="button"
-                  className="w-full"
-                  size="lg"
-                  disabled={purchaseMutation.isPending}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log("🚀 COMPLETE PURCHASE CLICKED");
-                    handlePurchase();
-                  }}
-                  data-testid="button-complete-purchase"
-                >
-                  {purchaseMutation.isPending ? (
-                    "Processing Payment..."
-                  ) : (
-                    <>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Complete Purchase - {formatCurrency(selectedPkg.price)}
-                    </>
-                  )}
-                </Button>
+                <div style={{ position: 'relative', zIndex: 10, pointerEvents: 'auto' }}>
+                  <Button
+                    type="button"
+                    className="w-full"
+                    size="lg"
+                    disabled={purchaseMutation.isPending}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log("🚀🚀🚀 BUTTON CLICKED - OPENING MODAL");
+                      console.log("Selected:", selectedPackage, selectedPkg);
+                      setShowPaymentModal(true);
+                    }}
+                    data-testid="button-complete-purchase"
+                    style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+                  >
+                    {purchaseMutation.isPending ? (
+                      "Processing Payment..."
+                    ) : (
+                      <>
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Complete Purchase - {formatCurrency(selectedPkg.price)}
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
