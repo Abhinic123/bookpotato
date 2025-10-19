@@ -169,14 +169,11 @@ export default function MyBooks() {
                         // Check if payment is required upfront due to excess late fees
                         if (data.requiresPayment && data.excessAmount > 0) {
                           setExcessChargeData({
-                            rentalId: rental.id,
+                            rental: rental,
                             excessAmount: data.excessAmount,
                             lateFee: data.lateFee,
-                            platformFeeOnLateFee: data.platformFeeOnLateFee,
-                            totalDeduction: data.totalDeduction,
-                            bookTitle: rental.book.title,
-                            lenderName: rental.lender.name,
-                            securityDeposit: rental.securityDeposit
+                            platformFee: data.platformFeeOnLateFee,
+                            securityDeposit: parseFloat(rental.securityDeposit)
                           });
                           setShowExcessChargeModal(true);
                         } else {
@@ -699,23 +696,11 @@ export default function MyBooks() {
             setShowExcessChargeModal(false);
             setExcessChargeData(null);
           }}
-          rentalId={excessChargeData.rentalId}
+          rental={excessChargeData.rental}
           excessAmount={excessChargeData.excessAmount}
           lateFee={excessChargeData.lateFee}
-          platformFeeOnLateFee={excessChargeData.platformFeeOnLateFee}
-          totalDeduction={excessChargeData.totalDeduction}
-          bookTitle={excessChargeData.bookTitle}
-          lenderName={excessChargeData.lenderName}
+          platformFee={excessChargeData.platformFee}
           securityDeposit={excessChargeData.securityDeposit}
-          onPaymentSuccess={() => {
-            setShowExcessChargeModal(false);
-            setExcessChargeData(null);
-            queryClient.invalidateQueries({ queryKey: ["/api/rentals/borrowed"] });
-            toast({
-              title: "Payment Successful",
-              description: "Excess charges paid successfully. Return request has been sent.",
-            });
-          }}
         />
       )}
 
