@@ -1670,6 +1670,57 @@ The BookPotato Team`,
     }
   });
 
+  // Pay excess charges (when charges exceed security deposit after return)
+  app.post("/api/rentals/:id/pay-excess-charges", requireAuth, async (req, res) => {
+    try {
+      const rentalId = parseInt(req.params.id);
+      const rental = await storage.getRental(rentalId);
+      
+      if (!rental || rental.borrowerId !== req.session.userId!) {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
+
+      const { excessAmount, paymentId, orderId } = req.body;
+
+      if (!paymentId || !orderId) {
+        return res.status(400).json({ message: "Payment details required" });
+      }
+
+      console.log(`✅ Excess charge payment received for rental ${rentalId}: ₹${excessAmount}, Payment ID: ${paymentId}`);
+
+      // Create notification for lender
+      await storage.createNotification({
+        userId: rental.lenderId,
+        title: "Excess Charges Paid",
+        message: `${rental.borrower.name} has paid ₹${excessAmount.toFixed(2)} in excess charges for "${rental.book.title}". The book return transaction is now complete.`,
+        type: "excess_charge_paid",
+        data: JSON.stringify({
+          rentalId: rentalId,
+          excessAmount: excessAmount,
+          paymentId: paymentId,
+          orderId: orderId
+        })
+      });
+
+      // Create notification for borrower confirming payment
+      await storage.createNotification({
+        userId: rental.borrowerId,
+        title: "Payment Confirmed",
+        message: `Your payment of ₹${excessAmount.toFixed(2)} for excess charges on "${rental.book.title}" has been successfully processed. The transaction is now complete.`,
+        type: "payment_confirmed"
+      });
+
+      res.json({ 
+        message: "Excess charges paid successfully",
+        paymentId,
+        orderId
+      });
+    } catch (error) {
+      console.error("Pay excess charges error:", error);
+      res.status(500).json({ message: "Failed to process excess charge payment" });
+    }
+  });
+
   // Notification endpoints
   app.post("/api/notifications/:id/respond-extension", requireAuth, async (req, res) => {
     try {
