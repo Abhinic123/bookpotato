@@ -114,9 +114,22 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-// Google OAuth configuration
+// Google OAuth configuration - dynamically detect domain
 const getCallbackURL = () => {
-  const domain = process.env.REPLIT_DEV_DOMAIN || '59203db4-a967-4b1c-b1d8-9d66f27d10d9-00-3bzw6spzdofx2.picard.replit.dev';
+  // Priority: 1. Production domain, 2. REPLIT_DOMAINS, 3. Fallback dev domain
+  const productionDomain = process.env.PRODUCTION_DOMAIN; // Set this to bookpotato.in in production
+  const replitDomains = process.env.REPLIT_DOMAINS;
+  const devDomain = '59203db4-a967-4b1c-b1d8-9d66f27d10d9-00-3bzw6spzdofx2.picard.replit.dev';
+  
+  let domain = devDomain;
+  
+  if (productionDomain) {
+    domain = productionDomain;
+  } else if (replitDomains) {
+    // REPLIT_DOMAINS can contain multiple domains, use the first one
+    domain = replitDomains.split(',')[0].trim();
+  }
+  
   // Ensure HTTPS protocol
   const baseUrl = domain.startsWith('http') ? domain : `https://${domain}`;
   return `${baseUrl}/api/auth/google/callback`;
