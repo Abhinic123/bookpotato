@@ -106,11 +106,15 @@ const borrowBookSchema = z.object({
     brocksUsed: z.number(),
     discountAmount: z.number(),
   }).nullable().optional(),
+  paymentId: z.string().optional(),
+  orderId: z.string().optional(),
 });
 
 const buyBookSchema = z.object({
   bookId: z.number(),
   paymentMethod: z.string(),
+  paymentId: z.string().optional(),
+  orderId: z.string().optional(),
 });
 
 const joinSocietySchema = z.object({
@@ -2662,7 +2666,11 @@ Submitted on: ${new Date().toLocaleString()}
 
   app.post("/api/rentals/borrow", requireAuth, async (req, res) => {
     try {
-      const { bookId, duration, paymentMethod, appliedBrocks } = borrowBookSchema.parse(req.body);
+      const { bookId, duration, paymentMethod, appliedBrocks, paymentId, orderId } = borrowBookSchema.parse(req.body);
+      
+      if (paymentId && orderId) {
+        console.log(`💳 Razorpay payment received for borrow - Payment ID: ${paymentId}, Order ID: ${orderId}`);
+      }
       
       const book = await storage.getBook(bookId);
       if (!book) {
@@ -2832,7 +2840,11 @@ Submitted on: ${new Date().toLocaleString()}
 
   app.post("/api/purchases/buy", requireAuth, async (req, res) => {
     try {
-      const { bookId, paymentMethod } = buyBookSchema.parse(req.body);
+      const { bookId, paymentMethod, paymentId, orderId } = buyBookSchema.parse(req.body);
+      
+      if (paymentId && orderId) {
+        console.log(`💳 Razorpay payment received for purchase - Payment ID: ${paymentId}, Order ID: ${orderId}`);
+      }
       
       const book = await storage.getBook(bookId);
       if (!book) {
