@@ -249,22 +249,12 @@ export default function Home() {
         
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200" onClick={() => setShowAddBookModal(true)}>
-            <CardContent className="pt-4 pb-4 text-center">
-              <div className="flex flex-col items-center space-y-1">
-                <BookPlus className="h-6 w-6 text-blue-600" />
-                <div className="text-sm font-semibold text-blue-700">Add Book</div>
-                <div className="text-xs text-blue-600">Manual Entry</div>
-              </div>
-            </CardContent>
-          </Card>
-          
           <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200" onClick={() => setShowBulkUploadModal(true)}>
             <CardContent className="pt-4 pb-4 text-center">
               <div className="flex flex-col items-center space-y-1">
                 <Camera className="h-6 w-6 text-purple-600" />
                 <div className="flex items-center space-x-1">
-                  <div className="text-sm font-semibold text-purple-700">Bulk Upload (Experimental)</div>
+                  <div className="text-sm font-semibold text-purple-700">Add Books In Bulk</div>
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -303,6 +293,16 @@ export default function Home() {
               </div>
             </CardContent>
           </Card>
+          
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200" onClick={() => setShowAddBookModal(true)}>
+            <CardContent className="pt-4 pb-4 text-center">
+              <div className="flex flex-col items-center space-y-1">
+                <BookPlus className="h-6 w-6 text-blue-600" />
+                <div className="text-sm font-semibold text-blue-700">Add Book</div>
+                <div className="text-xs text-blue-600">Manual Entry</div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
         
         <div className="grid grid-cols-2 gap-3">
@@ -320,7 +320,7 @@ export default function Home() {
             <CardContent className="pt-4 pb-4 text-center">
               <div className="flex flex-col items-center space-y-1">
                 <MessageCircle className="h-6 w-6 text-emerald-600" />
-                <div className="text-sm font-semibold text-emerald-700">Society Chat</div>
+                <div className="text-sm font-semibold text-emerald-700">Society and School Chat</div>
                 <div className="text-xs text-emerald-600">Connect & Message</div>
               </div>
             </CardContent>

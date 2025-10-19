@@ -8,12 +8,13 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency, formatDateRelative, getBookStatusColor, getBookStatusText } from "@/lib/utils";
 import type { RentalWithDetails, Book } from "@shared/schema";
-import { BookOpen, Plus, Edit } from "lucide-react";
+import { BookOpen, Plus, Edit, Camera } from "lucide-react";
 import AddBookModal from "@/components/modals/add-book-modal";
 import BookDetailsModal from "@/components/modals/book-details-modal";
 import ExtensionRequestModal from "@/components/modals/extension-request-modal";
 import LateFeeModal from "@/components/modals/late-fee-modal";
 import ReturnConfirmationModal from "@/components/modals/return-confirmation-modal";
+import { BulkBookUpload } from "@/components/bulk-book-upload";
 
 export default function MyBooks() {
   const { toast } = useToast();
@@ -27,6 +28,7 @@ export default function MyBooks() {
   const [showLateFeeModal, setShowLateFeeModal] = useState(false);
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [returnModalType, setReturnModalType] = useState<"confirm" | "request">("request");
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
 
   const { data: borrowedBooks, isLoading: loadingBorrowed } = useQuery({
     queryKey: ["/api/rentals/borrowed"],
@@ -567,6 +569,14 @@ export default function MyBooks() {
 
   return (
     <div className="p-4">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-text-primary">My Books</h1>
+        <Button onClick={() => setShowBulkUploadModal(true)} variant="outline" data-testid="button-bulk-upload">
+          <Camera className="h-4 w-4 mr-2" />
+          Add Books In Bulk
+        </Button>
+      </div>
+      
       <Tabs defaultValue="borrowed" className="w-full">
         <TabsList className="grid w-full grid-cols-5 mb-6">
           <TabsTrigger value="borrowed">Borrowed</TabsTrigger>
@@ -658,6 +668,21 @@ export default function MyBooks() {
           rental={selectedRental}
           type={returnModalType}
         />
+      )}
+
+      {/* Bulk Upload Modal */}
+      {showBulkUploadModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-auto">
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-white rounded-lg shadow-xl">
+            <BulkBookUpload
+              onClose={() => setShowBulkUploadModal(false)}
+              onBooksAdded={() => {
+                setShowBulkUploadModal(false);
+                queryClient.invalidateQueries({ queryKey: ["/api/books/my"] });
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
