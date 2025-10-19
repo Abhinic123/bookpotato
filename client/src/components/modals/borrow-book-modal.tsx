@@ -35,6 +35,12 @@ import { formatCurrency, calculateRentalCost } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import type { BookWithOwner } from "@shared/schema";
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 const borrowSchema = z.object({
   transactionType: z.enum(["borrow", "buy"], {
     required_error: "Please select transaction type",
@@ -155,27 +161,31 @@ export default function BorrowBookModal({ book, open, onOpenChange, initialTrans
   } : currentCost;
 
   const borrowMutation = useMutation({
-    mutationFn: async (data: BorrowFormData) => {
+    mutationFn: async (data: { formData: BorrowFormData; paymentId?: string; orderId?: string }) => {
       if (!book) throw new Error("No book selected");
       
-      if (data.transactionType === "buy") {
+      if (data.formData.transactionType === "buy") {
         const response = await apiRequest("POST", "/api/purchases/buy", {
           bookId: book.id,
-          paymentMethod: data.paymentMethod,
+          paymentMethod: data.formData.paymentMethod,
+          paymentId: data.paymentId,
+          orderId: data.orderId,
         });
         return response.json();
       } else {
         const response = await apiRequest("POST", "/api/rentals/borrow", {
           bookId: book.id,
-          duration: parseInt(data.duration!),
-          paymentMethod: data.paymentMethod,
+          duration: parseInt(data.formData.duration!),
+          paymentMethod: data.formData.paymentMethod,
           appliedBrocks: appliedBrocks,
+          paymentId: data.paymentId,
+          orderId: data.orderId,
         });
         return response.json();
       }
     },
     onSuccess: (data: any, variables) => {
-      if (variables.transactionType === "buy") {
+      if (variables.formData.transactionType === "buy") {
         const { sellerInfo } = data || {};
         
         let purchaseMessage = "The book is now yours! Check 'My Books > Bought' to see your purchase.";
@@ -225,8 +235,88 @@ export default function BorrowBookModal({ book, open, onOpenChange, initialTrans
     },
   });
 
-  const onSubmit = (data: BorrowFormData) => {
-    borrowMutation.mutate(data);
+  const onSubmit = async (data: BorrowFormData) => {
+    // If payment method is Brocks, submit directly (no Razorpay needed)
+    if (data.paymentMethod === "brocks") {
+      borrowMutation.mutate({ formData: data });
+      return;
+    }
+
+    // For card/UPI payment, use Razorpay
+    try {
+      if (!finalCost) {
+        throw new Error("Unable to calculate cost");
+      }
+
+      const amount = parseFloat(finalCost.totalAmount.toString()) * 100; // Convert to paise
+      const description = data.transactionType === "buy" 
+        ? `Purchase: ${book.title}`
+        : `Rent ${book.title} for ${data.duration} days`;
+
+      // Create Razorpay order
+      const response = await fetch('/api/payments/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          amount: amount,
+          bookTitle: book.title,
+          lenderName: book.owner?.name || "Book Owner"
+        }),
+      });
+
+      const orderData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(orderData.message || 'Failed to create order');
+      }
+
+      // Initialize Razorpay
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: 'INR',
+        name: 'BookPotato',
+        description: description,
+        order_id: orderData.orderId,
+        handler: function (razorpayResponse: any) {
+          // Complete the transaction with payment details
+          borrowMutation.mutate({
+            formData: data,
+            paymentId: razorpayResponse.razorpay_payment_id,
+            orderId: razorpayResponse.razorpay_order_id,
+          });
+        },
+        prefill: {
+          name: 'User Name',
+          email: 'user@example.com',
+        },
+        theme: {
+          color: '#0EA5E9'
+        },
+        modal: {
+          ondismiss: function() {
+            toast({
+              title: "Payment Cancelled",
+              description: "You cancelled the payment process",
+            });
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast({
+        title: "Payment Failed",
+        description: error instanceof Error ? error.message : "Something went wrong",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!book) return null;
