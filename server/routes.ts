@@ -1059,20 +1059,31 @@ The BookPotato Team`,
       
       // Convert Map back to array
       allBooks = Array.from(bookMap.values());
+      
+      console.log(`📚 Browse: After deduplication - ${allBooks.length} unique books`);
+      console.log(`📚 Browse: Book IDs - ${allBooks.map(b => b.id).slice(0, 20).join(', ')}`);
 
       // Filter out sold books (books that have been purchased)
       const purchasedBookIds = await storage.getAllPurchasedBookIds();
       allBooks = allBooks.filter(book => !purchasedBookIds.includes(book.id));
+      
+      console.log(`📚 Browse: After filtering sold books - ${allBooks.length} books`);
 
       // Apply search filter
       if (search && typeof search === 'string') {
         const searchTerm = search.toLowerCase();
+        console.log(`🔍 Browse: Searching for "${searchTerm}"`);
+        const beforeSearch = allBooks.length;
         allBooks = allBooks.filter(book => 
           book.title.toLowerCase().includes(searchTerm) ||
           book.author.toLowerCase().includes(searchTerm) ||
           book.genre.toLowerCase().includes(searchTerm) ||
           (book.description && book.description.toLowerCase().includes(searchTerm))
         );
+        console.log(`🔍 Browse: Search filtered from ${beforeSearch} to ${allBooks.length} books`);
+        if (allBooks.length > 0) {
+          console.log(`🔍 Browse: First result: "${allBooks[0].title}"`);
+        }
       }
 
       // Apply genre filter
