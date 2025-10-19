@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CreditCard, Coins, Check } from "lucide-react";
+import { Coins, Check, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { formatCurrency } from "@/lib/utils";
 
 declare global {
   interface Window {
@@ -15,391 +12,343 @@ declare global {
   }
 }
 
+interface Package {
+  id: number | string;
+  name: string;
+  brocks: number;
+  bonus: number;
+  price: string;
+  popular: boolean;
+  isActive: boolean;
+}
+
 export default function BuyBrocks() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedPackage, setSelectedPackage] = useState<string | number>("");
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<number | string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch user credits
   const { data: userCredits } = useQuery<any>({
     queryKey: ["/api/user/credits"],
   });
 
-  // Fetch conversion rates
-  const { data: conversionRates } = useQuery<any>({
-    queryKey: ["/api/admin/brocks-conversion-rates"],
-  });
-
-  // Fetch page content
-  const { data: pageContent } = useQuery<any>({
-    queryKey: ["/api/page-content/buy-brocks"],
-  });
-
-  // Fetch dynamic packages from API
-  const { data: brocksPackages, isLoading: packagesLoading } = useQuery<any>({
+  const { data: packages = [], isLoading } = useQuery<Package[]>({
     queryKey: ["/api/brocks-packages"],
   });
 
-  // Default packages in case API fails or no packages exist
-  const defaultPackages = [
-    {
-      id: "starter",
-      name: "Starter Pack",
-      brocks: 100,
-      bonus: 20,
-      price: "99",
-      popular: false
-    },
-    {
-      id: "value",
-      name: "Value Pack",
-      brocks: 250,
-      bonus: 75,
-      price: "199",
-      popular: true
-    },
-    {
-      id: "premium",
-      name: "Premium Pack",
-      brocks: 500,
-      bonus: 200,
-      price: "349",
-      popular: false
-    },
-    {
-      id: "ultimate",
-      name: "Ultimate Pack",
-      brocks: 1000,
-      bonus: 500,
-      price: "599",
-      popular: false
-    }
-  ];
-  
-  // Use API packages if available, otherwise fall back to defaults
-  const packages = (brocksPackages as any[])?.length > 0 ? brocksPackages : defaultPackages;
-  
-  // Get selected package details  
-  const selectedPkg = packages?.find((pkg: any) => pkg.id == selectedPackage);
+  const selectedPkg = packages.find((p) => p.id === selectedPackage);
 
-  const handlePurchase = async () => {
-    console.log('🔥 BUY BROCKS: Purchase button clicked');
-    console.log('📦 Selected package ID:', selectedPackage);
-    
-    if (!selectedPackage) {
-      console.error('❌ No package selected');
+  const handleBuyNow = async () => {
+    console.log("🔥🔥🔥 BUY NOW CLICKED!");
+    console.log("Selected package:", selectedPackage);
+    console.log("Selected pkg object:", selectedPkg);
+
+    if (!selectedPkg) {
       toast({
-        title: "Package Required",
-        description: "Please select a package to continue",
+        title: "Please select a package",
+        description: "Choose a Brocks package to continue",
         variant: "destructive",
       });
       return;
     }
 
-    const pkg = packages.find((p: any) => p.id == selectedPackage);
-    console.log('📦 Found package:', pkg);
-    
-    if (!pkg) {
+    if (!window.Razorpay) {
+      console.error("❌ Razorpay not loaded!");
       toast({
-        title: "Error",
-        description: "Package not found. Please try again.",
+        title: "Payment Error",
+        description: "Payment system not loaded. Please refresh the page.",
         variant: "destructive",
       });
       return;
     }
 
-    setIsProcessing(true);
-    console.log('⏳ Processing started...');
+    setLoading(true);
+    console.log("⏳ Starting payment process...");
 
     try {
-      const amountInPaise = parseFloat(pkg.price) * 100;
-      console.log('💰 Creating order for amount:', amountInPaise, 'paise');
+      const amountInPaise = Math.round(parseFloat(selectedPkg.price) * 100);
+      console.log("💰 Amount:", amountInPaise, "paise");
 
-      // Create Razorpay order
-      const orderResponse = await fetch('/api/payments/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      console.log("📡 Creating order...");
+      const orderRes = await fetch("/api/payments/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           amount: amountInPaise,
-          bookTitle: `${pkg.name} - ${pkg.brocks + (pkg.bonus || 0)} Brocks`,
-          lenderName: "BookPotato Platform"
+          bookTitle: `${selectedPkg.name} - ${selectedPkg.brocks + selectedPkg.bonus} Brocks`,
+          lenderName: "BookPotato Platform",
         }),
       });
 
-      if (!orderResponse.ok) {
-        throw new Error('Failed to create payment order');
+      if (!orderRes.ok) {
+        const error = await orderRes.json();
+        throw new Error(error.message || "Failed to create order");
       }
 
-      const orderData = await orderResponse.json();
-      console.log('✅ Order created:', orderData.orderId);
+      const orderData = await orderRes.json();
+      console.log("✅ Order created:", orderData);
 
-      // Initialize Razorpay payment
+      const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+      console.log("🔑 Razorpay key exists:", !!razorpayKey);
+
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: razorpayKey,
         amount: orderData.amount,
-        currency: 'INR',
-        name: 'BookPotato',
-        description: `Purchase ${pkg.name}`,
+        currency: "INR",
+        name: "BookPotato",
+        description: `${selectedPkg.name} - ${selectedPkg.brocks + selectedPkg.bonus} Brocks`,
         order_id: orderData.orderId,
-        handler: async function (razorpayResponse: any) {
-          console.log('💳 Razorpay payment successful!', razorpayResponse);
-          
+        handler: async function (response: any) {
+          console.log("✅ Payment successful!", response);
+
           try {
-            // Complete the purchase
-            const purchaseResponse = await apiRequest("POST", "/api/brocks/purchase", {
-              packageId: selectedPackage.toString(),
-              paymentId: razorpayResponse.razorpay_payment_id,
-              orderId: razorpayResponse.razorpay_order_id,
-              paymentMethod: "razorpay",
+            const purchaseRes = await fetch("/api/brocks/purchase", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                packageId: String(selectedPkg.id),
+                paymentId: response.razorpay_payment_id,
+                orderId: response.razorpay_order_id,
+                paymentMethod: "razorpay",
+              }),
             });
 
-            const result = await purchaseResponse.json();
-            console.log('✅ Purchase completed:', result);
+            if (!purchaseRes.ok) {
+              throw new Error("Failed to complete purchase");
+            }
+
+            const result = await purchaseRes.json();
+            console.log("✅ Purchase completed:", result);
 
             toast({
-              title: "Purchase Successful!",
-              description: `${result.brocksAwarded} Brocks credits have been added to your account.`,
+              title: "Success!",
+              description: `${result.brocksAwarded} Brocks added to your account!`,
             });
 
             queryClient.invalidateQueries({ queryKey: ["/api/user/credits"] });
-            setSelectedPackage("");
-            setIsProcessing(false);
+            setSelectedPackage(null);
+            setLoading(false);
           } catch (error) {
-            console.error('❌ Error completing purchase:', error);
+            console.error("❌ Purchase error:", error);
             toast({
               title: "Purchase Failed",
-              description: error instanceof Error ? error.message : "Failed to complete purchase",
+              description: error instanceof Error ? error.message : "Something went wrong",
               variant: "destructive",
             });
-            setIsProcessing(false);
+            setLoading(false);
           }
         },
         prefill: {
-          name: 'User',
-          email: 'user@example.com',
+          name: "User",
+          email: "user@example.com",
         },
         theme: {
-          color: '#0EA5E9'
+          color: "#0EA5E9",
         },
         modal: {
-          ondismiss: function() {
-            console.log('❌ Payment modal dismissed');
-            setIsProcessing(false);
+          ondismiss: function () {
+            console.log("❌ Payment cancelled");
+            setLoading(false);
             toast({
               title: "Payment Cancelled",
               description: "You closed the payment window",
             });
-          }
-        }
+          },
+        },
       };
 
-      console.log('🚀 Opening Razorpay modal...');
+      console.log("🚀 Opening Razorpay...");
       const rzp = new window.Razorpay(options);
       rzp.open();
-
+      console.log("✅ Razorpay opened!");
     } catch (error) {
-      console.error('❌ Payment error:', error);
+      console.error("❌ Error:", error);
       toast({
-        title: "Payment Failed",
+        title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong",
         variant: "destructive",
       });
-      setIsProcessing(false);
+      setLoading(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto px-4 py-6 max-w-4xl">
-      <div className="flex flex-col space-y-6">
+    <div className="container mx-auto px-4 py-8 max-w-5xl">
+      <div className="space-y-8">
         {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <Coins className="h-8 w-8 text-amber-600" />
-            <h1 className="text-3xl font-bold text-text-primary">
-              {pageContent?.title || "Buy Brocks Credits"}
-            </h1>
+        <div className="text-center space-y-3">
+          <div className="flex items-center justify-center gap-3">
+            <Coins className="h-10 w-10 text-amber-500" />
+            <h1 className="text-4xl font-bold">Buy Brocks Credits</h1>
           </div>
-          <p className="text-text-secondary max-w-2xl mx-auto">
-            {pageContent?.description || "Purchase Brocks credits to unlock premium benefits, get discounts on rentals, and enjoy commission-free transactions."}
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Get Brocks credits for commission-free rentals and instant discounts
           </p>
-          {pageContent?.subtitle && (
-            <p className="text-lg text-gray-700 font-medium mt-2">
-              {pageContent.subtitle}
-            </p>
-          )}
         </div>
 
         {/* Current Balance */}
-        <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
+        <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-text-primary">Current Balance</h3>
-                <div className="flex items-center space-x-2">
-                  <Coins className="h-5 w-5 text-amber-600" />
-                  <span className="text-2xl font-bold text-amber-600">
-                    {userCredits?.balance || 0} Brocks
+                <p className="text-sm text-muted-foreground mb-1">Your Balance</p>
+                <div className="flex items-center gap-2">
+                  <Coins className="h-6 w-6 text-amber-600" />
+                  <span className="text-3xl font-bold text-amber-600">
+                    {userCredits?.balance || 0}
                   </span>
+                  <span className="text-lg text-muted-foreground">Brocks</span>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-text-secondary">Total Earned</p>
-                <p className="text-lg font-semibold text-text-primary">
-                  {userCredits?.totalEarned || 0} Brocks
-                </p>
+                <p className="text-sm text-muted-foreground">Total Earned</p>
+                <p className="text-2xl font-semibold">{userCredits?.totalEarned || 0}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Package Selection */}
+        {/* Packages */}
         <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-text-primary">Choose Your Package</h2>
-          {packagesLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {packages?.map((pkg: any) => (
+          <h2 className="text-2xl font-bold">Choose Your Package</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {packages.map((pkg) => (
               <Card
                 key={pkg.id}
-                className={`relative cursor-pointer transition-all ${
-                  selectedPackage == pkg.id
-                    ? "ring-2 ring-primary border-primary"
-                    : "hover:shadow-md"
-                } ${pkg.popular ? "border-amber-400" : ""}`}
                 onClick={() => {
-                  console.log('📦 Package selected:', pkg.id, pkg.name);
+                  console.log("🎯 Package clicked:", pkg.id, pkg.name);
                   setSelectedPackage(pkg.id);
                 }}
+                className={`cursor-pointer transition-all relative ${
+                  selectedPackage === pkg.id
+                    ? "ring-2 ring-primary shadow-lg scale-105"
+                    : "hover:shadow-md"
+                } ${pkg.popular ? "border-amber-400 border-2" : ""}`}
                 data-testid={`package-${pkg.id}`}
               >
                 {pkg.popular && (
-                  <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-amber-500">
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-white">
                     Most Popular
                   </Badge>
                 )}
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-center">
-                    <div className="text-lg font-semibold">{pkg.name}</div>
-                  </CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-center text-xl">{pkg.name}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-center space-y-3">
+                <CardContent className="text-center space-y-4">
                   <div>
-                    <div className="text-3xl font-bold text-amber-600">
+                    <div className="text-4xl font-bold text-amber-600">
                       {pkg.brocks + pkg.bonus}
                     </div>
-                    <div className="text-sm text-text-secondary">
+                    <div className="text-sm text-muted-foreground mt-1">
                       {pkg.brocks} + {pkg.bonus} bonus
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-text-primary">
-                    ₹{parseFloat(pkg.price)}
+                  <div className="text-3xl font-bold">₹{parseFloat(pkg.price)}</div>
+                  <div className="text-xs text-muted-foreground">
+                    ₹{(parseFloat(pkg.price) / (pkg.brocks + pkg.bonus)).toFixed(2)} per Brock
                   </div>
-                  <div className="text-sm text-text-secondary">
-                    ≈ ₹{(parseFloat(pkg.price) / (pkg.brocks + pkg.bonus)).toFixed(2)} per Brock
-                  </div>
-                  {selectedPackage == pkg.id && (
-                    <div className="flex justify-center">
-                      <Check className="h-6 w-6 text-primary" />
+                  {selectedPackage === pkg.id && (
+                    <div className="flex justify-center pt-2">
+                      <div className="bg-primary text-white rounded-full p-2">
+                        <Check className="h-5 w-5" />
+                      </div>
                     </div>
                   )}
                 </CardContent>
               </Card>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
         </div>
 
-        {/* Order Summary and Purchase Button */}
-        {selectedPackage && selectedPkg && (
-          <Card>
+        {/* Purchase Button */}
+        {selectedPkg && (
+          <Card className="border-2 border-primary">
             <CardHeader>
-              <CardTitle>Order Summary</CardTitle>
+              <CardTitle>Complete Your Purchase</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="bg-surface rounded-lg p-4 space-y-3">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Package</span>
-                      <span className="font-medium">{selectedPkg.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Base Brocks</span>
-                      <span>{selectedPkg.brocks} Brocks</span>
-                    </div>
-                    <div className="flex justify-between text-green-600">
-                      <span>Bonus Brocks</span>
-                      <span>+{selectedPkg.bonus} Brocks</span>
-                    </div>
-                    <Separator />
-                    <div className="flex justify-between font-semibold">
-                      <span>Total Brocks</span>
-                      <span className="text-amber-600">{selectedPkg.brocks + selectedPkg.bonus} Brocks</span>
-                    </div>
-                    <div className="flex justify-between font-semibold text-lg">
-                      <span>Total Amount</span>
-                      <span className="text-primary">{formatCurrency(selectedPkg.price)}</span>
-                    </div>
-                  </div>
+            <CardContent className="space-y-4">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Package:</span>
+                  <span className="font-semibold">{selectedPkg.name}</span>
                 </div>
-
-                <Button
-                  className="w-full"
-                  size="lg"
-                  disabled={isProcessing}
-                  onClick={handlePurchase}
-                  data-testid="button-complete-purchase"
-                >
-                  {isProcessing ? (
-                    "Processing Payment..."
-                  ) : (
-                    <>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Complete Purchase - {formatCurrency(selectedPkg.price)}
-                    </>
-                  )}
-                </Button>
+                <div className="flex justify-between text-sm">
+                  <span>Base Brocks:</span>
+                  <span>{selectedPkg.brocks}</span>
+                </div>
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Bonus Brocks:</span>
+                  <span>+{selectedPkg.bonus}</span>
+                </div>
+                <div className="border-t pt-2 mt-2 flex justify-between font-bold">
+                  <span>Total Brocks:</span>
+                  <span className="text-amber-600">{selectedPkg.brocks + selectedPkg.bonus}</span>
+                </div>
+                <div className="border-t pt-2 flex justify-between text-lg font-bold">
+                  <span>Amount to Pay:</span>
+                  <span className="text-primary">₹{parseFloat(selectedPkg.price)}</span>
+                </div>
               </div>
+
+              <Button
+                onClick={handleBuyNow}
+                disabled={loading}
+                size="lg"
+                className="w-full text-lg"
+                data-testid="button-complete-purchase"
+              >
+                {loading ? (
+                  "Processing..."
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    Complete Purchase - ₹{parseFloat(selectedPkg.price)}
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
         )}
 
-        {/* Benefits Information */}
+        {/* Benefits */}
         <Card>
           <CardHeader>
-            <CardTitle>Why Buy Brocks Credits?</CardTitle>
+            <CardTitle>Why Buy Brocks?</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <h4 className="font-semibold text-text-primary">Commission-Free Rentals</h4>
-                <p className="text-sm text-text-secondary">
-                  Use {conversionRates?.creditsToCommissionFreeRate || 20} Brocks to get 1 day of commission-free
-                  rentals on all your transactions.
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-semibold mb-2">💰 Commission-Free Rentals</h3>
+                <p className="text-sm text-muted-foreground">
+                  Use Brocks to get commission-free days on all your transactions
                 </p>
               </div>
-              <div className="space-y-3">
-                <h4 className="font-semibold text-text-primary">Instant Discounts</h4>
-                <p className="text-sm text-text-secondary">
-                  Convert {conversionRates?.creditsToRupeesRate || 20} Brocks to ₹1 and get instant
-                  discounts on your rental payments.
+              <div>
+                <h3 className="font-semibold mb-2">🎁 Instant Discounts</h3>
+                <p className="text-sm text-muted-foreground">
+                  Convert Brocks to rupees for instant discounts on payments
                 </p>
               </div>
-              <div className="space-y-3">
-                <h4 className="font-semibold text-text-primary">No Expiry</h4>
-                <p className="text-sm text-text-secondary">
-                  Your Brocks credits never expire. Use them whenever you want for maximum flexibility.
+              <div>
+                <h3 className="font-semibold mb-2">⏰ No Expiry</h3>
+                <p className="text-sm text-muted-foreground">
+                  Your Brocks never expire - use them anytime
                 </p>
               </div>
-              <div className="space-y-3">
-                <h4 className="font-semibold text-text-primary">Bonus Rewards</h4>
-                <p className="text-sm text-text-secondary">
-                  Earn additional Brocks through referrals, book uploads, and successful transactions.
+              <div>
+                <h3 className="font-semibold mb-2">🎯 Earn More</h3>
+                <p className="text-sm text-muted-foreground">
+                  Get bonus Brocks through referrals and book uploads
                 </p>
               </div>
             </div>
