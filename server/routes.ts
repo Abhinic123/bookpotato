@@ -1037,17 +1037,28 @@ The BookPotato Team`,
       const userSocieties = await storage.getSocietiesByUser(req.session.userId!);
       let allBooks: any[] = [];
       
+      // Use a Map to prevent duplicate books
+      const bookMap = new Map<number, any>();
+      
       for (const society of userSocieties) {
         const societyBooks = await storage.getBooksBySociety(society.id);
         // Filter out user's own books and add hub type info
         const otherBooks = societyBooks
-          .filter(book => book.ownerId !== req.session.userId!)
-          .map(book => ({
-            ...book,
-            hubType: society.hubType || 'society'
-          }));
-        allBooks.push(...otherBooks);
+          .filter(book => book.ownerId !== req.session.userId!);
+        
+        for (const book of otherBooks) {
+          // Only add the book if we haven't seen it before
+          if (!bookMap.has(book.id)) {
+            bookMap.set(book.id, {
+              ...book,
+              hubType: society.hubType || 'society'
+            });
+          }
+        }
       }
+      
+      // Convert Map back to array
+      allBooks = Array.from(bookMap.values());
 
       // Filter out sold books (books that have been purchased)
       const purchasedBookIds = await storage.getAllPurchasedBookIds();
