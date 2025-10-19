@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreditCard, Coins, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/utils";
+
 declare global {
   interface Window {
     Razorpay: any;
@@ -15,13 +16,7 @@ declare global {
 }
 
 export default function BuyBrocks() {
-  console.log("🎯 BuyBrocks page loaded");
   const { toast } = useToast();
-  
-  // Fetch dynamic packages from API
-  const { data: brocksPackages, isLoading: packagesLoading } = useQuery<any>({
-    queryKey: ["/api/brocks-packages"],
-  });
   const queryClient = useQueryClient();
   const [selectedPackage, setSelectedPackage] = useState<string | number>("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -41,125 +36,11 @@ export default function BuyBrocks() {
     queryKey: ["/api/page-content/buy-brocks"],
   });
 
-  const purchaseMutation = useMutation({
-    mutationFn: async (data: { packageId: string; paymentId: string; orderId: string }) => {
-      const response = await apiRequest("POST", "/api/brocks/purchase", {
-        packageId: data.packageId,
-        paymentId: data.paymentId,
-        orderId: data.orderId,
-        paymentMethod: "razorpay",
-      });
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: "Purchase Successful!",
-        description: `${data.brocksAwarded} Brocks credits have been added to your account.`,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/user/credits"] });
-      setSelectedPackage("");
-      setIsProcessing(false);
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Purchase Failed",
-        description: error.message || "Failed to process payment",
-        variant: "destructive",
-      });
-      setIsProcessing(false);
-    },
+  // Fetch dynamic packages from API
+  const { data: brocksPackages, isLoading: packagesLoading } = useQuery<any>({
+    queryKey: ["/api/brocks-packages"],
   });
 
-  const handlePurchase = async () => {
-    console.log('🎯 Complete Purchase button clicked');
-    console.log('📦 Selected package:', selectedPackage);
-    console.log('📦 Packages available:', packages);
-    
-    if (!selectedPackage) {
-      console.error('❌ No package selected');
-      toast({
-        title: "Package Required",
-        description: "Please select a package to continue",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    console.log('⏳ Processing started');
-
-    try {
-      const pkg = packages.find((p: any) => p.id == selectedPackage);
-      console.log('🔍 Found package:', pkg);
-      
-      if (!pkg) {
-        throw new Error("Package not found");
-      }
-
-      // Create Razorpay order on backend
-      const response = await fetch('/api/payments/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          amount: parseFloat(pkg.price) * 100, // Convert to paise
-          bookTitle: `${pkg.name} - ${pkg.brocks + (pkg.bonus || 0)} Brocks`,
-          lenderName: "BookPotato Platform"
-        }),
-      });
-
-      const orderData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(orderData.message || 'Failed to create order');
-      }
-
-      // Initialize Razorpay
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: orderData.amount,
-        currency: 'INR',
-        name: 'BookPotato',
-        description: `Purchase ${pkg.name}`,
-        order_id: orderData.orderId,
-        handler: function (response: any) {
-          // Complete the purchase with payment details
-          purchaseMutation.mutate({
-            packageId: selectedPackage.toString(),
-            paymentId: response.razorpay_payment_id,
-            orderId: response.razorpay_order_id,
-          });
-        },
-        prefill: {
-          name: 'User Name',
-          email: 'user@example.com',
-        },
-        theme: {
-          color: '#0EA5E9'
-        },
-        modal: {
-          ondismiss: function() {
-            setIsProcessing(false);
-          }
-        }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-
-    } catch (error) {
-      console.error('Payment error:', error);
-      toast({
-        title: "Payment Failed",
-        description: error instanceof Error ? error.message : "Something went wrong",
-        variant: "destructive",
-      });
-      setIsProcessing(false);
-    }
-  };
-  
   // Default packages in case API fails or no packages exist
   const defaultPackages = [
     {
@@ -201,6 +82,133 @@ export default function BuyBrocks() {
   
   // Get selected package details  
   const selectedPkg = packages?.find((pkg: any) => pkg.id == selectedPackage);
+
+  const handlePurchase = async () => {
+    console.log('🔥 BUY BROCKS: Purchase button clicked');
+    console.log('📦 Selected package ID:', selectedPackage);
+    
+    if (!selectedPackage) {
+      console.error('❌ No package selected');
+      toast({
+        title: "Package Required",
+        description: "Please select a package to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const pkg = packages.find((p: any) => p.id == selectedPackage);
+    console.log('📦 Found package:', pkg);
+    
+    if (!pkg) {
+      toast({
+        title: "Error",
+        description: "Package not found. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    console.log('⏳ Processing started...');
+
+    try {
+      const amountInPaise = parseFloat(pkg.price) * 100;
+      console.log('💰 Creating order for amount:', amountInPaise, 'paise');
+
+      // Create Razorpay order
+      const orderResponse = await fetch('/api/payments/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          amount: amountInPaise,
+          bookTitle: `${pkg.name} - ${pkg.brocks + (pkg.bonus || 0)} Brocks`,
+          lenderName: "BookPotato Platform"
+        }),
+      });
+
+      if (!orderResponse.ok) {
+        throw new Error('Failed to create payment order');
+      }
+
+      const orderData = await orderResponse.json();
+      console.log('✅ Order created:', orderData.orderId);
+
+      // Initialize Razorpay payment
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: 'INR',
+        name: 'BookPotato',
+        description: `Purchase ${pkg.name}`,
+        order_id: orderData.orderId,
+        handler: async function (razorpayResponse: any) {
+          console.log('💳 Razorpay payment successful!', razorpayResponse);
+          
+          try {
+            // Complete the purchase
+            const purchaseResponse = await apiRequest("POST", "/api/brocks/purchase", {
+              packageId: selectedPackage.toString(),
+              paymentId: razorpayResponse.razorpay_payment_id,
+              orderId: razorpayResponse.razorpay_order_id,
+              paymentMethod: "razorpay",
+            });
+
+            const result = await purchaseResponse.json();
+            console.log('✅ Purchase completed:', result);
+
+            toast({
+              title: "Purchase Successful!",
+              description: `${result.brocksAwarded} Brocks credits have been added to your account.`,
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["/api/user/credits"] });
+            setSelectedPackage("");
+            setIsProcessing(false);
+          } catch (error) {
+            console.error('❌ Error completing purchase:', error);
+            toast({
+              title: "Purchase Failed",
+              description: error instanceof Error ? error.message : "Failed to complete purchase",
+              variant: "destructive",
+            });
+            setIsProcessing(false);
+          }
+        },
+        prefill: {
+          name: 'User',
+          email: 'user@example.com',
+        },
+        theme: {
+          color: '#0EA5E9'
+        },
+        modal: {
+          ondismiss: function() {
+            console.log('❌ Payment modal dismissed');
+            setIsProcessing(false);
+            toast({
+              title: "Payment Cancelled",
+              description: "You closed the payment window",
+            });
+          }
+        }
+      };
+
+      console.log('🚀 Opening Razorpay modal...');
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
+    } catch (error) {
+      console.error('❌ Payment error:', error);
+      toast({
+        title: "Payment Failed",
+        description: error instanceof Error ? error.message : "Something went wrong",
+        variant: "destructive",
+      });
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl">
@@ -264,9 +272,10 @@ export default function BuyBrocks() {
                     : "hover:shadow-md"
                 } ${pkg.popular ? "border-amber-400" : ""}`}
                 onClick={() => {
-                  console.log("📦 Package selected:", pkg.id, pkg.name);
+                  console.log('📦 Package selected:', pkg.id, pkg.name);
                   setSelectedPackage(pkg.id);
                 }}
+                data-testid={`package-${pkg.id}`}
               >
                 {pkg.popular && (
                   <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-amber-500">
@@ -342,11 +351,11 @@ export default function BuyBrocks() {
                 <Button
                   className="w-full"
                   size="lg"
-                  disabled={isProcessing || purchaseMutation.isPending}
+                  disabled={isProcessing}
                   onClick={handlePurchase}
                   data-testid="button-complete-purchase"
                 >
-                  {isProcessing || purchaseMutation.isPending ? (
+                  {isProcessing ? (
                     "Processing Payment..."
                   ) : (
                     <>
