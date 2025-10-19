@@ -12,6 +12,7 @@ import { sql, eq, and, inArray, not, desc } from "drizzle-orm";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import OpenAI from "openai";
+import Razorpay from "razorpay";
 
 // Session interface
 declare module "express-session" {
@@ -45,6 +46,12 @@ const getCallbackURL = () => {
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Initialize Razorpay client
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || '',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || '',
 });
 
 passport.use(new GoogleStrategy({
@@ -2015,6 +2022,38 @@ Submitted on: ${new Date().toLocaleString()}
     } catch (error) {
       console.error("Get feedback error:", error);
       res.status(500).json({ message: "Failed to fetch feedback" });
+    }
+  });
+
+  // Create Razorpay order
+  app.post("/api/payments/create-order", requireAuth, async (req, res) => {
+    try {
+      const { amount, bookTitle, lenderName } = req.body;
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Invalid amount" });
+      }
+
+      const options = {
+        amount: amount, // Amount is already in paise from frontend
+        currency: "INR",
+        receipt: `receipt_${Date.now()}`,
+        notes: {
+          bookTitle: bookTitle || "Book Rental",
+          lenderName: lenderName || "Unknown",
+        }
+      };
+
+      const order = await razorpay.orders.create(options);
+      
+      res.json({
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+      });
+    } catch (error) {
+      console.error("Razorpay order creation error:", error);
+      res.status(500).json({ message: "Failed to create payment order" });
     }
   });
 
