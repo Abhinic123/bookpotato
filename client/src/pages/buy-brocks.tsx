@@ -71,7 +71,12 @@ export default function BuyBrocks() {
   });
 
   const handlePurchase = async () => {
+    console.log('🎯 Complete Purchase button clicked');
+    console.log('📦 Selected package:', selectedPackage);
+    console.log('📦 Packages available:', packages);
+    
     if (!selectedPackage) {
+      console.error('❌ No package selected');
       toast({
         title: "Package Required",
         description: "Please select a package to continue",
@@ -81,9 +86,12 @@ export default function BuyBrocks() {
     }
 
     setIsProcessing(true);
+    console.log('⏳ Processing started');
 
     try {
       const pkg = packages.find((p: any) => p.id == selectedPackage);
+      console.log('🔍 Found package:', pkg);
+      
       if (!pkg) {
         throw new Error("Package not found");
       }
