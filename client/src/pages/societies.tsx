@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useLocation } from "wouter";
-import { Plus, Users, Building2, Hash, Check, AlertTriangle, ExternalLink, MapPin, MessageCircle } from "lucide-react";
+import { Plus, Users, Building2, Hash, Check, AlertTriangle, ExternalLink, MapPin, MessageCircle, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -156,6 +156,7 @@ export default function Societies() {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{address: string; coordinates: [number, number]} | null>(null);
   const [selectedCity, setSelectedCity] = useState<string>("All Cities");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [showMemberListModal, setShowMemberListModal] = useState(false);
   const [selectedSocietyForMembers, setSelectedSocietyForMembers] = useState<SocietyWithStats | null>(null);
   const [activeTab, setActiveTab] = useState<string>("society");
@@ -237,9 +238,14 @@ export default function Societies() {
     ["All Cities", ...Array.from(new Set((availableSocieties as SocietyWithStats[]).map(s => s.city).filter(Boolean)))] : ["All Cities"];
   
   const filteredSocieties = availableSocieties ? 
-    (availableSocieties as SocietyWithStats[]).filter(society => 
-      selectedCity === "All Cities" || society.city === selectedCity
-    ) : [];
+    (availableSocieties as SocietyWithStats[]).filter(society => {
+      const matchesCity = selectedCity === "All Cities" || society.city === selectedCity;
+      const matchesSearch = searchQuery === "" || 
+        society.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        society.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (society.description && society.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesCity && matchesSearch;
+    }) : [];
 
   // Set default city to user's city when data loads
   React.useEffect(() => {
@@ -724,14 +730,47 @@ export default function Societies() {
         </div>
 
         <TabsContent value="society" className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search societies by name, city, or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+              data-testid="search-society"
+            />
+          </div>
           {renderAvailableSocieties()}
         </TabsContent>
 
         <TabsContent value="school" className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search schools by name, city, or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+              data-testid="search-school"
+            />
+          </div>
           {renderAvailableSocieties()}
         </TabsContent>
 
         <TabsContent value="office" className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Search offices by name, city, or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+              data-testid="search-office"
+            />
+          </div>
           {renderAvailableSocieties()}
         </TabsContent>
 
