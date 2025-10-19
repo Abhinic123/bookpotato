@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import BuyBrocksSection from "@/components/brocks/buy-brocks-section";
 import { formatCurrency } from "@/lib/utils";
 
 export default function BrocksInfoPage() {
@@ -224,11 +223,28 @@ export default function BrocksInfoPage() {
 
           {/* Buy Brocks */}
           <TabsContent value="buy" className="space-y-6">
-            <BuyBrocksSection 
-              compactHeader={true}
-              initialPackageId={selectedPackage}
-              showTitle={false}
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Coins className="h-6 w-6 text-amber-600" />
+                  Purchase Brocks Credits
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-muted-foreground">
+                  Get Brocks credits for commission-free rentals and instant discounts.
+                </p>
+                <Button 
+                  onClick={() => navigate("/buy-brocks")} 
+                  size="lg" 
+                  className="w-full"
+                  data-testid="go-to-buy-brocks"
+                >
+                  <CreditCard className="mr-2 h-5 w-5" />
+                  Go to Buy Brocks Page
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
