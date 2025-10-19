@@ -121,12 +121,22 @@ export default function LateFeeModal({ isOpen, onClose, rental }: LateFeeModalPr
         name: 'BookPotato',
         description: `Late Fee Payment for ${rental.book?.title}`,
         order_id: orderData.orderId,
-        handler: function (razorpayResponse: any) {
-          // Complete the payment with payment details
-          payLateFeesMutation.mutate({
-            paymentId: razorpayResponse.razorpay_payment_id,
-            orderId: razorpayResponse.razorpay_order_id,
-          });
+        handler: async function (razorpayResponse: any) {
+          console.log('💳 Razorpay payment successful for late fee:', razorpayResponse);
+          try {
+            // Complete the payment with payment details
+            await payLateFeesMutation.mutateAsync({
+              paymentId: razorpayResponse.razorpay_payment_id,
+              orderId: razorpayResponse.razorpay_order_id,
+            });
+          } catch (error) {
+            console.error('Error completing late fee payment after Razorpay:', error);
+            toast({
+              title: "Transaction Failed",
+              description: "Payment was successful but failed to complete the transaction. Please contact support.",
+              variant: "destructive",
+            });
+          }
         },
         prefill: {
           name: 'User Name',

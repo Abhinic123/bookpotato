@@ -281,13 +281,23 @@ export default function BorrowBookModal({ book, open, onOpenChange, initialTrans
         name: 'BookPotato',
         description: description,
         order_id: orderData.orderId,
-        handler: function (razorpayResponse: any) {
-          // Complete the transaction with payment details
-          borrowMutation.mutate({
-            formData: data,
-            paymentId: razorpayResponse.razorpay_payment_id,
-            orderId: razorpayResponse.razorpay_order_id,
-          });
+        handler: async function (razorpayResponse: any) {
+          console.log('💳 Razorpay payment successful:', razorpayResponse);
+          try {
+            // Complete the transaction with payment details
+            await borrowMutation.mutateAsync({
+              formData: data,
+              paymentId: razorpayResponse.razorpay_payment_id,
+              orderId: razorpayResponse.razorpay_order_id,
+            });
+          } catch (error) {
+            console.error('Error completing transaction after payment:', error);
+            toast({
+              title: "Transaction Failed",
+              description: "Payment was successful but failed to complete the transaction. Please contact support.",
+              variant: "destructive",
+            });
+          }
         },
         prefill: {
           name: 'User Name',
