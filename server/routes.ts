@@ -1542,18 +1542,30 @@ The BookPotato Team`,
       const currentDate = new Date();
       const isOverdue = currentDate > endDate;
       let lateFee = 0;
+      let platformFeeOnLateFee = 0;
+      let totalDeduction = 0;
+
+      // Get platform settings for commission rate
+      const settings = await storage.getPlatformSettings();
+      const commissionRate = settings.commissionRate / 100; // Convert to decimal
 
       if (isOverdue) {
         const daysLate = Math.ceil((currentDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
         const dailyLateFee = Number(rental.book?.dailyFee) || 10; // 100% of daily fee (same as normal rate)
         lateFee = daysLate * dailyLateFee;
+        
+        // Calculate platform commission on late fees
+        platformFeeOnLateFee = lateFee * commissionRate;
+        totalDeduction = lateFee + platformFeeOnLateFee;
       }
 
       // Calculate payments (fake payment processing)
       const securityDepositAmount = parseFloat(rental.securityDeposit);
       const lenderEarnings = parseFloat(rental.lenderAmount);
-      const totalRefund = Math.max(0, securityDepositAmount - lateFee);
-      const excessLateFee = Math.max(0, lateFee - securityDepositAmount);
+      
+      // Calculate refund and excess based on total deduction (late fee + platform fee)
+      const totalRefund = Math.max(0, securityDepositAmount - totalDeduction);
+      const excessAmount = Math.max(0, totalDeduction - securityDepositAmount);
       
       // Update rental status and mark book as available
       await storage.updateRental(rentalId, {
@@ -1569,10 +1581,10 @@ The BookPotato Team`,
       let borrowerMessage = `Return of "${rental.book.title}" confirmed! Security deposit: ₹${securityDepositAmount.toFixed(2)}`;
       
       if (lateFee > 0) {
-        if (excessLateFee > 0) {
-          borrowerMessage += `, Late fee: ₹${lateFee.toFixed(2)}. You need to pay additional ₹${excessLateFee.toFixed(2)} (late fees exceeded security deposit). Please contact the lender to complete payment.`;
+        if (excessAmount > 0) {
+          borrowerMessage += `, Late fee: ₹${lateFee.toFixed(2)}, Platform fee on late charge: ₹${platformFeeOnLateFee.toFixed(2)}. You need to pay additional ₹${excessAmount.toFixed(2)} (charges exceeded security deposit). Please contact the lender to complete payment.`;
         } else {
-          borrowerMessage += `, Late fee: ₹${lateFee.toFixed(2)}, Refund: ₹${totalRefund.toFixed(2)} has been processed.`;
+          borrowerMessage += `, Late fee: ₹${lateFee.toFixed(2)}, Platform fee: ₹${platformFeeOnLateFee.toFixed(2)}, Refund: ₹${totalRefund.toFixed(2)} has been processed.`;
         }
       } else {
         borrowerMessage += `, Refund: ₹${totalRefund.toFixed(2)} has been processed.`;
@@ -1580,15 +1592,17 @@ The BookPotato Team`,
       
       await storage.createNotification({
         userId: rental.borrowerId,
-        title: excessLateFee > 0 ? "Book Return - Additional Payment Required" : "Book Return Confirmed - Payment Processed",
+        title: excessAmount > 0 ? "Book Return - Additional Payment Required" : "Book Return Confirmed - Payment Processed",
         message: borrowerMessage,
         type: "return_confirmed",
         data: JSON.stringify({
           rentalId: rentalId,
           securityDeposit: securityDepositAmount,
           lateFee: lateFee,
+          platformFeeOnLateFee: platformFeeOnLateFee,
+          totalDeduction: totalDeduction,
           refundAmount: totalRefund,
-          excessLateFee: excessLateFee,
+          excessAmount: excessAmount,
           bookTitle: rental.book.title
         })
       });
@@ -1607,13 +1621,15 @@ The BookPotato Team`,
       });
 
       res.json({ 
-        message: excessLateFee > 0 
-          ? "Book return confirmed. Additional payment required for excess late fees."
+        message: excessAmount > 0 
+          ? "Book return confirmed. Additional payment required for excess charges."
           : "Book return confirmed and payments processed successfully",
         securityDeposit: securityDepositAmount,
         lateFee: lateFee,
+        platformFeeOnLateFee: platformFeeOnLateFee,
+        totalDeduction: totalDeduction,
         refundAmount: totalRefund,
-        excessLateFee: excessLateFee,
+        excessAmount: excessAmount,
         lenderEarnings: lenderEarnings
       });
     } catch (error) {
