@@ -283,34 +283,74 @@ export default function BorrowBookModal({ book, open, onOpenChange, initialTrans
         order_id: orderData.orderId,
         handler: async function (razorpayResponse: any) {
           console.log('💳 Razorpay payment successful:', razorpayResponse);
-          console.log('📦 Book object:', book);
-          console.log('📋 Form data:', data);
-          console.log('🔄 Mutation state:', { 
-            isLoading: borrowMutation.isPending, 
-            isError: borrowMutation.isError,
-            error: borrowMutation.error 
-          });
           
           try {
-            console.log('🚀 About to call mutateAsync...');
-            // Complete the transaction with payment details
-            const result = await borrowMutation.mutateAsync({
-              formData: data,
+            // Make direct API call instead of using mutation
+            const endpoint = data.transactionType === "buy" ? "/api/purchases/buy" : "/api/rentals/borrow";
+            const payload = data.transactionType === "buy" ? {
+              bookId: book.id,
+              paymentMethod: data.paymentMethod,
               paymentId: razorpayResponse.razorpay_payment_id,
               orderId: razorpayResponse.razorpay_order_id,
-            });
+            } : {
+              bookId: book.id,
+              duration: parseInt(data.duration!),
+              paymentMethod: data.paymentMethod,
+              appliedBrocks: appliedBrocks,
+              paymentId: razorpayResponse.razorpay_payment_id,
+              orderId: razorpayResponse.razorpay_order_id,
+            };
+
+            console.log('🚀 Making API call to:', endpoint);
+            console.log('📦 Payload:', payload);
+
+            const response = await apiRequest("POST", endpoint, payload);
+            const result = await response.json();
+            
             console.log('✅ Transaction completed successfully:', result);
+
+            // Show success message
+            if (data.transactionType === "buy") {
+              const { sellerInfo } = result || {};
+              let purchaseMessage = "The book is now yours! Check 'My Books > Bought' to see your purchase.";
+              
+              if (sellerInfo && sellerInfo.flatWing && sellerInfo.buildingName) {
+                purchaseMessage = `Please go to ${sellerInfo.flatWing}, ${sellerInfo.buildingName} to collect your book. In case you want to call, the phone number is ${sellerInfo.phone || 'not provided'}`;
+              }
+
+              toast({
+                title: "Book Purchased Successfully! 🎉",
+                description: purchaseMessage,
+                duration: 8000,
+              });
+            } else {
+              const { collectionInfo } = result || {};
+              let instructionsMessage = "Book borrowed successfully!";
+              
+              if (collectionInfo && collectionInfo.flatWing && collectionInfo.buildingName) {
+                instructionsMessage = `Please go to ${collectionInfo.flatWing}, ${collectionInfo.buildingName} to collect the book. In case you want to call, the phone number is ${collectionInfo.phone || 'not provided'}`;
+              }
+
+              toast({
+                title: "Book Borrowed Successfully! 📚",
+                description: instructionsMessage,
+                duration: 8000,
+              });
+            }
+            
+            // Invalidate queries
+            queryClient.invalidateQueries({ queryKey: ["/api/books"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/books/browse"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/rentals"] });
+            queryClient.invalidateQueries({ queryKey: ["/api/purchases"] });
+            
+            form.reset();
+            onOpenChange(false);
+            
           } catch (error) {
-            console.error('❌ Error type:', typeof error);
-            console.error('❌ Error object:', error);
-            console.error('❌ Error keys:', error ? Object.keys(error) : 'null');
-            console.error('❌ Error message:', error instanceof Error ? error.message : 'Not an Error instance');
-            
+            console.error('❌ Error:', error);
             const errorMessage = error instanceof Error ? error.message : 
-                               error && typeof error === 'object' && 'message' in error ? String(error.message) :
                                'Payment was successful but failed to complete the transaction. Please contact support.';
-            
-            console.error('❌ Final error message:', errorMessage);
             
             toast({
               title: "Transaction Failed",
