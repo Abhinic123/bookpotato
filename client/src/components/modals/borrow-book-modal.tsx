@@ -283,7 +283,16 @@ export default function BorrowBookModal({ book, open, onOpenChange, initialTrans
         order_id: orderData.orderId,
         handler: async function (razorpayResponse: any) {
           console.log('💳 Razorpay payment successful:', razorpayResponse);
+          console.log('📦 Book object:', book);
+          console.log('📋 Form data:', data);
+          console.log('🔄 Mutation state:', { 
+            isLoading: borrowMutation.isPending, 
+            isError: borrowMutation.isError,
+            error: borrowMutation.error 
+          });
+          
           try {
+            console.log('🚀 About to call mutateAsync...');
             // Complete the transaction with payment details
             const result = await borrowMutation.mutateAsync({
               formData: data,
@@ -292,10 +301,17 @@ export default function BorrowBookModal({ book, open, onOpenChange, initialTrans
             });
             console.log('✅ Transaction completed successfully:', result);
           } catch (error) {
-            console.error('❌ Error completing transaction after payment:', error);
+            console.error('❌ Error type:', typeof error);
+            console.error('❌ Error object:', error);
+            console.error('❌ Error keys:', error ? Object.keys(error) : 'null');
+            console.error('❌ Error message:', error instanceof Error ? error.message : 'Not an Error instance');
+            
             const errorMessage = error instanceof Error ? error.message : 
                                error && typeof error === 'object' && 'message' in error ? String(error.message) :
                                'Payment was successful but failed to complete the transaction. Please contact support.';
+            
+            console.error('❌ Final error message:', errorMessage);
+            
             toast({
               title: "Transaction Failed",
               description: errorMessage,
