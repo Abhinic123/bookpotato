@@ -18,6 +18,7 @@ import { getCurrentUser, logout } from "@/lib/auth";
 import { getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import AddBookModal from "@/components/modals/add-book-modal";
+import { BulkBookUpload } from "@/components/bulk-book-upload";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -26,6 +27,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const [location, setLocation] = useLocation();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -204,7 +206,24 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <AddBookModal 
         open={showAddModal}
         onOpenChange={setShowAddModal}
+        onOpenBulkUpload={() => setShowBulkUploadModal(true)}
       />
+
+      {/* Bulk Upload Modal */}
+      {showBulkUploadModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-auto">
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-white rounded-lg shadow-xl">
+            <BulkBookUpload
+              onClose={() => setShowBulkUploadModal(false)}
+              onBooksAdded={() => {
+                setShowBulkUploadModal(false);
+                // Refresh data after bulk upload
+                window.location.reload();
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
