@@ -17,6 +17,12 @@ import Razorpay from "razorpay";
 // Email notification helper function
 async function sendEmailNotification(userId: number, title: string, message: string) {
   try {
+    // Check if SendGrid is configured
+    if (!process.env.SENDGRID_API_KEY) {
+      console.log(`📧 SendGrid API key not configured - skipping email notification`);
+      return;
+    }
+
     // Get user details
     const user = await storage.getUser(userId);
     if (!user || !user.email) {
@@ -27,7 +33,7 @@ async function sendEmailNotification(userId: number, title: string, message: str
     // Dynamic import of SendGrid
     const sgMailModule = await import('@sendgrid/mail');
     const sgMail = sgMailModule.default;
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
     const domain = process.env.REPLIT_DEV_DOMAIN || '59203db4-a967-4b1c-b1d8-9d66f27d10d9-00-3bzw6spzdofx2.picard.replit.dev';
     const frontendUrl = domain.startsWith('http') ? domain : `https://${domain}`;
@@ -77,7 +83,7 @@ The BookPotato Team`,
 // Wrapper function to create notification and send email
 async function createNotificationWithEmail(data: { userId: number; title: string; message: string; type: string; data?: string }) {
   // Create in-app notification
-  const notification = await createNotificationWithEmail(data);
+  const notification = await storage.createNotification(data);
   
   // Send email notification in the background (don't await to avoid blocking)
   sendEmailNotification(data.userId, data.title, data.message).catch(err => {
