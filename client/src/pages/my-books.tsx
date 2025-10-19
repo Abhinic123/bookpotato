@@ -14,6 +14,7 @@ import BookDetailsModal from "@/components/modals/book-details-modal";
 import ExtensionRequestModal from "@/components/modals/extension-request-modal";
 import LateFeeModal from "@/components/modals/late-fee-modal";
 import ReturnConfirmationModal from "@/components/modals/return-confirmation-modal";
+import ExcessChargePaymentModal from "@/components/modals/excess-charge-payment-modal";
 import { BulkBookUpload } from "@/components/bulk-book-upload";
 
 export default function MyBooks() {
@@ -29,6 +30,8 @@ export default function MyBooks() {
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [returnModalType, setReturnModalType] = useState<"confirm" | "request">("request");
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+  const [showExcessChargeModal, setShowExcessChargeModal] = useState(false);
+  const [excessChargeData, setExcessChargeData] = useState<any>(null);
 
   const { data: borrowedBooks, isLoading: loadingBorrowed } = useQuery({
     queryKey: ["/api/rentals/borrowed"],
@@ -154,26 +157,43 @@ export default function MyBooks() {
               ) : (
                 <div className="flex space-x-2 mt-3">
                   <Button 
-                    onClick={() => {
-                      // Request return from lender
-                      apiRequest("POST", `/api/rentals/${rental.id}/request-return`, {
-                        notes: `I would like to return "${rental.book.title}". Please coordinate with me for a meeting spot.`
-                      })
-                        .then(() => {
+                    onClick={async () => {
+                      try {
+                        // Request return from lender
+                        const response = await apiRequest("POST", `/api/rentals/${rental.id}/request-return`, {
+                          notes: `I would like to return "${rental.book.title}". Please coordinate with me for a meeting spot.`
+                        });
+                        
+                        const data = await response.json();
+                        
+                        // Check if payment is required upfront due to excess late fees
+                        if (data.requiresPayment && data.excessAmount > 0) {
+                          setExcessChargeData({
+                            rentalId: rental.id,
+                            excessAmount: data.excessAmount,
+                            lateFee: data.lateFee,
+                            platformFeeOnLateFee: data.platformFeeOnLateFee,
+                            totalDeduction: data.totalDeduction,
+                            bookTitle: rental.book.title,
+                            lenderName: rental.lender.name,
+                            securityDeposit: rental.securityDeposit
+                          });
+                          setShowExcessChargeModal(true);
+                        } else {
                           toast({
                             title: "Return Request Sent",
                             description: `Return request sent to ${rental.lender.name}. They will be notified with coordination details including phone numbers.`,
                           });
                           queryClient.invalidateQueries({ queryKey: ["/api/rentals/borrowed"] });
-                        })
-                        .catch((error) => {
-                          console.error("Return request error:", error);
-                          toast({
-                            title: "Error", 
-                            description: "Failed to send return request. Please try again.",
-                            variant: "destructive",
-                          });
+                        }
+                      } catch (error) {
+                        console.error("Return request error:", error);
+                        toast({
+                          title: "Error", 
+                          description: "Failed to send return request. Please try again.",
+                          variant: "destructive",
                         });
+                      }
                     }}
                     className="flex-1"
                   >
@@ -668,6 +688,34 @@ export default function MyBooks() {
           }}
           rental={selectedRental}
           type={returnModalType}
+        />
+      )}
+
+      {/* Excess Charge Payment Modal */}
+      {excessChargeData && (
+        <ExcessChargePaymentModal
+          isOpen={showExcessChargeModal}
+          onClose={() => {
+            setShowExcessChargeModal(false);
+            setExcessChargeData(null);
+          }}
+          rentalId={excessChargeData.rentalId}
+          excessAmount={excessChargeData.excessAmount}
+          lateFee={excessChargeData.lateFee}
+          platformFeeOnLateFee={excessChargeData.platformFeeOnLateFee}
+          totalDeduction={excessChargeData.totalDeduction}
+          bookTitle={excessChargeData.bookTitle}
+          lenderName={excessChargeData.lenderName}
+          securityDeposit={excessChargeData.securityDeposit}
+          onPaymentSuccess={() => {
+            setShowExcessChargeModal(false);
+            setExcessChargeData(null);
+            queryClient.invalidateQueries({ queryKey: ["/api/rentals/borrowed"] });
+            toast({
+              title: "Payment Successful",
+              description: "Excess charges paid successfully. Return request has been sent.",
+            });
+          }}
         />
       )}
 

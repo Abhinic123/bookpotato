@@ -1539,11 +1539,24 @@ The BookPotato Team`,
       const currentDate = new Date();
       const isOverdue = currentDate > endDate;
       let calculatedLateFee = 0;
+      let platformFeeOnLateFee = 0;
+      let totalDeduction = 0;
+      let excessAmount = 0;
 
       if (isOverdue) {
         const daysLate = Math.ceil((currentDate.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24));
         const dailyLateFee = Number(rental.book?.dailyFee) || 10; // 100% of daily fee (same as normal rate)
         calculatedLateFee = daysLate * dailyLateFee;
+        
+        // Get platform settings and calculate platform commission on late fee
+        const settings = await getPlatformSettings();
+        const commissionRate = settings.commissionRate / 100;
+        platformFeeOnLateFee = calculatedLateFee * commissionRate;
+        totalDeduction = calculatedLateFee + platformFeeOnLateFee;
+        
+        // Check if total deduction exceeds security deposit
+        const securityDepositAmount = parseFloat(rental.securityDeposit);
+        excessAmount = Math.max(0, totalDeduction - securityDepositAmount);
       }
 
       // Update rental status to indicate return request
@@ -1575,14 +1588,26 @@ The BookPotato Team`,
 
       // If there's a late fee, also notify the borrower
       if (isOverdue && calculatedLateFee > 0) {
+        let borrowerLateFeeMessage = `Your return request for "${rental.book.title}" has been sent. Late fee: ₹${calculatedLateFee.toFixed(2)}, Platform commission: ₹${platformFeeOnLateFee.toFixed(2)}, Total charges: ₹${totalDeduction.toFixed(2)}.`;
+        
+        if (excessAmount > 0) {
+          borrowerLateFeeMessage += ` Since the total charges exceed your security deposit (₹${parseFloat(rental.securityDeposit).toFixed(2)}), you will need to pay an additional ₹${excessAmount.toFixed(2)} when returning the book.`;
+        } else {
+          borrowerLateFeeMessage += ` This will be deducted from your security deposit when the owner confirms the return.`;
+        }
+        
         await createNotificationWithEmail({
           userId: rental.borrowerId,
-          title: "Late Fee Notice",
-          message: `Your return request for "${rental.book.title}" has been sent. A late fee of ₹${calculatedLateFee.toFixed(2)} will be deducted from your security deposit when the owner confirms the return.`,
+          title: excessAmount > 0 ? "Late Fee - Payment Required" : "Late Fee Notice",
+          message: borrowerLateFeeMessage,
           type: "late_fee_notice",
           data: JSON.stringify({
             rentalId: rentalId,
             lateFee: calculatedLateFee,
+            platformFeeOnLateFee: platformFeeOnLateFee,
+            totalDeduction: totalDeduction,
+            excessAmount: excessAmount,
+            securityDeposit: parseFloat(rental.securityDeposit),
             bookTitle: rental.book.title
           })
         });
@@ -1590,7 +1615,11 @@ The BookPotato Team`,
 
       res.json({ 
         message: "Return request sent successfully",
-        lateFee: calculatedLateFee > 0 ? calculatedLateFee : null
+        lateFee: calculatedLateFee > 0 ? calculatedLateFee : null,
+        platformFeeOnLateFee: platformFeeOnLateFee > 0 ? platformFeeOnLateFee : null,
+        totalDeduction: totalDeduction > 0 ? totalDeduction : null,
+        excessAmount: excessAmount > 0 ? excessAmount : null,
+        requiresPayment: excessAmount > 0
       });
     } catch (error) {
       console.error("Request return error:", error);
@@ -1619,7 +1648,7 @@ The BookPotato Team`,
       let totalDeduction = 0;
 
       // Get platform settings for commission rate
-      const settings = await storage.getPlatformSettings();
+      const settings = await getPlatformSettings();
       const commissionRate = settings.commissionRate / 100; // Convert to decimal
 
       if (isOverdue) {
