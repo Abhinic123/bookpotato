@@ -589,6 +589,7 @@ export default function Home() {
       <AddBookModal
         open={showAddBookModal}
         onOpenChange={setShowAddBookModal}
+        onOpenBulkUpload={() => setShowBulkUploadModal(true)}
       />
 
       {/* Chat Section */}

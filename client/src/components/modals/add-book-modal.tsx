@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Camera, X, Loader2 } from "lucide-react";
+import { Camera, X, Loader2, Images } from "lucide-react";
 import EnhancedBarcodeScanner from "@/components/enhanced-barcode-scanner-working";
 import {
   Dialog,
@@ -81,9 +81,10 @@ interface AddBookModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editBook?: any;
+  onOpenBulkUpload?: () => void;
 }
 
-export default function AddBookModal({ open, onOpenChange, editBook }: AddBookModalProps) {
+export default function AddBookModal({ open, onOpenChange, editBook, onOpenBulkUpload }: AddBookModalProps) {
   const [scanMode, setScanMode] = useState(false);
   const [isLookingUpISBN, setIsLookingUpISBN] = useState(false);
   const { toast } = useToast();
@@ -424,6 +425,27 @@ export default function AddBookModal({ open, onOpenChange, editBook }: AddBookMo
           </div>
         ) : (
           <div className="space-y-4">
+            {!editBook && onOpenBulkUpload && (
+              <div className="space-y-3 pb-4 border-b">
+                <Button
+                  type="button"
+                  variant="default"
+                  className="w-full"
+                  onClick={() => {
+                    onOpenChange(false);
+                    onOpenBulkUpload();
+                  }}
+                  data-testid="button-open-bulk-upload"
+                >
+                  <Images className="h-4 w-4 mr-2" />
+                  Add Books In Bulk
+                </Button>
+                <p className="text-center text-sm text-text-secondary">
+                  Or Add Books One by One
+                </p>
+              </div>
+            )}
+            
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField

@@ -631,6 +631,7 @@ export default function MyBooks() {
           }
         }}
         editBook={editingBook}
+        onOpenBulkUpload={() => setShowBulkUploadModal(true)}
       />
 
       {/* Extension Request Modal */}
