@@ -14,6 +14,79 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import OpenAI from "openai";
 import Razorpay from "razorpay";
 
+// Email notification helper function
+async function sendEmailNotification(userId: number, title: string, message: string) {
+  try {
+    // Get user details
+    const user = await storage.getUser(userId);
+    if (!user || !user.email) {
+      console.log(`📧 Skipping email notification - no email for user ${userId}`);
+      return;
+    }
+
+    // Dynamic import of SendGrid
+    const sgMailModule = await import('@sendgrid/mail');
+    const sgMail = sgMailModule.default;
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    const domain = process.env.REPLIT_DEV_DOMAIN || '59203db4-a967-4b1c-b1d8-9d66f27d10d9-00-3bzw6spzdofx2.picard.replit.dev';
+    const frontendUrl = domain.startsWith('http') ? domain : `https://${domain}`;
+
+    const msg = {
+      to: user.email,
+      from: process.env.SENDGRID_FROM_EMAIL || 'notifications@bookpotato.com',
+      subject: `BookPotato - ${title}`,
+      text: `Hi ${user.name},
+
+${message}
+
+You can view all your notifications by logging into BookPotato:
+${frontendUrl}/notifications
+
+Best regards,
+The BookPotato Team`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #3b82f6;">${title}</h2>
+          <p>Hi ${user.name},</p>
+          <div style="background-color: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;">
+            ${message.replace(/\n/g, '<br>')}
+          </div>
+          <p>
+            <a href="${frontendUrl}/notifications" 
+               style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 16px 0;">
+               View All Notifications
+            </a>
+          </p>
+          <p style="color: #6b7280; font-size: 14px;">
+            Best regards,<br>
+            The BookPotato Team
+          </p>
+        </div>
+      `,
+    };
+
+    await sgMail.send(msg);
+    console.log(`📧 Email notification sent to ${user.email}: ${title}`);
+  } catch (error: any) {
+    // Log error but don't fail the notification creation
+    console.error(`📧 Failed to send email notification to user ${userId}:`, error.message);
+  }
+}
+
+// Wrapper function to create notification and send email
+async function createNotificationWithEmail(data: { userId: number; title: string; message: string; type: string; data?: string }) {
+  // Create in-app notification
+  const notification = await createNotificationWithEmail(data);
+  
+  // Send email notification in the background (don't await to avoid blocking)
+  sendEmailNotification(data.userId, data.title, data.message).catch(err => {
+    console.error('Background email send error:', err);
+  });
+  
+  return notification;
+}
+
 // Session interface
 declare module "express-session" {
   interface SessionData {
@@ -753,7 +826,7 @@ The BookPotato Team`,
         
         // Create notification for each admin
         for (const admin of adminUsers) {
-          await storage.createNotification({
+          await createNotificationWithEmail({
             userId: admin.id,
             title: `New ${hubTypeLabel} Request`,
             message: `${user?.name || 'User'} has requested to create "${validatedData.name}" ${hubTypeLower} with ${validatedData.apartmentCount} members in ${validatedData.city}. Please review and approve.`,
@@ -1416,7 +1489,7 @@ The BookPotato Team`,
       proposedEndDate.setDate(currentEndDate.getDate() + extensionDays);
 
       // Create notification for book owner
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: rental.lenderId,
         title: "Extension Request",
         message: `${rental.borrower.name} requests to extend "${rental.book.title}" for ${extensionDays} day(s). Current return date: ${currentEndDate.toLocaleDateString()}, Proposed: ${proposedEndDate.toLocaleDateString()}. Reason: ${reason}`,
@@ -1483,7 +1556,7 @@ The BookPotato Team`,
         ? `${borrower.name} wants to return "${rental.book.title}". The book is overdue and will incur a late fee of ₹${calculatedLateFee.toFixed(2)}. Please coordinate a meeting spot for the book return. Once you receive the book, confirm the return to complete the transaction.${notes ? ` Borrower's message: ${notes}` : ''}`
         : `${borrower.name} wants to return "${rental.book.title}". Please coordinate a meeting spot for the book return. Once you receive the book, confirm the return to complete the transaction.${notes ? ` Borrower's message: ${notes}` : ''}`;
 
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: rental.lenderId,
         title: "Book Return Request",
         message: notificationMessage,
@@ -1502,7 +1575,7 @@ The BookPotato Team`,
 
       // If there's a late fee, also notify the borrower
       if (isOverdue && calculatedLateFee > 0) {
-        await storage.createNotification({
+        await createNotificationWithEmail({
           userId: rental.borrowerId,
           title: "Late Fee Notice",
           message: `Your return request for "${rental.book.title}" has been sent. A late fee of ₹${calculatedLateFee.toFixed(2)} will be deducted from your security deposit when the owner confirms the return.`,
@@ -1590,7 +1663,7 @@ The BookPotato Team`,
         borrowerMessage += `, Refund: ₹${totalRefund.toFixed(2)} has been processed.`;
       }
       
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: rental.borrowerId,
         title: excessAmount > 0 ? "Book Return - Additional Payment Required" : "Book Return Confirmed - Payment Processed",
         message: borrowerMessage,
@@ -1608,7 +1681,7 @@ The BookPotato Team`,
       });
 
       // Notify borrower about lender payment (fake payment notification)
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: rental.lenderId,
         title: "Rental Payment Received",
         message: `Payment of ₹${lenderEarnings.toFixed(2)} for "${rental.book.title}" rental has been processed to your account.`,
@@ -1656,7 +1729,7 @@ The BookPotato Team`,
       });
 
       // Create notification for lender
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: rental.lenderId,
         title: "Late Fee Paid",
         message: `${rental.borrower.name} has paid ₹${lateFeeAmount.toFixed(2)} in late fees for "${rental.book.title}"`,
@@ -1689,7 +1762,7 @@ The BookPotato Team`,
       console.log(`✅ Excess charge payment received for rental ${rentalId}: ₹${excessAmount}, Payment ID: ${paymentId}`);
 
       // Create notification for lender
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: rental.lenderId,
         title: "Excess Charges Paid",
         message: `${rental.borrower.name} has paid ₹${excessAmount.toFixed(2)} in excess charges for "${rental.book.title}". The book return transaction is now complete.`,
@@ -1703,7 +1776,7 @@ The BookPotato Team`,
       });
 
       // Create notification for borrower confirming payment
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: rental.borrowerId,
         title: "Payment Confirmed",
         message: `Your payment of ₹${excessAmount.toFixed(2)} for excess charges on "${rental.book.title}" has been successfully processed. The transaction is now complete.`,
@@ -1750,7 +1823,7 @@ The BookPotato Team`,
         });
         
         // Create notification for borrower
-        await storage.createNotification({
+        await createNotificationWithEmail({
           userId: rental.borrowerId,
           title: "Extension Approved",
           message: `Your extension request for "${rental.book.title}" has been approved. New return date: ${newEndDate.toLocaleDateString()}`,
@@ -1762,7 +1835,7 @@ The BookPotato Team`,
         });
       } else {
         // Decline extension
-        await storage.createNotification({
+        await createNotificationWithEmail({
           userId: rental.borrowerId,
           title: "Extension Declined",
           message: `Your extension request for "${rental.book.title}" has been declined. Please return the book by the original due date: ${new Date(rental.endDate).toLocaleDateString()}`,
@@ -1831,7 +1904,7 @@ The BookPotato Team`,
       
       // Create notification for the requester
       const requesterUserId = requestData.requestedBy;
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: requesterUserId,
         title: approved ? "Society Request Approved" : "Society Request Rejected",
         message: approved 
@@ -2590,7 +2663,7 @@ Submitted on: ${new Date().toLocaleString()}
       }
 
       // Create notification for borrower
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: rental.borrowerId,
         title: "Return Reminder",
         message: reminderMessage,
@@ -2697,7 +2770,7 @@ Submitted on: ${new Date().toLocaleString()}
           await storage.reviewSocietyRequest(requestId, true, reason);
           
           // Notify the requester about approval
-          await storage.createNotification({
+          await createNotificationWithEmail({
             userId: request.requestedBy,
             title: "Society Request Approved",
             message: `Your society "${request.name}" has been approved and created successfully!`,
@@ -2718,7 +2791,7 @@ Submitted on: ${new Date().toLocaleString()}
         const request = allRequests[0];
         
         if (request) {
-          await storage.createNotification({
+          await createNotificationWithEmail({
             userId: request.requestedBy,
             title: "Society Request Declined",
             message: `Your society request for "${request.name}" has been declined. ${reason ? `Reason: ${reason}` : ''}`,
@@ -2895,7 +2968,7 @@ Submitted on: ${new Date().toLocaleString()}
       }
 
       // Create notification for lender with borrower collection details
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: book.ownerId,
         title: "Book Borrowed - Collection Pending",
         message: `Your book "${book.title}" has been borrowed by ${borrower.name}. They will collect it from ${owner.flatWing}, ${owner.buildingName}. Contact: ${borrower.phone || 'No phone provided'}`,
@@ -2903,7 +2976,7 @@ Submitted on: ${new Date().toLocaleString()}
       });
 
       // Create notification for borrower with owner's address and phone
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: req.session.userId!,
         title: "Book Borrowed Successfully",
         message: `You have borrowed "${book.title}" from ${owner.name}. Collect from: ${owner.flatWing}, ${owner.buildingName}, ${owner.detailedAddress || ''}. Contact: ${owner.phone || 'No phone provided'}`,
@@ -2987,7 +3060,7 @@ Submitted on: ${new Date().toLocaleString()}
       }
 
       // Create notification for seller
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: book.ownerId,
         title: "Book Sold",
         message: `Your book "${book.title}" has been sold to ${buyer.name}. Sale amount: ₹${sellerAmount.toFixed(2)}`,
@@ -2995,7 +3068,7 @@ Submitted on: ${new Date().toLocaleString()}
       });
 
       // Create notification for buyer
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: req.session.userId!,
         title: "Purchase Confirmed",
         message: `You have successfully purchased "${book.title}" for ₹${salePrice.toFixed(2)}. Contact seller ${seller.name} at ${seller.phone} to collect the book.`,
@@ -3061,7 +3134,7 @@ Submitted on: ${new Date().toLocaleString()}
         ? rental.lenderId 
         : rental.borrowerId;
       
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: notificationUserId,
         title: "Book Returned",
         message: `The book "${rental.book.title}" has been returned`,
@@ -3422,7 +3495,7 @@ Submitted on: ${new Date().toLocaleString()}
       });
 
       // Create notification for the book owner
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: rental.lenderId,
         title: "Extension Request Received",
         message: `${rental.borrower.name} wants to extend "${rental.book.title}" for ${extensionDays} days. You'll earn ₹${lenderEarnings.toFixed(2)}.`,
@@ -3501,7 +3574,7 @@ Submitted on: ${new Date().toLocaleString()}
       const rental = await storage.getRental(request.rentalId);
       if (rental) {
         // Create notification for borrower about approval with payment details
-        await storage.createNotification({
+        await createNotificationWithEmail({
           userId: request.requesterId,
           title: "Extension Request Approved",
           message: `Your extension request for "${rental.book.title}" has been approved! Click "Pay Now" to complete the extension.`,
@@ -3559,7 +3632,7 @@ Submitted on: ${new Date().toLocaleString()}
       const rental = await storage.getRental(request.rentalId);
       if (rental) {
         // Create notification for borrower about denial
-        await storage.createNotification({
+        await createNotificationWithEmail({
           userId: request.requesterId,
           title: "Extension Request Denied",
           message: `Your extension request for "${rental.book.title}" has been denied. Reason: ${reason || "No reason provided"}`,
@@ -3641,7 +3714,7 @@ Submitted on: ${new Date().toLocaleString()}
       });
 
       // Create success notification for borrower
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: request.requesterId,
         title: "Extension Payment Successful",
         message: `Payment successful! Your book "${rental.book.title}" has been extended for ${request.extensionDays} days. New due date: ${newEndDate.toLocaleDateString()}`,
@@ -3656,7 +3729,7 @@ Submitted on: ${new Date().toLocaleString()}
       });
 
       // Create earnings notification for book owner
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: request.ownerId,
         title: "Extension Payment Received",
         message: `You've earned ₹${parseFloat(request.lenderEarnings.toString()).toFixed(2)} from the extension of "${rental.book.title}"`,
@@ -3741,7 +3814,7 @@ Submitted on: ${new Date().toLocaleString()}
         .where(eq(users.id, request.ownerId));
 
       // Create notification for the lender about payment
-      await storage.createNotification({
+      await createNotificationWithEmail({
         userId: request.ownerId,
         title: "Extension Payment Received",
         message: `You earned ₹${parseFloat(request.lenderEarnings).toFixed(2)} from a ${request.extensionDays}-day extension for "${rental.book.title}".`,

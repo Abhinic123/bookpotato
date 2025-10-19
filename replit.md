@@ -31,13 +31,14 @@ Preferred communication style: Simple, everyday language.
 - **Migrations**: Drizzle Kit
 
 ### Key Features
-- **Authentication**: Session-based, user registration, profile management, admin roles, password reset.
+- **Authentication**: Session-based, user registration, profile management, admin roles, password reset with email notifications via SendGrid.
 - **Society Management**: Creation (with approval), joining, multi-society support, statistics tracking.
 - **Book Management**: Manual entry, barcode scanning, condition tracking, daily rental fees, availability management, optional selling price for buy/sell functionality. **Books belong to users** and are tagged to societies - when a user leaves a society, their books are automatically hidden from that society.
-- **Rental System**: Borrowing with duration, payment calculation (5% commission), security deposits, tracking, due date management.
+- **Rental System**: Borrowing with duration, payment calculation (5% commission), security deposits, tracking, due date management. **Late Fee Management**: 100% of daily rental rate charged for overdue books, platform commission applied to late fees, automatic deduction from security deposit, Razorpay payment gateway for excess charges.
 - **Buy/Sell Marketplace**: Books can be listed for sale with optional selling price, purchase tracking with bookPurchases table, buy buttons in UI, "Bought" and "Sold" tabs in My Books page, Brocks payment integration for purchases.
-- **Brocks Credit System**: Platform currency awarded for actions (upload, referral, borrow, lend), convertible to commission-free days or rupees. Admin-configurable parameters.
+- **Brocks Credit System**: Platform currency awarded for actions (upload, referral, borrow, lend), convertible to commission-free days or rupees. Admin-configurable parameters. Razorpay-integrated purchase system.
 - **Referral Program**: Unique codes, Brocks credit rewards, commission-free periods.
+- **Notifications**: Comprehensive in-app notification system with **automatic email notifications** for all events via SendGrid (return requests, confirmations, late fees, payments, messages, etc.).
 - **Enhanced Chat System**: Society chat rooms, one-on-one direct messages, integrated notifications, WebSocket real-time communication, society member directory, unread message tracking, tabbed interface, message history, read status management.
 - **Image Recognition**: Multi-provider system (Google Gemini, Anthropic Claude, Google Cloud Vision) for bulk book uploads with automatic failover.
 - **Barcode Scanner**: Enhanced camera functionality, improved image processing, direct camera access, professional viewfinder.
@@ -46,8 +47,11 @@ Preferred communication style: Simple, everyday language.
 ## External Dependencies
 
 ### Payment Processing
-- **Razorpay**
+- **Razorpay** (Book rentals, late fees, excess charges, Brocks purchases)
 - **Stripe** (components prepared)
+
+### Email Services
+- **SendGrid** (Password reset, all in-app notifications)
 
 ### Database & Hosting
 - **Neon** (Serverless PostgreSQL)
