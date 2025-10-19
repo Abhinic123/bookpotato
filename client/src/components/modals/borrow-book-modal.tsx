@@ -285,16 +285,20 @@ export default function BorrowBookModal({ book, open, onOpenChange, initialTrans
           console.log('💳 Razorpay payment successful:', razorpayResponse);
           try {
             // Complete the transaction with payment details
-            await borrowMutation.mutateAsync({
+            const result = await borrowMutation.mutateAsync({
               formData: data,
               paymentId: razorpayResponse.razorpay_payment_id,
               orderId: razorpayResponse.razorpay_order_id,
             });
+            console.log('✅ Transaction completed successfully:', result);
           } catch (error) {
-            console.error('Error completing transaction after payment:', error);
+            console.error('❌ Error completing transaction after payment:', error);
+            const errorMessage = error instanceof Error ? error.message : 
+                               error && typeof error === 'object' && 'message' in error ? String(error.message) :
+                               'Payment was successful but failed to complete the transaction. Please contact support.';
             toast({
               title: "Transaction Failed",
-              description: "Payment was successful but failed to complete the transaction. Please contact support.",
+              description: errorMessage,
               variant: "destructive",
             });
           }
