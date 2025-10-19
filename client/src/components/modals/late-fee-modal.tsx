@@ -13,6 +13,12 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { AlertTriangle, Clock, IndianRupee } from "lucide-react";
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 interface LateFeeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -46,9 +52,12 @@ export default function LateFeeModal({ isOpen, onClose, rental }: LateFeeModalPr
   }
 
   const payLateFeesMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (data: { paymentId: string; orderId: string }) => {
       const response = await apiRequest("POST", `/api/rentals/${rental.id}/pay-late-fees`, {
-        lateFeeAmount: totalLateFee
+        lateFeeAmount: totalLateFee,
+        paymentId: data.paymentId,
+        orderId: data.orderId,
+        paymentMethod: "razorpay"
       });
       return response.json();
     },
@@ -59,6 +68,7 @@ export default function LateFeeModal({ isOpen, onClose, rental }: LateFeeModalPr
       });
       queryClient.invalidateQueries({ queryKey: ["/api/rentals/borrowed"] });
       queryClient.invalidateQueries({ queryKey: ["/api/rentals/lent"] });
+      setIsProcessing(false);
       onClose();
     },
     onError: () => {
@@ -67,12 +77,87 @@ export default function LateFeeModal({ isOpen, onClose, rental }: LateFeeModalPr
         description: "Failed to process late fee payment",
         variant: "destructive",
       });
+      setIsProcessing(false);
     },
   });
 
-  const handlePayLateFees = () => {
+  const handlePayLateFees = async () => {
+    if (totalLateFee <= 0) {
+      toast({
+        title: "No Late Fees",
+        description: "There are no late fees to pay",
+      });
+      return;
+    }
+
     setIsProcessing(true);
-    payLateFeesMutation.mutate();
+
+    try {
+      // Create Razorpay order
+      const response = await fetch('/api/payments/create-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          amount: totalLateFee * 100, // Convert to paise
+          bookTitle: rental.book?.title || "Late Fee Payment",
+          lenderName: "Late Fee Payment"
+        }),
+      });
+
+      const orderData = await response.json();
+
+      if (!response.ok) {
+        throw new Error(orderData.message || 'Failed to create order');
+      }
+
+      // Initialize Razorpay
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: 'INR',
+        name: 'BookPotato',
+        description: `Late Fee Payment for ${rental.book?.title}`,
+        order_id: orderData.orderId,
+        handler: function (razorpayResponse: any) {
+          // Complete the payment with payment details
+          payLateFeesMutation.mutate({
+            paymentId: razorpayResponse.razorpay_payment_id,
+            orderId: razorpayResponse.razorpay_order_id,
+          });
+        },
+        prefill: {
+          name: 'User Name',
+          email: 'user@example.com',
+        },
+        theme: {
+          color: '#0EA5E9'
+        },
+        modal: {
+          ondismiss: function() {
+            setIsProcessing(false);
+            toast({
+              title: "Payment Cancelled",
+              description: "You cancelled the payment process",
+            });
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast({
+        title: "Payment Failed",
+        description: error instanceof Error ? error.message : "Something went wrong",
+        variant: "destructive",
+      });
+      setIsProcessing(false);
+    }
   };
 
   return (
