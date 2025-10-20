@@ -1,8 +1,8 @@
-# BookShare App - Promotional Video Script & Storyboard
+# BookPotato App - Promotional Video Script & Storyboard
 
 ## Video Overview
 **Duration**: 60-90 seconds  
-**Target Audience**: Book lovers, apartment residents, community-minded individuals  
+**Target Audience**: Book lovers, apartment residents, school communities, office spaces  
 **Tone**: Modern, friendly, community-focused  
 **Style**: Clean animations, real app screenshots, vibrant colors
 
@@ -16,69 +16,73 @@
 ---
 
 ## Scene 2: App Introduction (10-20 seconds)
-**Visual**: BookShare app logo animation with smartphone showing the welcome screen
-**Voiceover**: "Meet BookShare - where your neighborhood becomes your personal library"
+**Visual**: BookPotato app logo animation with smartphone showing the welcome screen
+**Voiceover**: "Meet BookPotato - where your neighborhood becomes your personal library"
 **Screen Recording**: App opening to the beautiful welcome screens with book illustrations
 
 ---
 
-## Scene 3: Society Feature Demo (20-35 seconds)
-**Visual**: Screen recording of society joining process
-**Voiceover**: "Join your apartment society and discover hundreds of books from your neighbors"
+## Scene 3: Hub Feature Demo (20-35 seconds)
+**Visual**: Screen recording of hub joining process (Societies, Schools, Offices)
+**Voiceover**: "Join your apartment society, school, or office and discover hundreds of books from your community"
 **Show**:
-- Society selection screen (Dosti Ambrosia, Ajmera Aeon, etc.)
+- Hub selection screen (Dosti Ambrosia, AVM Bandra East, etc.)
 - Member count and book statistics
-- Clean society interface
+- Clean hub interface with multiple hub types
 
 ---
 
 ## Scene 4: Book Discovery (35-45 seconds)
 **Visual**: Browse books page with real book listings
-**Voiceover**: "Browse, search, and discover amazing books right in your building"
+**Voiceover**: "Browse, search, and discover amazing books right in your building - or buy them outright"
 **Show**:
-- Book cards with ratings and prices
+- Book cards with ratings, rental prices, and selling prices
 - Search and filter functionality
 - Book details with owner information
+- Buy/Sell marketplace tabs
 
 ---
 
-## Scene 5: Rental Process (45-55 seconds)
-**Visual**: Quick rental flow demonstration
-**Voiceover**: "Rent for just a few rupees per day - cheaper than buying, easier than libraries"
+## Scene 5: Rental & Purchase Process (45-55 seconds)
+**Visual**: Quick rental and buy flow demonstration
+**Voiceover**: "Rent for just a few rupees per day - cheaper than buying, or purchase books directly from your neighbors"
 **Show**:
 - Book rental modal with pricing
+- Buy now option with instant purchase
 - Payment integration (Razorpay)
-- Rental confirmation
+- Rental and purchase confirmation
 
 ---
 
 ## Scene 6: Chat & Community (55-65 seconds)
 **Visual**: Chat interface demonstration
-**Voiceover**: "Connect with fellow book lovers, discuss recommendations, and build community"
+**Voiceover**: "Connect with fellow book lovers through society chat rooms and direct messaging"
 **Show**:
-- Society chat rooms
+- Society/School/Office chat rooms
 - Direct messaging with members
-- Notification system
+- Real-time WebSocket notifications
+- Member directory
 
 ---
 
-## Scene 7: Brocks Rewards (65-75 seconds)
+## Scene 7: Brocks Rewards & Gamification (65-75 seconds)
 **Visual**: Brocks credit system and leaderboard
-**Voiceover**: "Earn Brocks credits for every book you share and every rental - turn reading into rewards"
+**Voiceover**: "Earn Brocks credits for every book you share and every rental - climb the ranks from Explorer to Emperor"
 **Show**:
 - Credit balance in navigation
-- Leaderboard with ranking system
-- Rewards conversion options
+- Ranking system with progress bars
+- Leaderboard with achievements
+- Rewards conversion to commission-free days or rupees
 
 ---
 
 ## Scene 8: Call to Action (75-90 seconds)
-**Visual**: App download mockup with QR code
-**Voiceover**: "Start your book sharing journey today. Download BookShare and transform how your community reads"
+**Visual**: App download mockup with domain
+**Voiceover**: "Start your book sharing journey today. Visit BookPotato and transform how your community reads"
 **Text Overlay**: 
-- "BookShare - Share. Read. Connect."
-- "Available Now on Replit"
-- QR code linking to the app
+- "BookPotato - Share. Read. Connect."
+- "Visit bookpotato.in"
+- Domain/QR code linking to the app
 
 ---
 
@@ -92,19 +96,26 @@
 
 ### Screen Recording Sections
 1. **Welcome Flow**: App startup and onboarding screens
-2. **Society Join**: Complete society joining process
-3. **Book Browse**: Scrolling through available books
-4. **Rental Process**: Book rental from selection to payment
-5. **Chat Demo**: Society chat and direct messaging
-6. **Profile/Brocks**: User profile with credits and achievements
+2. **Hub Join**: Complete hub joining process (Society/School/Office)
+3. **Book Browse**: Scrolling through available books with buy/rent options
+4. **Rental & Purchase Process**: Book rental and purchase from selection to payment
+5. **Chat Demo**: Hub chat rooms and direct messaging with real-time updates
+6. **Profile/Brocks**: User profile with credits, achievements, and ranking
 
 ### Key Features to Highlight
+- ✅ **Multi-Hub Support**: Societies, Schools, and Offices
+- ✅ **Buy & Rent**: Flexible options to rent or purchase books
 - ✅ **Community Focus**: Neighbor-to-neighbor book sharing
 - ✅ **Affordability**: Low daily rental rates vs buying books
-- ✅ **Social Features**: Chat, recommendations, community building
-- ✅ **Gamification**: Brocks credits and ranking system
+- ✅ **Social Features**: Chat rooms, direct messaging, community building
+- ✅ **Gamification**: Brocks credits and ranking system (Explorer to Emperor)
+- ✅ **Real-time Communication**: WebSocket-powered chat and notifications
+- ✅ **Email Notifications**: Automated email updates via SendGrid
+- ✅ **Smart Features**: Barcode scanning, bulk upload via photo recognition
+- ✅ **Payment Processing**: Integrated Razorpay for seamless transactions
+- ✅ **Late Fee Management**: Automatic calculation and payment processing
 - ✅ **User-Friendly**: Clean, modern interface
-- ✅ **Trust & Safety**: Society-based verification system
+- ✅ **Trust & Safety**: Community-based verification system
 
 ### Visual Style Guide
 - **Primary Colors**: Use the app's blue theme
@@ -125,18 +136,21 @@
 
 ### Mobile App Screenshots Needed:
 1. **Welcome Screens** (3-4 screens with illustrations)
-2. **Login/Signup Flow**
-3. **Home Dashboard** with Brocks credits visible
-4. **Browse Books** page with multiple book listings
-5. **Book Details** modal with rental options
-6. **Society Selection** and joining process
-7. **Chat Interface** - both general and direct messages
-8. **Profile Page** with achievements and stats
-9. **Rental History** and active rentals
-10. **Leaderboard/Rankings** page
+2. **Login/Signup Flow** with Google OAuth option
+3. **Home Dashboard** with Brocks credits and ranking badge visible
+4. **Browse Books** page with both rental and purchase listings
+5. **Book Details** modal with rent/buy options
+6. **Hub Selection** and joining process (Society, School, Office)
+7. **Chat Interface** - hub chat rooms and direct messages
+8. **Profile Page** with achievements, stats, and ranking progress
+9. **Rental History** and active rentals with late fee tracking
+10. **Buy/Sell Tabs** showing bought and sold books
+11. **Leaderboard/Rankings** page with Emperor, Legend, Master rankings
+12. **Bulk Upload** feature with photo recognition
+13. **Barcode Scanner** in action
 
 ### Desktop/Browser Screenshots:
-1. **Marketing Landing Page** (if exists)
+1. **Marketing Landing Page** at bookpotato.in
 2. **Admin Panel** views (to show platform scale)
 3. **Analytics Dashboard** (anonymized data)
 
@@ -170,7 +184,7 @@
 ### Platforms for Promotion:
 - **LinkedIn**: Professional community focus
 - **Instagram/Instagram Stories**: Visual, community-based
-- **Facebook**: Apartment society groups
+- **Facebook**: Apartment society groups, school parent groups
 - **YouTube**: Longer format with more detail
 - **WhatsApp**: Direct sharing in housing society groups
 - **Twitter**: Tech community and book lovers
@@ -189,7 +203,8 @@
 - Video engagement rates (views, likes, shares)
 - Click-through rates to app
 - New user registrations after video campaigns
-- Society sign-ups from promoted areas
+- Hub sign-ups from promoted areas
+- Book rental and purchase conversions
 - Social media follower growth
 
-This comprehensive video will showcase BookShare as the future of community-based book sharing, highlighting both the practical benefits and the social connections it creates.
+This comprehensive video will showcase BookPotato as the future of community-based book sharing, highlighting both the practical benefits (rent or buy) and the social connections it creates across societies, schools, and offices.
