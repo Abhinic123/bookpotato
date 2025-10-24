@@ -2,7 +2,7 @@
 
 ## Overview
 
-BookPotato (formerly BorrowBooks and BookShare) is a community-driven digital library platform facilitating book sharing within residential societies, schools, and offices. It enables users to lend and borrow books, buy and sell books, manage rentals with payment processing, utilize barcode scanning for book identification, and participate in a gamification system. The platform aims to create a comprehensive rental and marketplace system, offering a new way for community members to share resources and earn through their book collections.
+BookPotato is a community-driven digital library platform designed for residential societies, schools, and offices. Its core purpose is to facilitate book sharing through lending, borrowing, buying, and selling. Key capabilities include rental management with payment processing, barcode scanning for book identification, a gamification system (Brocks credits and ranking), and real-time communication. The platform aims to foster a vibrant book-sharing ecosystem within defined communities.
 
 ## User Preferences
 
@@ -10,95 +10,32 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend
-- **Framework**: React 18 with TypeScript
-- **Routing**: Wouter
-- **State Management**: TanStack Query (React Query)
-- **UI Components**: Radix UI primitives with shadcn/ui
-- **Styling**: Tailwind CSS with custom CSS variables
-- **Build Tool**: Vite
+### UI/UX Decisions
+The frontend utilizes React 18 with TypeScript, Wouter for routing, and TanStack Query for state management. UI components are built with Radix UI primitives and customized using shadcn/ui, styled with Tailwind CSS and custom HSL color variables. Form handling is managed by React Hook Form with Zod validation.
 
-### Backend
-- **Runtime**: Node.js with Express.js
-- **Language**: TypeScript with ES modules
-- **API Design**: RESTful API with JSON
-- **Session Management**: Express sessions with HTTP-only cookies
-- **File Structure**: Monorepo
+### Technical Implementations
+The backend is built with Node.js 20.x and Express.js, written in TypeScript with ES modules. It exposes a RESTful API using JSON payloads. Session management is handled by Express sessions stored in PostgreSQL, secured with HTTP-only cookies. Authentication supports both local email/password and Google OAuth strategies via Passport.js. The project follows a monorepo structure (`client/`, `server/`, `shared/`).
 
-### Database & ORM
-- **Database**: PostgreSQL (via Neon serverless)
-- **ORM**: Drizzle ORM
-- **Migrations**: Drizzle Kit
+### Feature Specifications
+- **Authentication**: Supports Google OAuth and local login with email/password. Sessions are managed in PostgreSQL with 7-day expiry.
+- **Book Rentals**: Users can borrow books with calculated fees (rental, platform commission, security deposit). Payment options include Brocks credits or Razorpay. Brocks credits are awarded to both borrowers and lenders upon rental completion.
+- **Late Fee System**: Automatically calculates late fees based on daily rates. If late fees exceed the security deposit, users must pay the excess via Razorpay before return confirmation.
+- **Brocks Credit System**: A gamified credit system where users earn Brocks for actions like signing up, uploading books, borrowing/lending, and referrals. Brocks can be converted to discounts or commission-free days. A ranking system based on total Brocks earned provides user tiers.
+- **Notification & Email System**: In-app notifications and email alerts (via SendGrid) for various events like rental status updates, messages, payments, and hub activities. Email sending is asynchronous.
+- **Buy/Sell Marketplace**: Users can buy and sell books. Purchases can be made via Razorpay or Brocks.
+- **Real-Time Chat**: WebSocket-based chat system for direct messages between users and within hubs. Tracks unread messages and provides real-time updates.
+- **Hub Management**: Supports creating and joining community hubs (Society, School, Office). Books uploaded by members are tagged with their active hubs, controlling visibility. Hubs require admin approval.
 
-### Key Features
-- **Authentication**: Session-based with Google OAuth support, user registration, profile management, admin roles, password reset with email notifications via SendGrid. **Production domain configured** for OAuth at bookpotato.in.
-- **Hub Management**: Three hub types (Societies, Schools, Offices), creation with approval, joining, multi-hub support, statistics tracking.
-- **Book Management**: Manual entry, barcode scanning, condition tracking, daily rental fees, availability management, optional selling price for buy/sell functionality. **Books belong to users** and are tagged to hubs - when a user leaves a hub, their books are automatically hidden from that hub.
-- **Rental System**: Borrowing with duration, payment calculation (10% commission), security deposits, tracking, due date management. **Late Fee Management**: 100% of daily rental rate charged for overdue books, platform commission applied to late fees, automatic deduction from security deposit, Razorpay payment gateway for excess charges.
-- **Buy/Sell Marketplace**: Books can be listed for sale with optional selling price, purchase tracking with bookPurchases table, buy buttons in UI, "Bought" and "Sold" tabs in My Books page, Razorpay payment integration for purchases.
-- **Brocks Credit System**: Platform currency awarded for actions (upload, referral, borrow, lend), convertible to commission-free days or rupees. Admin-configurable parameters. Razorpay-integrated purchase system.
-- **Referral Program**: Unique codes, Brocks credit rewards, commission-free periods.
-- **Notifications**: Comprehensive in-app notification system with **automatic email notifications** for all events via SendGrid from **bookpotato.info@gmail.com** (return requests, confirmations, late fees, payments, messages, etc.). SendGrid sender email verified and configured.
-- **Enhanced Chat System**: Hub chat rooms (societies/schools/offices), one-on-one direct messages, integrated notifications, WebSocket real-time communication, hub member directory, unread message tracking, tabbed interface, message history, read status management.
-- **Image Recognition**: Multi-provider system (Google Gemini, Anthropic Claude, Google Cloud Vision) for bulk book uploads with automatic failover.
-- **Barcode Scanner**: Enhanced camera functionality, improved image processing, direct camera access, professional viewfinder.
-- **Gamification**: Brocks ranking system (Explorer to Emperor), leaderboard with progress bars, achievement system.
+### System Design Choices
+- **Database**: PostgreSQL 15 (hosted on Neon serverless) is used with Drizzle ORM for type-safe queries and migrations (Drizzle Kit).
+- **Payment Gateway**: Razorpay is integrated for all monetary transactions.
+- **Email Service**: SendGrid is used for all email notifications.
+- **Scalability**: Designed with a serverless database (Neon) and asynchronous email sending for better performance and scalability.
 
 ## External Dependencies
 
-### Payment Processing
-- **Razorpay** (Book rentals, late fees, excess charges, Brocks purchases, book purchases)
-  - API keys configured: RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, VITE_RAZORPAY_KEY_ID
-
-### Email Services
-- **SendGrid** (Password reset, all in-app notifications)
-  - API key configured: SENDGRID_API_KEY
-  - Sender email: bookpotato.info@gmail.com (verified)
-
-### Authentication
-- **Google OAuth 2.0** (Sign in with Google)
-  - Production callback configured for bookpotato.in
-  - Development callback for Replit dev domain
-  - Automatic domain detection based on PRODUCTION_DOMAIN environment variable
-
-### Database & Hosting
-- **Neon** (Serverless PostgreSQL)
-- **Replit** (Development and deployment)
-- **Production Domain**: bookpotato.in
-
-### UI & Utilities
-- **Radix UI**
-- **Tailwind CSS**
-- **React Hook Form**
-- **Zod**
-
-### Media & Scanning
-- **@zxing/library** (Barcode scanning)
-- **Camera API**
-- **Google Gemini** (Image recognition)
-- **Anthropic Claude** (Image recognition)
-- **Google Cloud Vision APIs** (Image recognition)
-
-## Recent Updates (October 2025)
-
-### Email Notification System
-- Fixed critical recursive bug in `createNotificationWithEmail` function
-- All 27+ notification types now send both in-app and email notifications
-- SendGrid sender email updated to bookpotato.info@gmail.com
-- Automatic email delivery for all user actions (rentals, returns, messages, late fees, etc.)
-
-### OAuth Configuration
-- Google OAuth callback URL dynamically configured based on domain
-- Production domain (bookpotato.in) fully supported
-- Automatic domain detection from PRODUCTION_DOMAIN environment variable
-- Seamless sign-in experience on both development and production environments
-
-### Late Fee & Payment Processing
-- Enhanced return flow with immediate payment modal for excess charges
-- Platform commission (10%) applied to late fees
-- Razorpay integration for excess charge payments when late fees exceed security deposit
-
-### Bug Fixes
-- Fixed notification system preventing book rentals after payment completion
-- Fixed recursive function call causing stack overflow in notification creation
-- Payment processing now completes successfully end-to-end
+- **Razorpay**: Integrated for processing payments related to book rentals, late fees, excess charges, Brocks purchases, and direct book purchases.
+- **SendGrid**: Utilized for sending all transactional emails and notifications.
+- **Google OAuth 2.0**: Used for simplified user authentication via Google accounts.
+- **Neon**: Provides serverless PostgreSQL database hosting.
+- **Replit**: Development and deployment environment.
