@@ -2,7 +2,18 @@
 
 ## Overview
 
-BookPotato is a community-driven digital library platform designed for residential societies, schools, and offices. Its core purpose is to facilitate book sharing through lending, borrowing, buying, and selling. Key capabilities include rental management with payment processing, barcode scanning for book identification, a gamification system (Brocks credits and ranking), and real-time communication. The platform aims to foster a vibrant book-sharing ecosystem within defined communities.
+BookPotato is a community-driven digital library platform designed to facilitate book sharing, buying, and selling within residential societies, schools, and offices. It offers a comprehensive solution for managing book rentals with integrated payment processing, a marketplace for buying and selling books, and a gamification system based on "Brocks" credits. The platform aims to foster a vibrant reading community and streamline book exchange processes.
+
+**Key Capabilities:**
+- Multi-hub book sharing (Societies, Schools, Offices)
+- Rental system with late fee management
+- Buy/sell marketplace
+- Razorpay payment integration
+- Brocks gamification currency and ranking system (Explorer to Emperor)
+- Real-time WebSocket chat
+- SendGrid email notifications
+- Google OAuth and local authentication
+- Barcode scanning & bulk book photo upload
 
 ## User Preferences
 
@@ -10,32 +21,47 @@ Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### UI/UX Decisions
-The frontend utilizes React 18 with TypeScript, Wouter for routing, and TanStack Query for state management. UI components are built with Radix UI primitives and customized using shadcn/ui, styled with Tailwind CSS and custom HSL color variables. Form handling is managed by React Hook Form with Zod validation.
+BookPotato utilizes a modern full-stack architecture with a React-based frontend and a Node.js Express backend, both written in TypeScript.
 
-### Technical Implementations
-The backend is built with Node.js 20.x and Express.js, written in TypeScript with ES modules. It exposes a RESTful API using JSON payloads. Session management is handled by Express sessions stored in PostgreSQL, secured with HTTP-only cookies. Authentication supports both local email/password and Google OAuth strategies via Passport.js. The project follows a monorepo structure (`client/`, `server/`, `shared/`).
+**Frontend:**
+- **Framework:** React 18 (TypeScript)
+- **Routing:** Wouter
+- **State Management:** TanStack Query v5 for server state
+- **UI Components:** Radix UI primitives with shadcn/ui for customization
+- **Styling:** Tailwind CSS + custom HSL color variables
+- **Forms:** React Hook Form with Zod validation
+- **Build Tool:** Vite
+- **Icons:** Lucide React + React Icons
 
-### Feature Specifications
-- **Authentication**: Supports Google OAuth and local login with email/password. Sessions are managed in PostgreSQL with 7-day expiry.
-- **Book Rentals**: Users can borrow books with calculated fees (rental, platform commission, security deposit). Payment options include Brocks credits or Razorpay. Brocks credits are awarded to both borrowers and lenders upon rental completion.
-- **Late Fee System**: Automatically calculates late fees based on daily rates. If late fees exceed the security deposit, users must pay the excess via Razorpay before return confirmation.
-- **Brocks Credit System**: A gamified credit system where users earn Brocks for actions like signing up, uploading books, borrowing/lending, and referrals. Brocks can be converted to discounts or commission-free days. A ranking system based on total Brocks earned provides user tiers.
-- **Notification & Email System**: In-app notifications and email alerts (via SendGrid) for various events like rental status updates, messages, payments, and hub activities. Email sending is asynchronous.
-- **Buy/Sell Marketplace**: Users can buy and sell books. Purchases can be made via Razorpay or Brocks.
-- **Real-Time Chat**: WebSocket-based chat system for direct messages between users and within hubs. Tracks unread messages and provides real-time updates.
-- **Hub Management**: Supports creating and joining community hubs (Society, School, Office). Books uploaded by members are tagged with their active hubs, controlling visibility. Hubs require admin approval.
+**Backend:**
+- **Runtime:** Node.js 20.x
+- **Framework:** Express.js (TypeScript + ES modules)
+- **API Style:** RESTful with JSON payloads
+- **Authentication:** `express-session` (PostgreSQL-backed) and Passport.js (Local + Google OAuth strategies)
+- **Real-time Communication:** `ws` library for WebSockets
+- **Payment Integration:** Razorpay SDK
+- **Email Service:** SendGrid SDK
+- **ORM:** Drizzle with Neon PostgreSQL driver
 
-### System Design Choices
-- **Database**: PostgreSQL 15 (hosted on Neon serverless) is used with Drizzle ORM for type-safe queries and migrations (Drizzle Kit).
-- **Payment Gateway**: Razorpay is integrated for all monetary transactions.
-- **Email Service**: SendGrid is used for all email notifications.
-- **Scalability**: Designed with a serverless database (Neon) and asynchronous email sending for better performance and scalability.
+**Database:**
+- **Type:** PostgreSQL 15 (Neon serverless)
+- **ORM:** Drizzle ORM for type-safe queries and schema management.
+- **Schema:** Includes tables for users, books, rentals, purchases, hubs, messages, notifications, and credit transactions, designed to support all platform features and relationships.
+
+**Key Features & Implementations:**
+
+-   **Authentication:** Supports local email/password login and Google OAuth. Sessions are managed using `express-session` stored in PostgreSQL, with a 7-day expiry.
+-   **Book Borrowing:** Calculates rental fees, platform commission, and security deposits. Payments can be made via Brocks credits or Razorpay (supporting Card/UPI/NetBanking). Awards Brocks to both borrower and lender.
+-   **Late Fee System:** Calculates late fees based on `book.dailyFee` and days overdue. Late fees that exceed the security deposit require additional payment via Razorpay before return confirmation. Refunds security deposits proportionally.
+-   **Brocks Credit System:** A gamification currency awarded for various activities (signup, book uploads, borrowing, lending). Brocks can be used to pay for rentals, converted to discounts on purchases, or exchanged for commission-free days. Includes a multi-tiered ranking system (Explorer to Emperor) based on total Brocks earned.
+-   **Notification & Email System:** A dual system for in-app notifications and email alerts using SendGrid. Notifications are triggered by various events (rentals, messages, payments, hub activities, system updates) and delivered asynchronously.
+-   **Buy/Sell Marketplace:** Allows users to list books for sale with a specified selling price. Purchases can be made using Razorpay or Brocks. Manages book availability and notifies buyer/seller.
+-   **Real-Time Chat System:** Implemented using WebSockets for direct user-to-user messaging and hub-specific group chats. Messages are stored in the database, and unread counts are tracked. In-app notifications are sent for direct messages when the recipient is offline.
+-   **Hub Management:** Supports creation and joining of hubs (Society, School, Office) with unique codes. Hubs must be approved by administrators. Books uploaded by users are tagged with their active hub memberships, controlling visibility. Users can join/leave hubs, affecting book visibility.
 
 ## External Dependencies
 
-- **Razorpay**: Integrated for processing payments related to book rentals, late fees, excess charges, Brocks purchases, and direct book purchases.
-- **SendGrid**: Utilized for sending all transactional emails and notifications.
-- **Google OAuth 2.0**: Used for simplified user authentication via Google accounts.
-- **Neon**: Provides serverless PostgreSQL database hosting.
-- **Replit**: Development and deployment environment.
+-   **Neon Database:** Serverless PostgreSQL database hosting.
+-   **Razorpay:** Payment gateway for processing INR transactions (rentals, purchases, late fees).
+-   **SendGrid:** Email API for sending transactional and notification emails.
+-   **Google OAuth:** Authentication provider for user login.
